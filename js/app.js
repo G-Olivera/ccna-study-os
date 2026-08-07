@@ -16,6 +16,7 @@ import { logActivity, getAllTopics, getAllUserTopicProgress } from "./data-schem
 import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
 import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
+import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
 import {
   iniciarCronometro,
   pausarCronometro,
@@ -94,6 +95,7 @@ function trocarTela(nome) {
   if (nome === "flashcards") carregarFlashcards();
   if (nome === "dashboard") carregarDashboard();
   if (nome === "trilha") carregarTrilha();
+  if (nome === "tarefas") carregarTarefas();
 }
 
 // ---------- TELA HOJE ----------
@@ -502,5 +504,92 @@ document.getElementById("btn-ver-labs").addEventListener("click", async () => {
       cliArea.scrollIntoView({ behavior: "smooth" });
       await abrirCLI(currentUser.uid, btn.dataset.lab, cliArea);
     });
+  });
+});
+
+// ---------- TAREFAS (trabalho / estudo / bem-estar) ----------
+
+let categoriaSelecionada = "trabalho";
+
+document.getElementById("categoria-tabs").addEventListener("click", (e) => {
+  const btn = e.target.closest(".cat-tab");
+  if (!btn) return;
+  categoriaSelecionada = btn.dataset.cat;
+  document.querySelectorAll(".cat-tab").forEach((b) => b.classList.toggle("selecionada", b === btn));
+
+  const sugestoesEl = document.getElementById("sugestoes-bemestar");
+  if (categoriaSelecionada === "bemestar") {
+    sugestoesEl.classList.remove("hidden");
+    sugestoesEl.innerHTML = SUGESTOES_BEMESTAR.map((s) => `<span class="sugestao-chip" data-sugestao="${s}">${s}</span>`).join("");
+  } else {
+    sugestoesEl.classList.add("hidden");
+    sugestoesEl.innerHTML = "";
+  }
+});
+
+document.getElementById("sugestoes-bemestar").addEventListener("click", async (e) => {
+  const chip = e.target.closest(".sugestao-chip");
+  if (!chip) return;
+  await adicionarTarefa(currentUser.uid, chip.dataset.sugestao, "bemestar");
+  await carregarTarefas();
+});
+
+async function adicionarTarefaDoInput() {
+  const input = document.getElementById("input-nova-tarefa");
+  const titulo = input.value.trim();
+  if (!titulo) return;
+  await adicionarTarefa(currentUser.uid, titulo, categoriaSelecionada);
+  input.value = "";
+  await carregarTarefas();
+}
+
+document.getElementById("btn-add-tarefa").addEventListener("click", adicionarTarefaDoInput);
+document.getElementById("input-nova-tarefa").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") adicionarTarefaDoInput();
+});
+
+async function carregarTarefas() {
+  const { agrupadas, totalTarefas, totalConcluidas } = await getTarefasDeHoje(currentUser.uid);
+
+  document.getElementById("tarefas-resumo").textContent = `${totalConcluidas} de ${totalTarefas} concluídas`;
+
+  ["trabalho", "estudo", "bemestar"].forEach((cat) => {
+    const container = document.getElementById(`lista-tarefas-${cat}`);
+    const tarefas = agrupadas[cat];
+
+    if (tarefas.length === 0) {
+      container.innerHTML = "";
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="grupo-titulo"><span class="dot dot-${cat}"></span>${CATEGORIA_LABEL[cat]}</div>
+      ${tarefas
+        .map(
+          (t) => `
+        <div class="tarefa-item">
+          <div class="tarefa-checkbox ${t.concluida ? "concluida" : ""}" data-id="${t.id}" data-concluida="${t.concluida}">${t.concluida ? "✓" : ""}</div>
+          <span class="tarefa-titulo ${t.concluida ? "concluida" : ""}">${t.titulo}</span>
+          <button class="tarefa-remover" data-remover="${t.id}">✕</button>
+        </div>`
+        )
+        .join("")}
+    `;
+  });
+}
+
+document.querySelectorAll(".grupo-tarefas").forEach((el) => {
+  el.addEventListener("click", async (e) => {
+    const checkbox = e.target.closest(".tarefa-checkbox");
+    const removerBtn = e.target.closest("[data-remover]");
+
+    if (checkbox) {
+      const novoEstado = checkbox.dataset.concluida !== "true";
+      await marcarConcluida(currentUser.uid, checkbox.dataset.id, novoEstado);
+      await carregarTarefas();
+    } else if (removerBtn) {
+      await removerTarefa(currentUser.uid, removerBtn.dataset.remover);
+      await carregarTarefas();
+    }
   });
 });
