@@ -11,7 +11,8 @@ import { ai } from "./firebase-config.js";
 
 const SYSTEM_INSTRUCTION =
   "Você é um instrutor Cisco CCNA 200-301 explicando para um estudante com TDAH. " +
-  "Seja direto, use frases curtas, divida em passos pequenos, e evite parágrafos longos.";
+  "Seja direto, use frases curtas, divida em passos pequenos, e evite parágrafos longos. " +
+  "Responda em texto puro, sem formatação Markdown (sem asteriscos, sem #, sem listas com traço).";
 
 const model = getGenerativeModel(ai, {
   model: "gemini-3.6-flash",
