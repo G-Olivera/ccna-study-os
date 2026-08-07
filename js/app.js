@@ -12,7 +12,7 @@ import { getDueCards, reviewAndSave, QUALITY } from "./srs-engine.js";
 import { getDashboardData } from "./dashboard.js";
 import { verificarConquistas } from "./gamification.js";
 import { explicarTopico, perguntarLivre } from "./ai-tutor.js";
-import { logActivity, getAllTopics, getAllUserTopicProgress } from "./data-schema.js";
+import { logActivity, getAllTopics, getAllUserTopicProgress, getUserTopicProgress, upsertUserTopicProgress } from "./data-schema.js";
 import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
 import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
@@ -389,9 +389,13 @@ async function carregarTrilha() {
         </div>
         <div class="modulo-licoes" id="licoes-${mod.ordem}">
           ${licoesDoModulo
-            .map((t) => `<span class="licao-chip ${(progressoMap.get(t.id)?.masteryPercent ?? 0) >= 80 ? "dominada" : ""}">${t.nome}</span>`)
+            .map(
+              (t) =>
+                `<span class="licao-chip ${(progressoMap.get(t.id)?.masteryPercent ?? 0) >= 80 ? "dominada" : ""}" data-licao-id="${t.id}" data-licao-nome="${t.nome}">${t.nome}</span>`
+            )
             .join("")}
         </div>
+        <div class="licao-conteudo hidden" id="conteudo-${mod.ordem}"></div>
       </div>`;
     })
     .join("");
@@ -402,9 +406,51 @@ async function carregarTrilha() {
     });
   });
 
+  document.querySelectorAll(".modulo-licoes").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      const chip = e.target.closest(".licao-chip");
+      if (!chip) return;
+      const moduloOrdem = el.id.replace("licoes-", "");
+      await abrirConteudoLicao(chip.dataset.licaoId, chip.dataset.licaoNome, moduloOrdem);
+    });
+  });
+
   // Cronograma
   const ritmo = await calcularRitmo(currentUser.uid);
   renderCronograma(ritmo);
+}
+
+// Abre (ou fecha) o painel de conteúdo de uma lição, gerando a explicação via Tutor IA.
+async function abrirConteudoLicao(licaoId, licaoNome, moduloOrdem) {
+  const painel = document.getElementById(`conteudo-${moduloOrdem}`);
+
+  if (!painel.classList.contains("hidden") && painel.dataset.licaoAtual === licaoId) {
+    painel.classList.add("hidden");
+    return;
+  }
+
+  painel.dataset.licaoAtual = licaoId;
+  painel.classList.remove("hidden");
+  painel.innerHTML = `<p class="eyebrow">${licaoNome}</p><p>Gerando explicação…</p>`;
+
+  try {
+    const texto = await explicarTopico(licaoNome, "iniciante");
+    painel.innerHTML = `
+      <p class="eyebrow">${licaoNome}</p>
+      <p class="licao-texto">${texto}</p>
+      <button class="btn-primary" id="btn-marcar-estudada" data-licao="${licaoId}" style="margin-top:12px;">Marcar como estudada</button>
+    `;
+    document.getElementById("btn-marcar-estudada").addEventListener("click", async () => {
+      const atual = await getUserTopicProgress(currentUser.uid, licaoId);
+      const novoMastery = Math.max(atual?.masteryPercent ?? 0, 50);
+      await upsertUserTopicProgress(currentUser.uid, licaoId, { masteryPercent: novoMastery });
+      await logActivity(currentUser.uid, "leitura_licao", licaoId, 5);
+      painel.classList.add("hidden");
+      await carregarTrilha();
+    });
+  } catch (e) {
+    painel.innerHTML = `<p class="eyebrow">${licaoNome}</p><p>Não consegui gerar a explicação agora. Verifique se o Firebase AI Logic está ativado.</p>`;
+  }
 }
 
 function renderCronograma(ritmo) {
