@@ -14,7 +14,7 @@ const SYSTEM_INSTRUCTION =
   "Seja direto, use frases curtas, divida em passos pequenos, e evite parágrafos longos.";
 
 const model = getGenerativeModel(ai, {
-  model: "gemini-2.5-flash",
+  model: "gemini-3.6-flash",
   systemInstruction: SYSTEM_INSTRUCTION,
 });
 

@@ -358,7 +358,7 @@ document.getElementById("tutor-enviar").addEventListener("click", async () => {
     const texto = await perguntarLivre(pergunta);
     resposta.textContent = texto;
   } catch (e) {
-    resposta.textContent = "Não consegui responder agora. Verifique se a Cloud Function aiTutor está publicada.";
+    resposta.textContent = "Não consegui responder agora. Verifique se o Firebase AI Logic está ativado no Console (Serviços de IA > AI Logic).";
   }
 });
 
