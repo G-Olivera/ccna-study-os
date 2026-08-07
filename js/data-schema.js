@@ -13,6 +13,7 @@ import {
   getDocs,
   updateDoc,
   addDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -107,6 +108,36 @@ export async function getUserProfile(uid) {
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
   return snap.exists() ? snap.data().profile || null : null;
+}
+
+/** Cria uma nova tarefa do dia (trabalho, estudo ou bem-estar). */
+export async function createTarefa(uid, { titulo, categoria, dataAlvo }) {
+  return addDoc(userSub(uid, "tarefas"), {
+    titulo,
+    categoria, // "trabalho" | "estudo" | "bemestar"
+    dataAlvo, // "YYYY-MM-DD"
+    concluida: false,
+    criadaEm: serverTimestamp(),
+  });
+}
+
+/** Busca as tarefas de um dia específico. */
+export async function getTarefasByDate(uid, dataAlvo) {
+  const q = query(userSub(uid, "tarefas"), where("dataAlvo", "==", dataAlvo));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+/** Marca/desmarca uma tarefa como concluída. */
+export async function toggleTarefaConcluida(uid, tarefaId, concluida) {
+  const ref = doc(db, "users", uid, "tarefas", tarefaId);
+  await updateDoc(ref, { concluida, concluidaEm: concluida ? serverTimestamp() : null });
+}
+
+/** Remove uma tarefa. */
+export async function deleteTarefa(uid, tarefaId) {
+  const ref = doc(db, "users", uid, "tarefas", tarefaId);
+  await deleteDoc(ref);
 }
 
 /** Log genérico de atividade — alimenta streak, XP e o dashboard. */
