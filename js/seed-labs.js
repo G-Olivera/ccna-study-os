@@ -9,7 +9,7 @@ import { db } from "./firebase-config.js";
 const labsExemplo = [
   {
     id: "lab-2.1-vlan",
-    topicId: "m07-02",
+    topicId: "m08-01",
     titulo: "Configuração básica de VLANs e Trunk 802.1Q",
     ferramenta: "EVE-NG",
     dispositivo: "Switch",
@@ -35,7 +35,7 @@ const labsExemplo = [
   },
   {
     id: "lab-3.3-ospf",
-    topicId: "m16-02",
+    topicId: "m22-01",
     titulo: "OSPFv2 de área única entre 3 roteadores",
     ferramenta: "PNETLab",
     dispositivo: "Router",
@@ -58,7 +58,7 @@ const labsExemplo = [
   },
   {
     id: "lab-4.1-nat",
-    topicId: "m21-06",
+    topicId: "m43-03",
     titulo: "NAT dinâmico com PAT (sobrecarga)",
     ferramenta: "EVE-NG",
     dispositivo: "Router",
@@ -85,7 +85,7 @@ const labsExemplo = [
   },
   {
     id: "lab-5.4-acl",
-    topicId: "m23-05",
+    topicId: "m36-02",
     titulo: "ACL estendida bloqueando tráfego específico",
     ferramenta: "PNETLab",
     dispositivo: "Router",
@@ -109,7 +109,7 @@ const labsExemplo = [
   },
   {
     id: "lab-2.4-etherchannel",
-    topicId: "m09-06",
+    topicId: "m10-03",
     titulo: "EtherChannel com LACP entre dois switches",
     ferramenta: "EVE-NG",
     dispositivo: "Switch",
@@ -137,7 +137,7 @@ export async function seedLabsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().labsSeeded) {
+  if (metaSnap.exists() && metaSnap.data().labsSeededV2) {
     console.log("[seed] Labs já populados, pulando.");
     return { seeded: false };
   }
@@ -147,7 +147,7 @@ export async function seedLabsIfNeeded() {
     const ref = doc(db, "content", "labs", "items", lab.id);
     batch.set(ref, lab);
   });
-  batch.set(metaRef, { labsSeeded: true, labsCount: labsExemplo.length, labsSeededAt: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { labsSeededV2: true, labsCount: labsExemplo.length, labsSeededV2At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${labsExemplo.length} labs gravados`);
