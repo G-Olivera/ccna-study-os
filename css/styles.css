@@ -202,6 +202,11 @@ button { font-family: var(--font-body); cursor: pointer; }
 .tarefa-titulo.concluida { text-decoration: line-through; color: var(--ink-soft); }
 .tarefa-remover { background: none; border: none; color: var(--ink-soft); font-size: 16px; cursor: pointer; padding: 4px; }
 
+/* ===== CONTEÚDO DA LIÇÃO (dentro da Trilha) ===== */
+.licao-conteudo { background: var(--teal-soft); border-radius: var(--radius-sm); padding: var(--space-4); margin: 0 var(--space-4) var(--space-4); }
+.licao-conteudo .eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--teal); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+.licao-texto { font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: var(--ink); }
+
 /* ===== CRONÔMETRO ===== */
 .cronometro-display {
   font-family: var(--font-mono); font-size: 44px; font-weight: 500; text-align: center;
