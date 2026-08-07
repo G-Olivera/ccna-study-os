@@ -178,6 +178,30 @@ button { font-family: var(--font-body); cursor: pointer; }
 
 .hidden { display: none !important; }
 
+/* ===== TAREFAS (trabalho / estudo / bem-estar) ===== */
+.categoria-tabs { display: flex; gap: 6px; }
+.cat-tab { flex: 1; padding: 10px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.cat-tab.selecionada.cat-trabalho { background: var(--teal); border-color: var(--teal); color: white; }
+.cat-tab.selecionada.cat-estudo { background: var(--amber); border-color: var(--amber); color: white; }
+.cat-tab.selecionada.cat-bemestar { background: var(--sage); border-color: var(--sage); color: white; }
+
+.sugestoes-bemestar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.sugestao-chip { font-size: 12px; padding: 6px 12px; border-radius: 999px; background: var(--sage-soft); color: var(--sage); border: 1px solid var(--sage); }
+
+.grupo-tarefas { margin-bottom: var(--space-5); }
+.grupo-titulo { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.grupo-titulo .dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-trabalho { background: var(--teal); }
+.dot-estudo { background: var(--amber); }
+.dot-bemestar { background: var(--sage); }
+
+.tarefa-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; }
+.tarefa-checkbox { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; }
+.tarefa-checkbox.concluida { background: var(--sage); border-color: var(--sage); }
+.tarefa-titulo { flex: 1; font-size: 14px; }
+.tarefa-titulo.concluida { text-decoration: line-through; color: var(--ink-soft); }
+.tarefa-remover { background: none; border: none; color: var(--ink-soft); font-size: 16px; cursor: pointer; padding: 4px; }
+
 /* ===== CRONÔMETRO ===== */
 .cronometro-display {
   font-family: var(--font-mono); font-size: 44px; font-weight: 500; text-align: center;
