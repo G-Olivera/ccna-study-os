@@ -9,7 +9,7 @@
 //   enunciado, alternativas: {A,B,C,D}, respostaCorreta: "A"|"B"|"C"|"D", justificativa
 // }
 
-import { doc, getDoc, setDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
 const questoesExemplo = [

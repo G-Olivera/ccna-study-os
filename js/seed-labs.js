@@ -3,7 +3,7 @@
 // e a saída simulada de cada um — alimenta o simulador de CLI (cli-simulator.js).
 // Mesmo padrão de seed das outras coleções: só grava uma vez.
 
-import { doc, getDoc, setDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
 const labsExemplo = [

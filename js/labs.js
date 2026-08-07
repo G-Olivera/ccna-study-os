@@ -2,7 +2,7 @@
 // Busca laboratórios e controla o progresso do checklist do usuário
 // (comandos, topologias, erros comuns já vêm no doc do lab — ver seed-labs.js).
 
-import { collection, doc, getDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, doc, getDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { upsertLabProgress } from "./data-schema.js";
 

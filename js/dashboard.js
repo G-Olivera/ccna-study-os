@@ -3,7 +3,7 @@
 // progresso geral, progresso por domínio, horas estudadas, streak,
 // nível/XP, assuntos dominados, assuntos críticos, previsão de prontidão.
 
-import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { getAllTopics, getAllUserTopicProgress } from "./data-schema.js";
 

@@ -2,7 +2,7 @@
 // Conquistas, missões e metas semanais/mensais.
 // XP e nível já são calculados em dashboard.js — este módulo cuida do resto.
 
-import { doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
 // Catálogo de conquistas — cada uma tem uma condição avaliada contra os dados do dashboard.

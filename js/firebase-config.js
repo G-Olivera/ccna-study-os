@@ -2,10 +2,10 @@
 // Substitua os valores abaixo pelos do SEU projeto Firebase
 // (Console > Configurações do projeto > Seus apps > SDK setup and configuration).
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getFunctions } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+import { getAI, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-ai.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDCfSuD0tDJeT_9yiKe9cwzZI9dNZBNQaI",
@@ -19,4 +19,8 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const functions = getFunctions(app);
+
+// Firebase AI Logic, backend "Gemini Developer API" — funciona no plano Spark (gratuito),
+// sem precisar de Cloud Functions nem cartão de crédito. Precisa estar ativado em
+// Firebase Console > Serviços de IA > AI Logic antes de funcionar.
+export const ai = getAI(app, { backend: new GoogleAIBackend() });

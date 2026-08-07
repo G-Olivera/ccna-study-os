@@ -2,7 +2,7 @@
 // Detecta quantos dias o usuário ficou sem estudar e ajusta a carga do dia
 // automaticamente — sem empilhar atraso, sem mensagem de culpa.
 
-import { collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
 // Mensagens de retorno — sempre neutras/acolhedoras, nunca de cobrança.

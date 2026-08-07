@@ -2,7 +2,7 @@
 // Gera simulados puxando questões proporcionalmente ao peso de cada domínio na prova,
 // corrige ao final e gera automaticamente um plano de revisão dos assuntos errados.
 
-import { collection, query, where, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, limit } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { saveSimulado, logQuestionAttempt } from "./data-schema.js";
 

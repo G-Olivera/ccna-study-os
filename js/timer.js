@@ -3,7 +3,7 @@
 // Controla o tempo em memória e salva incrementos no activityLog conforme
 // o usuário pausa, pra alimentar streak, horas estudadas e o dashboard.
 
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { logActivity } from "./data-schema.js";
 

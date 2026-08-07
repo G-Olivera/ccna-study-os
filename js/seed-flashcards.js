@@ -3,7 +3,7 @@
 // Formato: { id, topicId, categoria, front, back }
 // front/back alimentam o SRS (srs-engine.js cria os cards do usuário a partir daqui).
 
-import { doc, getDoc, setDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
 const flashcards = [

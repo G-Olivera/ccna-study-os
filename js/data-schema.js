@@ -17,7 +17,7 @@ import {
   where,
   orderBy,
   serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 
 import { db } from "./firebase-config.js";
 
