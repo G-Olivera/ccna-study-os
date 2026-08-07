@@ -16,7 +16,7 @@ const questoesExemplo = [
   {
     id: "q-1.5-001",
     dominio: "Network Fundamentals",
-    topicId: "m12-02",
+    topicId: "m13-01",
     dificuldade: "facil",
     enunciado: "Qual é a máscara de sub-rede padrão para uma rede classe C?",
     alternativas: { A: "255.0.0.0", B: "255.255.0.0", C: "255.255.255.0", D: "255.255.255.255" },
@@ -26,7 +26,7 @@ const questoesExemplo = [
   {
     id: "q-2.3-001",
     dominio: "Network Access",
-    topicId: "m10-04",
+    topicId: "m09-03",
     dificuldade: "medio",
     enunciado: "No STP, qual porta em um switch não-root com o menor custo até a raiz é chamada de?",
     alternativas: { A: "Designated Port", B: "Root Port", C: "Blocking Port", D: "Alternate Port" },
@@ -36,7 +36,7 @@ const questoesExemplo = [
   {
     id: "q-3.3-001",
     dominio: "IP Connectivity",
-    topicId: "m16-03",
+    topicId: "m21-02",
     dificuldade: "dificil",
     enunciado: "Em OSPF, qual comando define o ID do roteador manualmente?",
     alternativas: {
@@ -51,7 +51,7 @@ const questoesExemplo = [
   {
     id: "q-1.4-001",
     dominio: "Network Fundamentals",
-    topicId: "m04-03",
+    topicId: "m34-01",
     dificuldade: "facil",
     enunciado: "Qual protocolo garante entrega confiável e ordenada dos dados?",
     alternativas: { A: "UDP", B: "TCP", C: "ICMP", D: "ARP" },
@@ -61,7 +61,7 @@ const questoesExemplo = [
   {
     id: "q-1.6-001",
     dominio: "Network Fundamentals",
-    topicId: "m18-02",
+    topicId: "m25-02",
     dificuldade: "medio",
     enunciado: "Qual o prefixo padrão de um endereço IPv6 link-local?",
     alternativas: { A: "fe80::/10", B: "2001::/32", C: "ff00::/8", D: "::1/128" },
@@ -71,7 +71,7 @@ const questoesExemplo = [
   {
     id: "q-2.1-001",
     dominio: "Network Access",
-    topicId: "m07-03",
+    topicId: "m08-02",
     dificuldade: "facil",
     enunciado: "Qual protocolo padroniza o encapsulamento de VLAN em enlaces trunk?",
     alternativas: { A: "ISL", B: "802.1Q", C: "802.1X", D: "LACP" },
@@ -81,7 +81,7 @@ const questoesExemplo = [
   {
     id: "q-2.4-001",
     dominio: "Network Access",
-    topicId: "m09-03",
+    topicId: "m10-03",
     dificuldade: "medio",
     enunciado: "Qual protocolo é padrão aberto (não proprietário) para EtherChannel?",
     alternativas: { A: "PAgP", B: "LACP", C: "HSRP", D: "VTP" },
@@ -91,7 +91,7 @@ const questoesExemplo = [
   {
     id: "q-3.2-001",
     dominio: "IP Connectivity",
-    topicId: "m14-02",
+    topicId: "m17-02",
     dificuldade: "facil",
     enunciado: "Qual comando cria uma rota estática padrão apontando para 192.168.1.1?",
     alternativas: {
@@ -106,7 +106,7 @@ const questoesExemplo = [
   {
     id: "q-3.4-001",
     dominio: "IP Connectivity",
-    topicId: "m15-05",
+    topicId: "m45-02",
     dificuldade: "medio",
     enunciado: "Qual protocolo FHRP é proprietário da Cisco?",
     alternativas: { A: "VRRP", B: "GLBP", C: "CARP", D: "STP" },
@@ -116,7 +116,7 @@ const questoesExemplo = [
   {
     id: "q-4.3-001",
     dominio: "IP Services",
-    topicId: "m20-01",
+    topicId: "m19-01",
     dificuldade: "facil",
     enunciado: "Qual é a sequência correta do processo DHCP?",
     alternativas: { A: "Offer, Discover, Ack, Request", B: "Discover, Offer, Request, Ack", C: "Request, Discover, Offer, Ack", D: "Discover, Request, Ack, Offer" },
@@ -126,7 +126,7 @@ const questoesExemplo = [
   {
     id: "q-4.7-001",
     dominio: "IP Services",
-    topicId: "m24-01",
+    topicId: "m39-02",
     dificuldade: "facil",
     enunciado: "Qual porta padrão o SSH utiliza?",
     alternativas: { A: "21", B: "22", C: "23", D: "443" },
@@ -136,7 +136,7 @@ const questoesExemplo = [
   {
     id: "q-5.4-001",
     dominio: "Security Fundamentals",
-    topicId: "m23-01",
+    topicId: "m35-01",
     dificuldade: "medio",
     enunciado: "O que acontece quando um pacote não corresponde a nenhuma linha de uma ACL?",
     alternativas: { A: "É permitido por padrão", B: "É negado por padrão (deny implícito)", C: "Gera erro de configuração", D: "É registrado em log e permitido" },
@@ -146,7 +146,7 @@ const questoesExemplo = [
   {
     id: "q-5.5-001",
     dominio: "Security Fundamentals",
-    topicId: "m25-03",
+    topicId: "m41-01",
     dificuldade: "medio",
     enunciado: "Qual recurso de camada 2 impede servidores DHCP não autorizados na rede?",
     alternativas: { A: "Port Security", B: "DHCP Snooping", C: "BPDU Guard", D: "Dynamic ARP Inspection" },
@@ -156,7 +156,7 @@ const questoesExemplo = [
   {
     id: "q-6.4-001",
     dominio: "Automation and Programmability",
-    topicId: "m37-02",
+    topicId: "m52-01",
     dificuldade: "facil",
     enunciado: "Qual método HTTP é normalmente usado para CRIAR um recurso via REST API?",
     alternativas: { A: "GET", B: "POST", C: "DELETE", D: "HEAD" },
@@ -166,12 +166,147 @@ const questoesExemplo = [
   {
     id: "q-6.5-001",
     dominio: "Automation and Programmability",
-    topicId: "m37-05",
+    topicId: "m53-01",
     dificuldade: "facil",
     enunciado: "Qual formato de dados usa indentação para representar hierarquia, sem chaves?",
     alternativas: { A: "JSON", B: "XML", C: "YAML", D: "CSV" },
     respostaCorreta: "C",
     justificativa: "YAML usa indentação (espaços) para representar estrutura hierárquica.",
+  },
+  {
+    id: "q-arp-001",
+    dominio: "Network Fundamentals",
+    topicId: "m01-04",
+    dificuldade: "facil",
+    enunciado: "O que o ARP resolve?",
+    alternativas: { A: "Nome de domínio para IP", B: "IP para endereço MAC", C: "MAC para IP", D: "Porta para aplicação" },
+    respostaCorreta: "B",
+    justificativa: "ARP (Address Resolution Protocol) descobre o endereço MAC associado a um IP conhecido na rede local.",
+  },
+  {
+    id: "q-icmp-001",
+    dominio: "Network Fundamentals",
+    topicId: "m20-02",
+    dificuldade: "facil",
+    enunciado: "Qual protocolo o comando ping utiliza?",
+    alternativas: { A: "ARP", B: "ICMP", C: "SNMP", D: "TCP" },
+    respostaCorreta: "B",
+    justificativa: "O ping usa mensagens ICMP Echo Request/Reply para testar conectividade.",
+  },
+  {
+    id: "q-bin-001",
+    dominio: "Network Fundamentals",
+    topicId: "m11-01",
+    dificuldade: "medio",
+    enunciado: "Qual o valor decimal do octeto binário 11111000?",
+    alternativas: { A: "240", B: "248", C: "252", D: "255" },
+    respostaCorreta: "B",
+    justificativa: "11111000 em binário equivale a 248 em decimal (128+64+32+16+8).",
+  },
+  {
+    id: "q-tcp-001",
+    dominio: "Network Fundamentals",
+    topicId: "m34-01",
+    dificuldade: "facil",
+    enunciado: "Quantas mensagens são trocadas no three-way handshake do TCP?",
+    alternativas: { A: "1", B: "2", C: "3", D: "4" },
+    respostaCorreta: "C",
+    justificativa: "SYN, SYN-ACK, ACK — três mensagens estabelecem a conexão TCP.",
+  },
+  {
+    id: "q-portsec-001",
+    dominio: "Security Fundamentals",
+    topicId: "m40-02",
+    dificuldade: "medio",
+    enunciado: "Qual modo de violação do Port Security descarta o tráfego indesejado sem desligar a porta?",
+    alternativas: { A: "Shutdown", B: "Protect", C: "Restrict", D: "Disable" },
+    respostaCorreta: "C",
+    justificativa: "Restrict descarta o tráfego e gera log/contador, sem colocar a porta em err-disabled (diferente do shutdown).",
+  },
+  {
+    id: "q-wlc-001",
+    dominio: "Network Access",
+    topicId: "m31-02",
+    dificuldade: "medio",
+    enunciado: "Qual protocolo um AP lightweight usa para se comunicar com o WLC?",
+    alternativas: { A: "CAPWAP", B: "STP", C: "OSPF", D: "DTP" },
+    respostaCorreta: "A",
+    justificativa: "CAPWAP (Control and Provisioning of Wireless Access Points) faz o túnel de controle e dados entre AP e WLC.",
+  },
+  {
+    id: "q-vpn-001",
+    dominio: "Network Fundamentals",
+    topicId: "m48-02",
+    dificuldade: "medio",
+    enunciado: "O que uma VPN site-to-site conecta?",
+    alternativas: { A: "Um único usuário remoto a uma rede", B: "Duas redes inteiras entre si", C: "Dois switches na mesma LAN", D: "Um AP a um WLC" },
+    respostaCorreta: "B",
+    justificativa: "VPN site-to-site interliga duas redes inteiras (ex: matriz e filial); acesso remoto conecta um único usuário.",
+  },
+  {
+    id: "q-qos-001",
+    dominio: "IP Services",
+    topicId: "m44-01",
+    dificuldade: "facil",
+    enunciado: "Qual tipo de tráfego é o mais sensível a atraso e jitter?",
+    alternativas: { A: "E-mail", B: "Transferência de arquivo", C: "Voz (VoIP)", D: "Backup noturno" },
+    respostaCorreta: "C",
+    justificativa: "Tráfego de voz é o mais sensível a atraso, jitter e perda de pacotes entre os tipos comuns de tráfego.",
+  },
+  {
+    id: "q-qos-002",
+    dominio: "IP Services",
+    topicId: "m44-02",
+    dificuldade: "dificil",
+    enunciado: "Qual mecanismo de QoS enfileira o tráfego excedente para enviar depois, em vez de descartar?",
+    alternativas: { A: "Policing", B: "Shaping", C: "Marking", D: "Classification" },
+    respostaCorreta: "B",
+    justificativa: "Shaping (traffic shaping) enfileira o excedente pra suavizar picos; policing descarta o excedente imediatamente.",
+  },
+  {
+    id: "q-cdp-001",
+    dominio: "IP Services",
+    topicId: "m42-03",
+    dificuldade: "facil",
+    enunciado: "Qual protocolo de descoberta de vizinhos é um padrão aberto (IEEE), ao contrário do CDP?",
+    alternativas: { A: "LLDP", B: "STP", C: "VTP", D: "DTP" },
+    respostaCorreta: "A",
+    justificativa: "LLDP (802.1AB) é o padrão aberto equivalente ao CDP, que é proprietário da Cisco.",
+  },
+  {
+    id: "q-ntp-001",
+    dominio: "IP Services",
+    topicId: "m42-02",
+    dificuldade: "facil",
+    enunciado: "Para que serve o NTP num ambiente de rede?",
+    alternativas: { A: "Sincronizar relógios entre dispositivos", B: "Traduzir nomes em IPs", C: "Atribuir IPs dinamicamente", D: "Monitorar uso de CPU" },
+    respostaCorreta: "A",
+    justificativa: "NTP (Network Time Protocol) sincroniza o horário dos dispositivos com uma fonte de tempo confiável.",
+  },
+  {
+    id: "q-ansible-001",
+    dominio: "Automation and Programmability",
+    topicId: "m53-01",
+    dificuldade: "medio",
+    enunciado: "O Ansible precisa de um agente instalado no dispositivo gerenciado?",
+    alternativas: { A: "Sim, sempre", B: "Não, é agentless e usa SSH", C: "Só em dispositivos Cisco", D: "Só para IPv6" },
+    respostaCorreta: "B",
+    justificativa: "Ansible é agentless — conecta via SSH sem precisar instalar software no dispositivo gerenciado.",
+  },
+  {
+    id: "q-nat64-001",
+    dominio: "IP Services",
+    topicId: "m43-01",
+    dificuldade: "dificil",
+    enunciado: "Qual o propósito do NAT64?",
+    alternativas: {
+      A: "Traduzir entre duas redes IPv4",
+      B: "Permitir comunicação entre uma rede IPv6-only e uma rede IPv4",
+      C: "Acelerar o tráfego IPv6",
+      D: "Substituir o DNS em redes IPv6",
+    },
+    respostaCorreta: "B",
+    justificativa: "NAT64 traduz endereços entre uma rede que só tem IPv6 e serviços que só existem em IPv4.",
   },
 ];
 
@@ -179,7 +314,7 @@ export async function seedQuestionsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().questionsSeeded) {
+  if (metaSnap.exists() && metaSnap.data().questionsSeededV3) {
     console.log("[seed] Banco de questões já populado, pulando.");
     return { seeded: false };
   }
@@ -189,7 +324,7 @@ export async function seedQuestionsIfNeeded() {
     const ref = doc(db, "content", "questions", "items", q.id);
     batch.set(ref, q);
   });
-  batch.set(metaRef, { questionsSeeded: true, questionsCount: questoesExemplo.length, questionsSeededAt: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { questionsSeededV3: true, questionsCount: questoesExemplo.length, questionsSeededV3At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${questoesExemplo.length} questões gravadas`);
