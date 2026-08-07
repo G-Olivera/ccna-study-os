@@ -56,6 +56,29 @@
     </div>
   </section>
 
+  <!-- TELA: TAREFAS -->
+  <section id="tela-tarefas" class="tela hidden">
+    <h1 style="margin-bottom: 4px;">Suas tarefas de hoje</h1>
+    <p style="margin-bottom: 20px;" id="tarefas-resumo">0 de 0 concluídas</p>
+
+    <div class="task-card" style="margin-bottom: 20px;">
+      <div class="categoria-tabs" id="categoria-tabs">
+        <button data-cat="trabalho" class="cat-tab selecionada cat-trabalho">Trabalho</button>
+        <button data-cat="estudo" class="cat-tab cat-estudo">Estudo</button>
+        <button data-cat="bemestar" class="cat-tab cat-bemestar">Bem-estar</button>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <input id="input-nova-tarefa" type="text" placeholder="O que você precisa fazer?" style="flex:1; padding:12px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body);" />
+        <button class="btn-primary" id="btn-add-tarefa" style="width:auto; padding:12px 18px;">+</button>
+      </div>
+      <div class="sugestoes-bemestar hidden" id="sugestoes-bemestar"></div>
+    </div>
+
+    <div id="lista-tarefas-trabalho" class="grupo-tarefas"></div>
+    <div id="lista-tarefas-estudo" class="grupo-tarefas"></div>
+    <div id="lista-tarefas-bemestar" class="grupo-tarefas"></div>
+  </section>
+
   <!-- TELA: TRILHA -->
   <section id="tela-trilha" class="tela hidden">
     <h1 style="margin-bottom: 8px;">Trilha CCNA 200-301</h1>
@@ -139,6 +162,7 @@
 
   <nav class="bottomnav">
     <button data-tela="hoje" class="active">🎯<span>Hoje</span></button>
+    <button data-tela="tarefas">✅<span>Tarefas</span></button>
     <button data-tela="trilha">🗺️<span>Trilha</span></button>
     <button data-tela="flashcards">🗂️<span>Cards</span></button>
     <button data-tela="dashboard">📊<span>Progresso</span></button>
