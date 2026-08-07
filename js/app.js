@@ -152,10 +152,17 @@ function renderTaskCardAtual() {
     document.getElementById("task-acao").textContent = "Explicar este tópico";
     document.getElementById("task-acao").onclick = async () => {
       document.getElementById("task-acao").textContent = "Gerando explicação…";
-      const resposta = await explicarTopico(planoHoje.focusTopic.nome, "iniciante");
-      document.getElementById("task-descricao").textContent = resposta;
-      document.getElementById("task-acao").textContent = "Entendi, concluir";
-      document.getElementById("task-acao").onclick = () => concluirSecao("teoria", 10);
+      try {
+        const resposta = await explicarTopico(planoHoje.focusTopic.nome, "iniciante");
+        document.getElementById("task-descricao").textContent = resposta;
+        document.getElementById("task-acao").textContent = "Entendi, concluir";
+        document.getElementById("task-acao").onclick = () => concluirSecao("teoria", 10);
+      } catch (e) {
+        document.getElementById("task-descricao").textContent =
+          "Não consegui gerar a explicação agora (o Tutor IA pode ainda não estar configurado). Você pode marcar como concluído mesmo assim.";
+        document.getElementById("task-acao").textContent = "Concluir mesmo assim";
+        document.getElementById("task-acao").onclick = () => concluirSecao("teoria", 10);
+      }
     };
   } else if (secao === "flashcards" || secao === "revisao") {
     document.getElementById("task-titulo").textContent = "Hora de revisar";
