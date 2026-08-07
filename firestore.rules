@@ -10,7 +10,7 @@ service cloud.firestore {
     // (Console > Authentication > Users > coluna "User UID").
     match /content/{document=**} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == "COLOQUE_SEU_UID_AQUI";
+      allow write: if request.auth != null && request.auth.uid == "18Uv2Goc7cOdVPErrFV81COmvnT2";
     }
 
     // --- Dados pessoais do usuário ---
