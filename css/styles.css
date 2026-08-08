@@ -59,6 +59,9 @@ button { font-family: var(--font-body); cursor: pointer; }
 .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); }
 .topbar .brand { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--teal); }
 .topbar .streak { display: flex; align-items: center; gap: var(--space-2); background: var(--amber-soft); color: var(--amber); padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; }
+.btn-logout { background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--ink-soft); }
+.btn-logout:hover { color: var(--terracotta); border-color: var(--terracotta); }
+.btn-logout svg { width: 17px; height: 17px; }
 
 /* ===== BOTTOM NAV — 5 itens, ícones + texto, nada além ===== */
 .bottomnav {
