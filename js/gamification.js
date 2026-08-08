@@ -43,6 +43,12 @@ export async function verificarConquistas(uid, dashboardData) {
   return novasDesbloqueadas; // use isso pra mostrar um toast/celebração na UI
 }
 
+/** Retorna todas as conquistas já desbloqueadas pelo usuário. */
+export async function getConquistasDesbloqueadas(uid) {
+  const snap = await getDocs(collection(db, "users", uid, "conquistas"));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
 // ---------- METAS SEMANAIS / MENSAIS ----------
 
 function inicioDaSemana() {

@@ -10,7 +10,9 @@ import { seedFlashcardsIfNeeded } from "./seed-flashcards.js";
 import { generateDailyPlan, markPlanSectionComplete } from "./daily-plan.js";
 import { getDueCards, reviewAndSave, QUALITY } from "./srs-engine.js";
 import { getDashboardData } from "./dashboard.js";
-import { verificarConquistas } from "./gamification.js";
+import { verificarConquistas, getConquistasDesbloqueadas, CONQUISTAS, definirMeta, progressoMeta } from "./gamification.js";
+import { verificarAusencia, ajustarPlanoParaRetorno } from "./anti-procrastination.js";
+import { gerarRevisaoRapida } from "./quick-review.js";
 import { explicarTopico, perguntarLivre } from "./ai-tutor.js";
 import { logActivity, getAllTopics, getAllUserTopicProgress, getUserTopicProgress, upsertUserTopicProgress } from "./data-schema.js";
 import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
@@ -31,6 +33,7 @@ import {
 let currentUser = null;
 let planoHoje = null;
 let filaCards = [];
+let duracaoRevisaoSelecionada = 0; // 0 = sem limite de tempo ("Tudo")
 let cardAtual = null;
 let simuladoAtivo = null;
 let respostasSimulado = {};
@@ -102,6 +105,17 @@ function trocarTela(nome) {
 
 async function carregarHoje() {
   planoHoje = await generateDailyPlan(currentUser.uid, { minutosDisponiveis: 45 });
+
+  const ausencia = await verificarAusencia(currentUser.uid);
+  const banner = document.getElementById("banner-retorno");
+  if (ausencia.ausente) {
+    planoHoje = ajustarPlanoParaRetorno(planoHoje, ausencia.multiplicadorCarga);
+    banner.textContent = ausencia.mensagem;
+    banner.classList.remove("hidden");
+  } else {
+    banner.classList.add("hidden");
+  }
+
   document.getElementById("hoje-foco-tag").textContent = `Foco: ${planoHoje.focusTopic.nome}`;
   renderRotaHops();
   renderTaskCardAtual();
@@ -268,8 +282,13 @@ async function inicializarCronometroUI() {
 // ---------- FLASHCARDS ----------
 
 async function carregarFlashcards() {
-  const { novos, revisoes } = await getDueCards(currentUser.uid);
-  filaCards = [...revisoes, ...novos];
+  if (duracaoRevisaoSelecionada > 0) {
+    const sessao = await gerarRevisaoRapida(currentUser.uid, duracaoRevisaoSelecionada);
+    filaCards = [...sessao.flashcards];
+  } else {
+    const { novos, revisoes } = await getDueCards(currentUser.uid);
+    filaCards = [...revisoes, ...novos];
+  }
 
   if (filaCards.length === 0) {
     document.getElementById("flashcard-vazio").classList.remove("hidden");
@@ -281,6 +300,14 @@ async function carregarFlashcards() {
   document.getElementById("flashcard-wrapper").classList.remove("hidden");
   proximoCard();
 }
+
+document.getElementById("quick-review-tabs").addEventListener("click", (e) => {
+  const btn = e.target.closest(".qr-tab");
+  if (!btn) return;
+  duracaoRevisaoSelecionada = Number(btn.dataset.min);
+  document.querySelectorAll(".qr-tab").forEach((b) => b.classList.toggle("selecionada", b === btn));
+  carregarFlashcards();
+});
 
 function proximoCard() {
   if (filaCards.length === 0) {
@@ -337,8 +364,31 @@ async function carregarDashboard() {
   document.getElementById("topicos-dominados").innerHTML =
     d.assuntosDominados.map((t) => `<span class="topic-chip dominado">${t.nome}</span>`).join("") || `<p style="font-size:13px;">Ainda nenhum — continue!</p>`;
 
-  verificarConquistas(currentUser.uid, d).catch(() => {});
+  await verificarConquistas(currentUser.uid, d).catch(() => {});
+  const desbloqueadas = await getConquistasDesbloqueadas(currentUser.uid).catch(() => []);
+  const idsDesbloqueadas = new Set(desbloqueadas.map((c) => c.id));
+
+  document.getElementById("lista-conquistas").innerHTML = CONQUISTAS.map(
+    (c) => `<span class="conquista-badge ${idsDesbloqueadas.has(c.id) ? "desbloqueada" : ""}" title="${c.desc}">${idsDesbloqueadas.has(c.id) ? "🏆" : "🔒"} ${c.nome}</span>`
+  ).join("");
+
+  const meta = await progressoMeta(currentUser.uid, "semanal", d).catch(() => null);
+  if (meta) {
+    document.getElementById("meta-progresso-texto").textContent = `${meta.minutosAtuais} / ${meta.minutosAlvo} min esta semana`;
+    document.getElementById("meta-progresso-fill").style.width = `${meta.percentualConcluido}%`;
+    document.getElementById("input-meta-minutos").value = meta.minutosAlvo;
+  } else {
+    document.getElementById("meta-progresso-texto").textContent = "Nenhuma meta definida ainda.";
+    document.getElementById("meta-progresso-fill").style.width = "0%";
+  }
 }
+
+document.getElementById("btn-definir-meta").addEventListener("click", async () => {
+  const minutos = Number(document.getElementById("input-meta-minutos").value);
+  if (!minutos) return;
+  await definirMeta(currentUser.uid, "semanal", { minutosAlvo: minutos });
+  await carregarDashboard();
+});
 
 // ---------- TUTOR IA ----------
 
