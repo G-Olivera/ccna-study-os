@@ -32,6 +32,7 @@
 
   <!-- TELA: HOJE -->
   <section id="tela-hoje" class="tela">
+    <div id="banner-retorno" class="banner-retorno hidden"></div>
     <div class="hoje-header">
       <h1 id="hoje-titulo">Foco de hoje</h1>
       <span class="foco-tag" id="hoje-foco-tag">carregando…</span>
@@ -118,7 +119,14 @@
 
   <!-- TELA: FLASHCARDS -->
   <section id="tela-flashcards" class="tela hidden">
-    <h1 style="margin-bottom: 20px;">Revisão</h1>
+    <h1 style="margin-bottom: 12px;">Revisão</h1>
+    <div class="quick-review-tabs" id="quick-review-tabs">
+      <button data-min="0" class="qr-tab selecionada">Tudo</button>
+      <button data-min="5" class="qr-tab">5 min</button>
+      <button data-min="10" class="qr-tab">10 min</button>
+      <button data-min="15" class="qr-tab">15 min</button>
+      <button data-min="30" class="qr-tab">30 min</button>
+    </div>
     <div id="flashcard-vazio" class="task-card hidden">
       <p>Nenhum card pendente agora. 🎉</p>
     </div>
@@ -146,6 +154,19 @@
     <div id="topicos-criticos"></div>
     <h3 style="margin:20px 0 8px; font-size:15px;">Dominados</h3>
     <div id="topicos-dominados"></div>
+
+    <h3 style="margin:20px 0 8px; font-size:15px;">Conquistas</h3>
+    <div id="lista-conquistas" class="conquistas-grid"></div>
+
+    <h3 style="margin:20px 0 8px; font-size:15px;">Meta semanal</h3>
+    <div class="task-card" id="meta-card">
+      <div id="meta-progresso-texto" style="margin-bottom:10px; font-size:14px; color:var(--ink-soft);"></div>
+      <div class="track" style="height:10px; margin-bottom:14px;"><div class="fill" id="meta-progresso-fill" style="height:100%; background:var(--sage); border-radius:5px; width:0%;"></div></div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="input-meta-minutos" type="number" min="10" step="10" placeholder="Minutos/semana" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+        <button class="btn-primary" id="btn-definir-meta" style="width:auto; padding:10px 16px;">Definir</button>
+      </div>
+    </div>
   </section>
 
   <!-- TELA: TUTOR IA -->
