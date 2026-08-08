@@ -62,17 +62,20 @@ button { font-family: var(--font-body); cursor: pointer; }
 
 /* ===== BOTTOM NAV — 5 itens, ícones + texto, nada além ===== */
 .bottomnav {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 640px;
   background: var(--surface); border-top: 1px solid var(--border);
   display: flex; justify-content: space-around; padding: var(--space-2) 0;
   z-index: 10;
+  box-shadow: 0 -2px 12px rgba(36,48,58,0.05);
 }
 .bottomnav button {
   background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px;
   color: var(--ink-soft); font-size: 11px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);
+  flex: 1;
 }
 .bottomnav button.active { color: var(--teal); background: var(--teal-soft); }
-.bottomnav svg { width: 20px; height: 20px; }
+.bottomnav svg { width: 21px; height: 21px; }
 
 /* ===== TELA "HOJE": uma tarefa por vez ===== */
 .hoje-header { margin-bottom: var(--space-6); }
@@ -177,6 +180,31 @@ button { font-family: var(--font-body); cursor: pointer; }
 .cronograma-status.precisa_ajustar { background: var(--terracotta-soft); color: var(--terracotta); }
 
 .hidden { display: none !important; }
+
+/* ===== POLIMENTO VISUAL ===== */
+* { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
+.tela { animation: fadeIn 0.28s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+button { transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease; }
+button:active { transform: scale(0.97); }
+.btn-primary:hover { box-shadow: 0 2px 10px rgba(62,107,107,0.25); }
+.task-card, .stat-card, .modulo-card, .tarefa-item { transition: box-shadow 0.2s ease, transform 0.2s ease; }
+.skeleton { background: linear-gradient(90deg, var(--surface-quiet) 25%, #E4E1D8 37%, var(--surface-quiet) 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; border-radius: var(--radius-sm); }
+@keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+/* ===== BANNER DE RETORNO (anti-procrastinação) ===== */
+.banner-retorno { background: var(--amber-soft); color: var(--amber); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 20px; font-size: 14px; animation: fadeIn 0.3s ease; }
+
+/* ===== CONQUISTAS ===== */
+.conquistas-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.conquista-badge { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 8px 14px; font-size: 13px; }
+.conquista-badge.desbloqueada { background: var(--amber-soft); border-color: var(--amber); color: var(--amber); font-weight: 600; }
+.conquista-vazio { font-size: 13px; color: var(--ink-soft); }
+
+/* ===== REVISÃO RÁPIDA (tabs de duração) ===== */
+.quick-review-tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 16px; }
+.qr-tab { flex-shrink: 0; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 13px; }
+.qr-tab.selecionada { background: var(--teal); color: white; border-color: var(--teal); }
 
 /* ===== TAREFAS (trabalho / estudo / bem-estar) ===== */
 .categoria-tabs { display: flex; gap: 6px; }
