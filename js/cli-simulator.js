@@ -6,6 +6,7 @@
 import { getLabById } from "./labs.js";
 import { upsertLabProgress } from "./data-schema.js";
 import { logActivity } from "./data-schema.js";
+import { escapeHtml } from "./utils.js";
 
 /**
  * Monta e controla o terminal dentro de `container` (um elemento DOM).
@@ -71,9 +72,9 @@ export async function abrirCLI(uid, labId, container) {
   function renderHistorico() {
     elHistorico.innerHTML = historico
       .map((linha) => {
-        if (linha.tipo === "cmd") return `<div class="cli-linha-hist"><span class="cli-prompt-hist">${linha.prompt}</span> ${linha.texto}</div>`;
-        if (linha.tipo === "saida") return `<div class="cli-linha-hist cli-saida">${linha.texto.replace(/\n/g, "<br/>")}</div>`;
-        if (linha.tipo === "erro") return `<div class="cli-linha-hist cli-erro">${linha.texto}</div>`;
+        if (linha.tipo === "cmd") return `<div class="cli-linha-hist"><span class="cli-prompt-hist">${escapeHtml(linha.prompt)}</span> ${escapeHtml(linha.texto)}</div>`;
+        if (linha.tipo === "saida") return `<div class="cli-linha-hist cli-saida">${escapeHtml(linha.texto).replace(/\n/g, "<br/>")}</div>`;
+        if (linha.tipo === "erro") return `<div class="cli-linha-hist cli-erro">${escapeHtml(linha.texto)}</div>`;
         return "";
       })
       .join("");

@@ -19,6 +19,7 @@ import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
 import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
 import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
+import { escapeHtml } from "./utils.js";
 import {
   iniciarCronometro,
   pausarCronometro,
@@ -53,7 +54,10 @@ document.getElementById("btn-login").addEventListener("click", async () => {
   }
 });
 
-document.getElementById("btn-signup").addEventListener("click", async () => {
+// "Criar conta" fica desativado por padrão (app pessoal, sem cadastro público).
+// O listener só é anexado se o botão existir no HTML — evita quebrar o app
+// caso você reative o botão comentado no index.html.
+document.getElementById("btn-signup")?.addEventListener("click", async () => {
   const email = document.getElementById("login-email").value;
   const senha = document.getElementById("login-senha").value;
   try {
@@ -481,13 +485,13 @@ async function abrirConteudoLicao(licaoId, licaoNome, moduloOrdem) {
 
   painel.dataset.licaoAtual = licaoId;
   painel.classList.remove("hidden");
-  painel.innerHTML = `<p class="eyebrow">${licaoNome}</p><p>Gerando explicação…</p>`;
+  painel.innerHTML = `<p class="eyebrow">${escapeHtml(licaoNome)}</p><p>Gerando explicação…</p>`;
 
   try {
     const texto = await explicarTopico(licaoNome, "iniciante");
     painel.innerHTML = `
-      <p class="eyebrow">${licaoNome}</p>
-      <p class="licao-texto">${texto}</p>
+      <p class="eyebrow">${escapeHtml(licaoNome)}</p>
+      <p class="licao-texto">${escapeHtml(texto)}</p>
       <button class="btn-primary" id="btn-marcar-estudada" data-licao="${licaoId}" style="margin-top:12px;">Marcar como estudada</button>
     `;
     document.getElementById("btn-marcar-estudada").addEventListener("click", async () => {
@@ -665,7 +669,7 @@ async function carregarTarefas() {
           (t) => `
         <div class="tarefa-item">
           <div class="tarefa-checkbox ${t.concluida ? "concluida" : ""}" data-id="${t.id}" data-concluida="${t.concluida}">${t.concluida ? "✓" : ""}</div>
-          <span class="tarefa-titulo ${t.concluida ? "concluida" : ""}">${t.titulo}</span>
+          <span class="tarefa-titulo ${t.concluida ? "concluida" : ""}">${escapeHtml(t.titulo)}</span>
           <button class="tarefa-remover" data-remover="${t.id}">✕</button>
         </div>`
         )
