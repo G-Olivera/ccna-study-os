@@ -88,6 +88,11 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
+document.getElementById("btn-logout").addEventListener("click", async () => {
+  await signOut(auth);
+  // onAuthStateChanged acima cuida de voltar pra tela de login automaticamente.
+});
+
 // ---------- NAVEGAÇÃO ----------
 
 document.querySelectorAll(".bottomnav button").forEach((btn) => {
