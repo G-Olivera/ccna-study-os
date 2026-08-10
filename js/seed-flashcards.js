@@ -93,13 +93,55 @@ const flashcards = [
   // Automação
   { id: "fc-config-mgmt-01", topicId: "m53-01", categoria: "Automation", front: "Ansible usa arquitetura agentless ou precisa de agente instalado no dispositivo gerenciado?", back: "Agentless — não precisa instalar nada no dispositivo gerenciado, usa SSH." },
   { id: "fc-nat64-01", topicId: "m43-01", categoria: "NAT", front: "Pra que serve o NAT64?", back: "Traduz endereços entre uma rede IPv6-only e uma rede IPv4, permitindo comunicação entre elas." },
+
+  // Ethernet e CLI
+  { id: "fc-eth-01", topicId: "m02-04", categoria: "Ethernet", front: "Qual o tamanho mínimo de um quadro Ethernet?", back: "64 bytes (sem contar preâmbulo)." },
+  { id: "fc-eth-02", topicId: "m02-01", categoria: "Ethernet", front: "Qual padrão define Gigabit Ethernet em cobre?", back: "1000BASE-T (IEEE 802.3ab)." },
+  { id: "fc-cli-01", topicId: "m04-02", categoria: "CLI", front: "Qual prompt indica que você está no modo privilegiado (enable) de um Cisco IOS?", back: "O símbolo # no final do prompt, ex: Switch#" },
+  { id: "fc-cli-02", topicId: "m04-04", categoria: "CLI", front: "Qual comando salva a running-config na startup-config?", back: "copy running-config startup-config (ou write memory)." },
+
+  // Switch: interfaces e gerenciamento
+  { id: "fc-swint-01", topicId: "m07-02", categoria: "Switching", front: "O que acontece se as duas pontas de um link não concordarem no duplex?", back: "Duplex mismatch — gera erros de colisão tardia e degrada a performance." },
+  { id: "fc-swmgmt-01", topicId: "m06-02", categoria: "Switching", front: "Qual comando configura o SSH pedindo geração de chaves RSA?", back: "crypto key generate rsa" },
+
+  // Sub-redes avançado (VLSM, classful)
+  { id: "fc-vlsm-01", topicId: "m15-01", categoria: "Subnetting", front: "O que o VLSM permite fazer que o subnetting clássico não permite?", back: "Usar máscaras de tamanhos diferentes em sub-redes diferentes da mesma rede, evitando desperdício de endereços." },
+  { id: "fc-classful-01", topicId: "m12-01", categoria: "Subnetting", front: "Qual classe de endereço IPv4 vai de 128.0.0.0 a 191.255.255.255?", back: "Classe B." },
+
+  // OSPF avançado
+  { id: "fc-ospf-04", topicId: "m24-02", categoria: "OSPF", front: "Em uma rede multiacesso, quem o DR e o BDR evitam que formem adjacência total com todos?", back: "Evitam que TODOS os roteadores formem adjacência de todos-com-todos, reduzindo tráfego de LSA — os DROTHERs só formam adjacência com DR e BDR." },
+
+  // IPv6 hosts
+  { id: "fc-ipv6host-01", topicId: "m28-01", categoria: "IPv6", front: "O que é SLAAC?", back: "StateLess Address Auto Configuration — o host gera seu próprio endereço IPv6 usando o prefixo anunciado pelo roteador + seu identificador de interface." },
+  { id: "fc-ipv6host-02", topicId: "m28-02", categoria: "IPv6", front: "Qual a diferença entre DHCPv6 stateful e stateless?", back: "Stateful atribui o endereço completo; stateless só fornece opções extras (como DNS), o endereço vem do SLAAC." },
+
+  // Wireless segurança
+  { id: "fc-wpa3-01", topicId: "m32-02", categoria: "Wireless", front: "Qual mecanismo o WPA3 usa no lugar do PSK do WPA2 pra ser mais resistente a ataques offline?", back: "SAE (Simultaneous Authentication of Equals), também chamado de Dragonfly." },
+
+  // ACL cenários
+  { id: "fc-aclcenario-01", topicId: "m37-01", categoria: "ACL", front: "Por que ACLs padrão devem ser aplicadas o mais perto possível do destino?", back: "Porque elas filtram só pela origem — aplicar perto da origem bloquearia esse tráfego de alcançar qualquer outro destino também." },
+
+  // Segurança de dispositivos
+  { id: "fc-radius-01", topicId: "m38-02", categoria: "Security", front: "Qual a diferença entre RADIUS e TACACS+?", back: "RADIUS combina autenticação e autorização e usa UDP; TACACS+ separa AAA em processos distintos e usa TCP, permitindo mais granularidade." },
+  { id: "fc-devsec-01", topicId: "m39-01", categoria: "Security", front: "Qual comando criptografa as senhas em texto plano na configuração?", back: "service password-encryption" },
+
+  // Gerenciamento: Syslog níveis
+  { id: "fc-syslog-01", topicId: "m42-01", categoria: "Gerenciamento", front: "Qual nível de severidade do Syslog é mais crítico: 0 ou 7?", back: "0 (Emergency) é o mais crítico; 7 (Debugging) é o menos crítico — a escala é decrescente em gravidade." },
+
+  // Arquitetura de rede
+  { id: "fc-lanarq-01", topicId: "m47-01", categoria: "Arquitetura", front: "Quais as 3 camadas do modelo hierárquico clássico de LAN?", back: "Core, Distribution (distribuição) e Access (acesso)." },
+  { id: "fc-wanarq-01", topicId: "m48-01", categoria: "Arquitetura", front: "Qual topologia WAN conecta cada site diretamente a todos os outros sites?", back: "Full mesh — mais resiliente, porém mais cara e complexa que hub-and-spoke." },
+  { id: "fc-cloudarq-01", topicId: "m49-01", categoria: "Arquitetura", front: "Em qual modelo de nuvem o provedor gerencia só a infraestrutura, e você cuida do SO e aplicações?", back: "IaaS (Infrastructure as a Service)." },
+
+  // SDN / Controller
+  { id: "fc-sdn-01", topicId: "m50-02", categoria: "Automation", front: "Qual a principal diferença entre uma rede tradicional e uma controller-based?", back: "Na controller-based, o plano de controle é centralizado num controller; na tradicional, cada dispositivo toma decisões de forma independente e distribuída." },
 ];
 
 export async function seedFlashcardsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().flashcardsSeededV3) {
+  if (metaSnap.exists() && metaSnap.data().flashcardsSeededV4) {
     console.log("[seed] Flashcards já populados, pulando.");
     return { seeded: false };
   }
@@ -109,7 +151,7 @@ export async function seedFlashcardsIfNeeded() {
     const ref = doc(db, "content", "flashcards", "items", fc.id);
     batch.set(ref, fc);
   });
-  batch.set(metaRef, { flashcardsSeededV3: true, flashcardsCount: flashcards.length, flashcardsSeededV3At: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { flashcardsSeededV4: true, flashcardsCount: flashcards.length, flashcardsSeededV4At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${flashcards.length} flashcards gravados`);

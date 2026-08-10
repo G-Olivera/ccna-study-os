@@ -308,13 +308,163 @@ const questoesExemplo = [
     respostaCorreta: "B",
     justificativa: "NAT64 traduz endereços entre uma rede que só tem IPv6 e serviços que só existem em IPv4.",
   },
+  {
+    id: "q-eth-001",
+    dominio: "Network Fundamentals",
+    topicId: "m02-04",
+    dificuldade: "medio",
+    enunciado: "Qual o tamanho mínimo de um quadro Ethernet válido?",
+    alternativas: { A: "48 bytes", B: "64 bytes", C: "128 bytes", D: "1518 bytes" },
+    respostaCorreta: "B",
+    justificativa: "O tamanho mínimo de um quadro Ethernet é 64 bytes; quadros menores são considerados runts.",
+  },
+  {
+    id: "q-cli-001",
+    dominio: "Network Fundamentals",
+    topicId: "m04-04",
+    dificuldade: "facil",
+    enunciado: "Qual comando salva a configuração em execução como configuração de inicialização?",
+    alternativas: { A: "save config", B: "copy running-config startup-config", C: "write running-config", D: "backup config" },
+    respostaCorreta: "B",
+    justificativa: "copy running-config startup-config (ou 'write memory') grava a configuração atual pra sobreviver a um reboot.",
+  },
+  {
+    id: "q-vlsm-001",
+    dominio: "Network Fundamentals",
+    topicId: "m15-01",
+    dificuldade: "medio",
+    enunciado: "O que o VLSM permite fazer numa mesma rede?",
+    alternativas: {
+      A: "Usar apenas uma máscara fixa em toda a rede",
+      B: "Usar máscaras de tamanhos diferentes em sub-redes diferentes",
+      C: "Eliminar a necessidade de sub-redes",
+      D: "Combinar IPv4 e IPv6 na mesma sub-rede",
+    },
+    respostaCorreta: "B",
+    justificativa: "VLSM (Variable Length Subnet Mask) permite tamanhos de sub-rede diferentes conforme a necessidade de cada segmento, evitando desperdício.",
+  },
+  {
+    id: "q-classful-001",
+    dominio: "Network Fundamentals",
+    topicId: "m12-01",
+    dificuldade: "facil",
+    enunciado: "Um endereço IPv4 começando em 172.x.x.x pertence a qual classe?",
+    alternativas: { A: "Classe A", B: "Classe B", C: "Classe C", D: "Classe D" },
+    respostaCorreta: "B",
+    justificativa: "A Classe B vai de 128.0.0.0 a 191.255.255.255, cobrindo o intervalo que começa em 172.",
+  },
+  {
+    id: "q-ospfdr-001",
+    dominio: "IP Connectivity",
+    topicId: "m24-02",
+    dificuldade: "dificil",
+    enunciado: "Qual o principal benefício de eleger um DR numa rede multiacesso OSPF?",
+    alternativas: {
+      A: "Aumentar a métrica de custo",
+      B: "Reduzir o número de adjacências formadas, economizando tráfego de LSA",
+      C: "Eliminar a necessidade de área 0",
+      D: "Permitir rotas estáticas",
+    },
+    respostaCorreta: "B",
+    justificativa: "Com DR/BDR, os demais roteadores formam adjacência só com eles, evitando o excesso de adjacências todos-com-todos.",
+  },
+  {
+    id: "q-slaac-001",
+    dominio: "Network Fundamentals",
+    topicId: "m28-01",
+    dificuldade: "medio",
+    enunciado: "O que é SLAAC em IPv6?",
+    alternativas: {
+      A: "Um protocolo de roteamento",
+      B: "Configuração automática de endereço sem servidor DHCP",
+      C: "Um tipo de ACL",
+      D: "Um método de compressão de endereço",
+    },
+    respostaCorreta: "B",
+    justificativa: "SLAAC permite que o host gere seu próprio endereço IPv6 usando o prefixo anunciado pelo roteador, sem precisar de DHCPv6.",
+  },
+  {
+    id: "q-wpa3-001",
+    dominio: "Network Access",
+    topicId: "m32-02",
+    dificuldade: "dificil",
+    enunciado: "Qual mecanismo o WPA3 usa para autenticação, mais resistente a ataques offline que o PSK do WPA2?",
+    alternativas: { A: "WEP", B: "TKIP", C: "SAE (Dragonfly)", D: "EAP-FAST" },
+    respostaCorreta: "C",
+    justificativa: "SAE (Simultaneous Authentication of Equals) substitui o 4-way handshake do WPA2-PSK, resistindo melhor a ataques de dicionário offline.",
+  },
+  {
+    id: "q-radius-001",
+    dominio: "Security Fundamentals",
+    topicId: "m38-02",
+    dificuldade: "medio",
+    enunciado: "Qual protocolo AAA separa autenticação, autorização e accounting em processos distintos e usa TCP?",
+    alternativas: { A: "RADIUS", B: "TACACS+", C: "SNMP", D: "Kerberos" },
+    respostaCorreta: "B",
+    justificativa: "TACACS+ (proprietário Cisco) separa os processos de AAA e usa TCP; RADIUS combina autenticação/autorização e usa UDP.",
+  },
+  {
+    id: "q-syslog-001",
+    dominio: "IP Services",
+    topicId: "m42-01",
+    dificuldade: "medio",
+    enunciado: "No Syslog, qual nível de severidade representa a condição mais crítica?",
+    alternativas: { A: "Nível 0 (Emergency)", B: "Nível 4 (Warning)", C: "Nível 7 (Debugging)", D: "Nível 6 (Informational)" },
+    respostaCorreta: "A",
+    justificativa: "A escala Syslog vai de 0 (mais crítico, Emergency) a 7 (menos crítico, Debugging).",
+  },
+  {
+    id: "q-lanarq-001",
+    dominio: "Network Fundamentals",
+    topicId: "m47-01",
+    dificuldade: "facil",
+    enunciado: "Quais as 3 camadas do modelo hierárquico clássico de rede LAN?",
+    alternativas: { A: "Core, Distribution, Access", B: "Físico, Lógico, Virtual", C: "Norte, Sul, Leste", D: "Spine, Leaf, Fabric" },
+    respostaCorreta: "A",
+    justificativa: "O modelo hierárquico clássico divide a rede em Core (núcleo), Distribution (distribuição) e Access (acesso).",
+  },
+  {
+    id: "q-wanarq-001",
+    dominio: "Network Fundamentals",
+    topicId: "m48-01",
+    dificuldade: "medio",
+    enunciado: "Qual topologia WAN oferece a maior resiliência, conectando cada site a todos os outros diretamente?",
+    alternativas: { A: "Hub-and-spoke", B: "Full mesh", C: "Anel simples", D: "Barramento" },
+    respostaCorreta: "B",
+    justificativa: "Full mesh conecta todo site a todos os outros, oferecendo a maior redundância — porém com maior custo e complexidade.",
+  },
+  {
+    id: "q-cloud-001",
+    dominio: "Network Fundamentals",
+    topicId: "m49-01",
+    dificuldade: "facil",
+    enunciado: "Em qual modelo de nuvem o provedor cuida só da infraestrutura física, deixando SO e aplicações por sua conta?",
+    alternativas: { A: "SaaS", B: "PaaS", C: "IaaS", D: "DaaS" },
+    respostaCorreta: "C",
+    justificativa: "IaaS (Infrastructure as a Service) entrega só a infraestrutura; você gerencia SO, runtime e aplicações.",
+  },
+  {
+    id: "q-sdn-001",
+    dominio: "Automation and Programmability",
+    topicId: "m50-02",
+    dificuldade: "medio",
+    enunciado: "Qual a principal diferença entre uma arquitetura controller-based e uma rede tradicional?",
+    alternativas: {
+      A: "Controller-based não usa endereços IP",
+      B: "O plano de controle é centralizado num controller, em vez de distribuído em cada dispositivo",
+      C: "Controller-based é sempre mais lenta",
+      D: "Não há diferença prática",
+    },
+    respostaCorreta: "B",
+    justificativa: "Em arquiteturas controller-based (SDN), o plano de controle fica centralizado, enquanto na tradicional cada dispositivo decide de forma independente.",
+  },
 ];
 
 export async function seedQuestionsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().questionsSeededV3) {
+  if (metaSnap.exists() && metaSnap.data().questionsSeededV4) {
     console.log("[seed] Banco de questões já populado, pulando.");
     return { seeded: false };
   }
@@ -324,7 +474,7 @@ export async function seedQuestionsIfNeeded() {
     const ref = doc(db, "content", "questions", "items", q.id);
     batch.set(ref, q);
   });
-  batch.set(metaRef, { questionsSeededV3: true, questionsCount: questoesExemplo.length, questionsSeededV3At: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { questionsSeededV4: true, questionsCount: questoesExemplo.length, questionsSeededV4At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${questoesExemplo.length} questões gravadas`);
