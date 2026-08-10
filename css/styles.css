@@ -86,12 +86,14 @@ button { font-family: var(--font-body); cursor: pointer; }
 
 /* ===== BOTTOM NAV — 5 itens, ícones + texto, nada além ===== */
 .bottomnav {
-  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 100%; max-width: 640px;
+  position: fixed; bottom: 0; left: 0; right: 0;
   background: var(--surface); border-top: 1px solid var(--border);
-  display: flex; justify-content: space-around; padding: var(--space-2) 0;
   z-index: 10;
   box-shadow: 0 -2px 12px rgba(36,48,58,0.05);
+}
+.bottomnav-inner {
+  max-width: 640px; margin: 0 auto;
+  display: flex; justify-content: space-around; padding: var(--space-2) 0;
 }
 .bottomnav button {
   background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px;
