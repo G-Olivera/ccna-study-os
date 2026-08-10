@@ -31,6 +31,15 @@ import {
   buscarMinutosHoje,
 } from "./timer.js";
 
+// ---------- PWA: registro do Service Worker ----------
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch((err) => {
+      console.warn("[PWA] Não foi possível registrar o service worker:", err);
+    });
+  });
+}
+
 // ---------- TEMA (claro/escuro) ----------
 // Fica logo no topo do arquivo pra aplicar o tema o mais cedo possível e evitar
 // um flash visual da cor errada. Não pode ser um <script> inline no HTML porque
