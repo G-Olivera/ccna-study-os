@@ -31,6 +31,33 @@ import {
   buscarMinutosHoje,
 } from "./timer.js";
 
+// ---------- TEMA (claro/escuro) ----------
+// Fica logo no topo do arquivo pra aplicar o tema o mais cedo possível e evitar
+// um flash visual da cor errada. Não pode ser um <script> inline no HTML porque
+// a CSP do site bloqueia scripts inline por segurança.
+const THEME_KEY = "ccna-study-os-theme";
+
+function aplicarTema(tema) {
+  document.documentElement.setAttribute("data-theme", tema);
+  document.getElementById("icon-theme-sun")?.classList.toggle("hidden", tema === "dark");
+  document.getElementById("icon-theme-moon")?.classList.toggle("hidden", tema !== "dark");
+}
+
+function temaPreferido() {
+  const salvo = localStorage.getItem(THEME_KEY);
+  if (salvo === "dark" || salvo === "light") return salvo;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+aplicarTema(temaPreferido());
+
+document.getElementById("btn-theme-toggle").addEventListener("click", () => {
+  const atual = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  const novo = atual === "dark" ? "light" : "dark";
+  localStorage.setItem(THEME_KEY, novo);
+  aplicarTema(novo);
+});
+
 let currentUser = null;
 let planoHoje = null;
 let filaCards = [];
