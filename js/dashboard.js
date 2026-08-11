@@ -137,6 +137,37 @@ function computeXpAndLevel(questionAttempts, activityLog, streak) {
 /**
  * Monta o objeto completo consumido pela tela de Dashboard.
  */
+// ---------- CALENDÁRIO DE STREAK (estilo GitHub) ----------
+
+/**
+ * Retorna os últimos `dias` dias com o total de minutos estudados em cada um,
+ * pronto pra virar um mapa de calor tipo "gráfico de contribuições".
+ */
+export async function getHistoricoStreak(uid, dias = 84) {
+  const inicio = new Date();
+  inicio.setDate(inicio.getDate() - (dias - 1));
+  inicio.setHours(0, 0, 0, 0);
+
+  const activityLog = await fetchActivityLog(uid);
+
+  const porDia = {};
+  activityLog.forEach((a) => {
+    const data = a.timestamp?.toDate?.();
+    if (!data || data < inicio) return;
+    const chave = data.toISOString().slice(0, 10);
+    porDia[chave] = (porDia[chave] || 0) + (a.duracao || 0);
+  });
+
+  const resultado = [];
+  const cursor = new Date(inicio);
+  for (let i = 0; i < dias; i++) {
+    const chave = cursor.toISOString().slice(0, 10);
+    resultado.push({ data: chave, minutos: Math.round(porDia[chave] || 0) });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return resultado;
+}
+
 export async function getDashboardData(uid) {
   const [allTopics, userProgress, activityLog, questionAttempts] = await Promise.all([
     getAllTopics(),

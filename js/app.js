@@ -9,7 +9,7 @@ import { seedLabsIfNeeded } from "./seed-labs.js";
 import { seedFlashcardsIfNeeded } from "./seed-flashcards.js";
 import { generateDailyPlan, markPlanSectionComplete } from "./daily-plan.js";
 import { getDueCards, reviewAndSave, QUALITY } from "./srs-engine.js";
-import { getDashboardData } from "./dashboard.js";
+import { getDashboardData, getHistoricoStreak } from "./dashboard.js";
 import { verificarConquistas, getConquistasDesbloqueadas, CONQUISTAS, definirMeta, progressoMeta } from "./gamification.js";
 import { verificarAusencia, ajustarPlanoParaRetorno } from "./anti-procrastination.js";
 import { gerarRevisaoRapida } from "./quick-review.js";
@@ -422,13 +422,17 @@ async function carregarDashboard() {
   document.getElementById("topicos-dominados").innerHTML =
     d.assuntosDominados.map((t) => `<span class="topic-chip dominado">${t.nome}</span>`).join("") || `<p style="font-size:13px;">Ainda nenhum — continue!</p>`;
 
-  await verificarConquistas(currentUser.uid, d).catch(() => {});
+  const novasConquistas = await verificarConquistas(currentUser.uid, d).catch(() => []);
   const desbloqueadas = await getConquistasDesbloqueadas(currentUser.uid).catch(() => []);
   const idsDesbloqueadas = new Set(desbloqueadas.map((c) => c.id));
 
   document.getElementById("lista-conquistas").innerHTML = CONQUISTAS.map(
     (c) => `<span class="conquista-badge ${idsDesbloqueadas.has(c.id) ? "desbloqueada" : ""}" title="${c.desc}">${idsDesbloqueadas.has(c.id) ? "🏆" : "🔒"} ${c.nome}</span>`
   ).join("");
+
+  if (novasConquistas && novasConquistas.length > 0) {
+    celebrarConquistas(novasConquistas);
+  }
 
   const meta = await progressoMeta(currentUser.uid, "semanal", d).catch(() => null);
   if (meta) {
@@ -439,6 +443,50 @@ async function carregarDashboard() {
     document.getElementById("meta-progresso-texto").textContent = "Nenhuma meta definida ainda.";
     document.getElementById("meta-progresso-fill").style.width = "0%";
   }
+
+  await renderCalendarioStreak();
+}
+
+// ---------- CELEBRAÇÃO DE CONQUISTA (confete + toast) ----------
+
+function celebrarConquistas(novas) {
+  const cores = ["#3E6B6B", "#C97B4A", "#5B8266", "#B3654A"];
+
+  for (let i = 0; i < 60; i++) {
+    const confete = document.createElement("div");
+    confete.className = "confete";
+    confete.style.left = `${Math.random() * 100}vw`;
+    confete.style.background = cores[Math.floor(Math.random() * cores.length)];
+    confete.style.animationDuration = `${1.6 + Math.random() * 1.2}s`;
+    confete.style.borderRadius = Math.random() > 0.5 ? "50%" : "2px";
+    document.body.appendChild(confete);
+    setTimeout(() => confete.remove(), 3200);
+  }
+
+  const nomes = novas.map((c) => c.nome).join(", ");
+  const toast = document.createElement("div");
+  toast.className = "toast-conquista";
+  toast.textContent = `🏆 Conquista desbloqueada: ${nomes}`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3700);
+}
+
+// ---------- CALENDÁRIO DE STREAK ----------
+
+async function renderCalendarioStreak() {
+  const historico = await getHistoricoStreak(currentUser.uid, 84);
+
+  function nivelPara(minutos) {
+    if (minutos <= 0) return 0;
+    if (minutos < 15) return 1;
+    if (minutos < 30) return 2;
+    if (minutos < 60) return 3;
+    return 4;
+  }
+
+  document.getElementById("streak-calendar").innerHTML = historico
+    .map((dia) => `<span class="streak-dia nivel-${nivelPara(dia.minutos)}" title="${dia.data}: ${dia.minutos} min"></span>`)
+    .join("");
 }
 
 document.getElementById("btn-definir-meta").addEventListener("click", async () => {
