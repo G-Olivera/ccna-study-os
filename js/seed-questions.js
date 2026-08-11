@@ -458,13 +458,128 @@ const questoesExemplo = [
     respostaCorreta: "B",
     justificativa: "Em arquiteturas controller-based (SDN), o plano de controle fica centralizado, enquanto na tradicional cada dispositivo decide de forma independente.",
   },
+  {
+    id: "q-tcpip-001",
+    dominio: "Network Fundamentals",
+    topicId: "m01-01",
+    dificuldade: "facil",
+    enunciado: "Quantas camadas tem o modelo TCP/IP na sua versão simplificada mais comum?",
+    alternativas: { A: "3", B: "4", C: "5", D: "7" },
+    respostaCorreta: "B",
+    justificativa: "O modelo TCP/IP simplificado tem 4 camadas: Aplicação, Transporte, Internet e Acesso à Rede.",
+  },
+  {
+    id: "q-swlearn-001",
+    dominio: "Network Fundamentals",
+    topicId: "m05-02",
+    dificuldade: "medio",
+    enunciado: "O que um switch faz ao receber um quadro cujo MAC de origem não está na sua tabela de endereços?",
+    alternativas: { A: "Descarta o quadro", B: "Aprende o MAC, associando-o à porta de entrada", C: "Envia um ARP request", D: "Bloqueia a porta" },
+    respostaCorreta: "B",
+    justificativa: "O switch aprende dinamicamente os MACs de origem dos quadros recebidos, associando-os às portas correspondentes.",
+  },
+  {
+    id: "q-stptimer-001",
+    dominio: "Network Access",
+    topicId: "m09-04",
+    dificuldade: "dificil",
+    enunciado: "Qual o valor padrão do temporizador Max Age no STP clássico (802.1D)?",
+    alternativas: { A: "2 segundos", B: "15 segundos", C: "20 segundos", D: "50 segundos" },
+    respostaCorreta: "C",
+    justificativa: "O Max Age padrão é 20 segundos — tempo que uma porta espera antes de considerar a informação de BPDU expirada.",
+  },
+  {
+    id: "q-router-001",
+    dominio: "IP Connectivity",
+    topicId: "m16-01",
+    dificuldade: "facil",
+    enunciado: "Onde fica armazenada a running-config de um roteador Cisco enquanto ele está ligado?",
+    alternativas: { A: "NVRAM", B: "Flash", C: "RAM", D: "ROM" },
+    respostaCorreta: "C",
+    justificativa: "A running-config vive na RAM (memória volátil); por isso precisa ser salva na NVRAM (startup-config) pra sobreviver a um reboot.",
+  },
+  {
+    id: "q-rosastick-001",
+    dominio: "IP Connectivity",
+    topicId: "m18-01",
+    dificuldade: "medio",
+    enunciado: "O que caracteriza a técnica 'router-on-a-stick'?",
+    alternativas: {
+      A: "Vários roteadores empilhados fisicamente",
+      B: "Uma única interface física dividida em subinterfaces com trunk, roteando entre VLANs",
+      C: "Um roteador sem nenhuma interface configurada",
+      D: "Substituição do switch por um roteador",
+    },
+    respostaCorreta: "B",
+    justificativa: "Router-on-a-stick usa subinterfaces (com encapsulamento 802.1Q) numa única interface física pra rotear entre múltiplas VLANs.",
+  },
+  {
+    id: "q-ipv6uni-001",
+    dominio: "IP Connectivity",
+    topicId: "m27-02",
+    dificuldade: "medio",
+    enunciado: "Qual comando é obrigatório antes de um roteador Cisco conseguir encaminhar pacotes IPv6?",
+    alternativas: { A: "ipv6 enable", B: "ipv6 unicast-routing", C: "ip routing", D: "ipv6 cef" },
+    respostaCorreta: "B",
+    justificativa: "Sem `ipv6 unicast-routing` no modo de configuração global, o roteador não encaminha tráfego IPv6 entre interfaces.",
+  },
+  {
+    id: "q-aclnome-001",
+    dominio: "Security Fundamentals",
+    topicId: "m36-01",
+    dificuldade: "facil",
+    enunciado: "Qual a principal vantagem de uma ACL nomeada sobre uma numerada?",
+    alternativas: {
+      A: "É mais rápida de processar",
+      B: "Permite editar ou remover linhas individuais sem recriar a ACL inteira",
+      C: "Não precisa ser aplicada a uma interface",
+      D: "Funciona só com IPv6",
+    },
+    respostaCorreta: "B",
+    justificativa: "ACLs nomeadas permitem edição granular (adicionar/remover linhas específicas), o que ACLs numeradas clássicas não permitem facilmente.",
+  },
+  {
+    id: "q-jitter-001",
+    dominio: "IP Services",
+    topicId: "m44-01",
+    dificuldade: "medio",
+    enunciado: "O que é 'jitter' no contexto de QoS?",
+    alternativas: { A: "Perda total de pacotes", B: "Variação no tempo de chegada dos pacotes", C: "Aumento da largura de banda", D: "Criptografia de tráfego" },
+    respostaCorreta: "B",
+    justificativa: "Jitter é a variação na latência entre pacotes consecutivos — especialmente prejudicial pra voz e vídeo em tempo real.",
+  },
+  {
+    id: "q-snmpv3-001",
+    dominio: "IP Services",
+    topicId: "m46-01",
+    dificuldade: "medio",
+    enunciado: "Qual versão do SNMP introduziu autenticação e criptografia?",
+    alternativas: { A: "SNMPv1", B: "SNMPv2c", C: "SNMPv3", D: "SNMPv2u" },
+    respostaCorreta: "C",
+    justificativa: "SNMPv3 foi a primeira versão a trazer autenticação de usuário e criptografia das mensagens.",
+  },
+  {
+    id: "q-sdaccess-001",
+    dominio: "Automation and Programmability",
+    topicId: "m51-01",
+    dificuldade: "dificil",
+    enunciado: "O que representa o 'fabric' no Cisco SD-Access?",
+    alternativas: {
+      A: "Um tipo de cabo de fibra óptica",
+      B: "A infraestrutura lógica criada pelo controller, separando identidade do endpoint da topologia física",
+      C: "Um protocolo de roteamento específico",
+      D: "Um tipo de switch físico",
+    },
+    respostaCorreta: "B",
+    justificativa: "O fabric do SD-Access é a camada lógica que abstrai a topologia física, permitindo políticas baseadas em identidade em vez de endereço IP/porta.",
+  },
 ];
 
 export async function seedQuestionsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().questionsSeededV4) {
+  if (metaSnap.exists() && metaSnap.data().questionsSeededV5) {
     console.log("[seed] Banco de questões já populado, pulando.");
     return { seeded: false };
   }
@@ -474,7 +589,7 @@ export async function seedQuestionsIfNeeded() {
     const ref = doc(db, "content", "questions", "items", q.id);
     batch.set(ref, q);
   });
-  batch.set(metaRef, { questionsSeededV4: true, questionsCount: questoesExemplo.length, questionsSeededV4At: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { questionsSeededV5: true, questionsCount: questoesExemplo.length, questionsSeededV5At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${questoesExemplo.length} questões gravadas`);

@@ -197,13 +197,61 @@ const labsExemplo = [
       "Não vincular a WLAN a uma Policy Tag/interface correta — os clientes não recebem IP.",
     ],
   },
+  {
+    id: "lab-36-aclnomeada",
+    topicId: "m36-01",
+    titulo: "ACL nomeada estendida com edição de linhas",
+    ferramenta: "PNETLab",
+    dispositivo: "Router",
+    promptInicial: "Router>",
+    topologiaDescricao: "R1 filtrando tráfego HTTP e SSH de uma sub-rede específica, usando ACL nomeada.",
+    comandos: [
+      { instrucao: "Entre no modo privilegiado.", cmd: "enable", saida: "", promptDepois: "Router#" },
+      { instrucao: "Entre no modo de configuração global.", cmd: "configure terminal", saida: "Enter configuration commands, one per line.  End with CNTL/Z.", promptDepois: "Router(config)#" },
+      { instrucao: "Crie a ACL nomeada estendida.", cmd: "ip access-list extended BLOQUEIA_HTTP", saida: "", promptDepois: "Router(config-ext-nacl)#" },
+      { instrucao: "Adicione a regra bloqueando HTTP dessa sub-rede.", cmd: "deny tcp 192.168.30.0 0.0.0.255 any eq 80", saida: "", promptDepois: "Router(config-ext-nacl)#" },
+      { instrucao: "Permita o restante do tráfego.", cmd: "permit ip any any", saida: "", promptDepois: "Router(config-ext-nacl)#" },
+      { instrucao: "Saia e aplique a ACL na interface correta.", cmd: "interface g0/1", saida: "", promptDepois: "Router(config-if)#" },
+      { instrucao: "Aplique a ACL nomeada na entrada.", cmd: "ip access-group BLOQUEIA_HTTP in", saida: "", promptDepois: "Router(config-if)#" },
+      { instrucao: "Saia do modo de configuração.", cmd: "end", saida: "", promptDepois: "Router#" },
+      { instrucao: "Verifique a ACL nomeada.", cmd: "show ip access-lists BLOQUEIA_HTTP", saida: "Extended IP access list BLOQUEIA_HTTP\n    10 deny tcp 192.168.30.0 0.0.0.255 any eq www\n    20 permit ip any any", promptDepois: "Router#" },
+    ],
+    errosComuns: [
+      "Esquecer que ACLs nomeadas usam `ip access-list extended <nome>`, não `access-list <número>`.",
+      "Não perceber que a ordem das regras importa — a mais específica deve vir antes da genérica.",
+    ],
+  },
+  {
+    id: "lab-06-sshmgmt",
+    topicId: "m06-02",
+    titulo: "Configuração de acesso remoto seguro (SSH)",
+    ferramenta: "EVE-NG",
+    dispositivo: "Switch",
+    promptInicial: "Switch>",
+    topologiaDescricao: "Switch de acesso configurado para permitir gerenciamento remoto só via SSH, com senhas criptografadas.",
+    comandos: [
+      { instrucao: "Entre no modo privilegiado.", cmd: "enable", saida: "", promptDepois: "Switch#" },
+      { instrucao: "Entre no modo de configuração global.", cmd: "configure terminal", saida: "Enter configuration commands, one per line.  End with CNTL/Z.", promptDepois: "Switch(config)#" },
+      { instrucao: "Defina o nome do domínio (necessário pra gerar chaves RSA).", cmd: "ip domain-name estudo.local", saida: "", promptDepois: "Switch(config)#" },
+      { instrucao: "Gere o par de chaves RSA.", cmd: "crypto key generate rsa", saida: "The name for the keys will be: Switch.estudo.local\nChoose the size of the key modulus...\n% Generating 1024 bit RSA keys, keys will be non-exportable...[OK]", promptDepois: "Switch(config)#" },
+      { instrucao: "Crie um usuário local com senha.", cmd: "username admin secret Cisco123!", saida: "", promptDepois: "Switch(config)#" },
+      { instrucao: "Entre nas linhas VTY.", cmd: "line vty 0 15", saida: "", promptDepois: "Switch(config-line)#" },
+      { instrucao: "Exija login com usuário local.", cmd: "login local", saida: "", promptDepois: "Switch(config-line)#" },
+      { instrucao: "Permita só SSH (não Telnet) nessas linhas.", cmd: "transport input ssh", saida: "", promptDepois: "Switch(config-line)#" },
+      { instrucao: "Saia e criptografe as senhas em texto plano.", cmd: "end", saida: "", promptDepois: "Switch#" },
+    ],
+    errosComuns: [
+      "Esquecer o `ip domain-name` antes de gerar as chaves RSA — o comando `crypto key generate rsa` nem aparece disponível sem isso.",
+      "Deixar `transport input telnet ssh` em vez de só `ssh` — mantém uma porta insegura aberta.",
+    ],
+  },
 ];
 
 export async function seedLabsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().labsSeededV3) {
+  if (metaSnap.exists() && metaSnap.data().labsSeededV4) {
     console.log("[seed] Labs já populados, pulando.");
     return { seeded: false };
   }
@@ -213,7 +261,7 @@ export async function seedLabsIfNeeded() {
     const ref = doc(db, "content", "labs", "items", lab.id);
     batch.set(ref, lab);
   });
-  batch.set(metaRef, { labsSeededV3: true, labsCount: labsExemplo.length, labsSeededV3At: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { labsSeededV4: true, labsCount: labsExemplo.length, labsSeededV4At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${labsExemplo.length} labs gravados`);

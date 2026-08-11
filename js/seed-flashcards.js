@@ -135,13 +135,45 @@ const flashcards = [
 
   // SDN / Controller
   { id: "fc-sdn-01", topicId: "m50-02", categoria: "Automation", front: "Qual a principal diferença entre uma rede tradicional e uma controller-based?", back: "Na controller-based, o plano de controle é centralizado num controller; na tradicional, cada dispositivo toma decisões de forma independente e distribuída." },
+
+  // Modelo TCP/IP e roteamento básico
+  { id: "fc-tcpip-01", topicId: "m01-01", categoria: "Fundamentos", front: "Quantas camadas tem o modelo TCP/IP (versão simplificada)?", back: "4 camadas: Aplicação, Transporte, Internet e Acesso à Rede." },
+  { id: "fc-wan-01", topicId: "m03-01", categoria: "Fundamentos", front: "O que é uma 'leased line' (linha dedicada) numa WAN?", back: "Um circuito ponto-a-ponto dedicado exclusivamente a um cliente, sempre disponível e com largura de banda fixa." },
+
+  // Switching interno
+  { id: "fc-swlearn-01", topicId: "m05-02", categoria: "Switching", front: "O que o switch faz quando recebe um quadro com MAC de origem desconhecido?", back: "Aprende esse MAC associando-o à porta de entrada, gravando na tabela de endereços MAC." },
+  { id: "fc-stptimer-01", topicId: "m09-04", categoria: "STP", front: "Qual o tempo padrão do temporizador Max Age do STP clássico?", back: "20 segundos." },
+
+  // Roteamento
+  { id: "fc-router-01", topicId: "m16-01", categoria: "Roteamento", front: "Qual componente de um roteador Cisco armazena a running-config enquanto ele está ligado?", back: "A RAM (memória volátil — se apagar a energia, perde a configuração não salva)." },
+  { id: "fc-iplan-01", topicId: "m18-01", categoria: "Roteamento", front: "O que significa 'router-on-a-stick'?", back: "Uma única interface física do roteador, dividida em subinterfaces com trunk, roteando entre várias VLANs." },
+  { id: "fc-troubleshoot-01", topicId: "m20-01", categoria: "Roteamento", front: "Qual o primeiro passo típico ao diagnosticar um problema de conectividade IP?", back: "Verificar a camada física e o endereçamento IP local antes de investigar rotas mais distantes (abordagem de baixo pra cima ou de cima pra baixo)." },
+
+  // IPv6 avançado
+  { id: "fc-ipv6static-01", topicId: "m27-02", categoria: "IPv6", front: "Qual comando global habilita o roteamento IPv6 num roteador Cisco?", back: "ipv6 unicast-routing" },
+  { id: "fc-ipv6route-01", topicId: "m29-02", categoria: "IPv6", front: "Como verificar as rotas IPv6 estáticas configuradas?", back: "show ipv6 route static" },
+
+  // Wireless arquitetura
+  { id: "fc-wlanbuild-01", topicId: "m30-02", categoria: "Wireless", front: "O que compõe uma WLAN, além do AP?", back: "SSID, autenticação/criptografia, e os clientes wireless conectados." },
+
+  // ACL nomeada
+  { id: "fc-aclnomeada-01", topicId: "m36-01", categoria: "ACL", front: "Qual a vantagem de uma ACL nomeada sobre uma numerada?", back: "Permite editar/remover linhas individuais sem recriar a ACL inteira, além de nomes mais descritivos." },
+
+  // QoS
+  { id: "fc-qos-03", topicId: "m44-01", categoria: "QoS", front: "O que é 'jitter' em QoS?", back: "A variação no tempo de chegada dos pacotes — prejudica muito chamadas de voz e vídeo." },
+
+  // SNMP
+  { id: "fc-snmp-01", topicId: "m46-01", categoria: "Gerenciamento", front: "Qual versão do SNMP introduziu autenticação e criptografia?", back: "SNMPv3." },
+
+  // SD-Access
+  { id: "fc-sdaccess-01", topicId: "m51-01", categoria: "Automation", front: "O que é o 'fabric' no contexto do Cisco SD-Access?", back: "A infraestrutura de rede lógica criada pelo controller, que separa o plano de identidade do dispositivo (endpoint) da topologia física." },
 ];
 
 export async function seedFlashcardsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().flashcardsSeededV4) {
+  if (metaSnap.exists() && metaSnap.data().flashcardsSeededV5) {
     console.log("[seed] Flashcards já populados, pulando.");
     return { seeded: false };
   }
@@ -151,7 +183,7 @@ export async function seedFlashcardsIfNeeded() {
     const ref = doc(db, "content", "flashcards", "items", fc.id);
     batch.set(ref, fc);
   });
-  batch.set(metaRef, { flashcardsSeededV4: true, flashcardsCount: flashcards.length, flashcardsSeededV4At: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { flashcardsSeededV5: true, flashcardsCount: flashcards.length, flashcardsSeededV5At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${flashcards.length} flashcards gravados`);

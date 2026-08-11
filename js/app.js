@@ -640,7 +640,7 @@ document.getElementById("btn-salvar-cronograma").addEventListener("click", async
 document.getElementById("btn-iniciar-simulado").addEventListener("click", async () => {
   const container = document.getElementById("area-simulado");
   container.innerHTML = "<p>Gerando simulado…</p>";
-  simuladoAtivo = await gerarSimulado(40);
+  simuladoAtivo = await gerarSimulado(currentUser.uid, 40);
   respostasSimulado = {};
   renderSimulado();
 });

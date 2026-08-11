@@ -4,7 +4,7 @@
 
 import { collection, query, where, getDocs, limit } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
-import { saveSimulado, logQuestionAttempt } from "./data-schema.js";
+import { saveSimulado, logQuestionAttempt, getAllUserTopicProgress } from "./data-schema.js";
 
 const DOMAIN_WEIGHTS = {
   "Network Fundamentals": 0.20,
@@ -15,28 +15,52 @@ const DOMAIN_WEIGHTS = {
   "Automation and Programmability": 0.10,
 };
 
-/** Busca N questões aleatórias de um domínio (via campo `randomKey` sorteado no seed). */
+/** Busca N*3 questões candidatas de um domínio (margem extra pra seleção adaptativa depois). */
 async function fetchQuestionsByDomain(dominio, quantidade) {
   const q = query(
     collection(db, "content", "questions", "items"),
     where("dominio", "==", dominio),
-    limit(quantidade * 3) // busca uma margem maior pra poder embaralhar client-side
+    limit(quantidade * 3)
   );
   const snap = await getDocs(q);
   const todas = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return todas.sort(() => Math.random() - 0.5).slice(0, quantidade);
+  return todas.sort(() => Math.random() - 0.5);
+}
+
+// Estilo "PassIQ" do AlphaPrep: a dificuldade da questão escolhida acompanha
+// o quanto você já domina aquele tópico específico — questão fácil pra reforçar
+// o básico onde ainda está fraco, difícil pra testar de verdade onde já manda bem.
+function dificuldadeAlvo(masteryPercent) {
+  if (masteryPercent >= 70) return "dificil";
+  if (masteryPercent >= 40) return "medio";
+  return "facil";
+}
+
+function selecionarAdaptativo(candidatas, quantidade, masteryPorTopico) {
+  const comPrioridade = candidatas.map((q) => {
+    const mastery = masteryPorTopico.get(q.topicId) ?? 0;
+    const alvo = dificuldadeAlvo(mastery);
+    return { q, prioridade: q.dificuldade === alvo ? 1 : 0 };
+  });
+  // Questões que combinam com o nível atual do usuário vêm primeiro; o resto preenche o restante.
+  comPrioridade.sort((a, b) => b.prioridade - a.prioridade);
+  return comPrioridade.slice(0, quantidade).map((x) => x.q);
 }
 
 /**
  * Monta um simulado com `totalQuestoes` questões, respeitando a proporção
- * oficial de peso de cada domínio no exame CCNA 200-301.
+ * oficial de peso de cada domínio no exame CCNA 200-301, e ajustando a
+ * dificuldade de cada questão ao seu nível atual de domínio no tópico.
  */
-export async function gerarSimulado(totalQuestoes = 40) {
+export async function gerarSimulado(uid, totalQuestoes = 40) {
+  const progresso = uid ? await getAllUserTopicProgress(uid).catch(() => []) : [];
+  const masteryPorTopico = new Map(progresso.map((p) => [p.id, p.masteryPercent ?? 0]));
+
   const questoesPorDominio = await Promise.all(
     Object.entries(DOMAIN_WEIGHTS).map(async ([dominio, peso]) => {
       const quantidade = Math.max(1, Math.round(totalQuestoes * peso));
-      const questoes = await fetchQuestionsByDomain(dominio, quantidade);
-      return questoes;
+      const candidatas = await fetchQuestionsByDomain(dominio, quantidade);
+      return selecionarAdaptativo(candidatas, quantidade, masteryPorTopico);
     })
   );
 
