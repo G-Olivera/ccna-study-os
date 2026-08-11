@@ -13,6 +13,15 @@ import { getDashboardData } from "./dashboard.js";
 import { verificarConquistas, getConquistasDesbloqueadas, CONQUISTAS, definirMeta, progressoMeta } from "./gamification.js";
 import { verificarAusencia, ajustarPlanoParaRetorno } from "./anti-procrastination.js";
 import { gerarRevisaoRapida } from "./quick-review.js";
+import {
+  getPermissaoAtual,
+  pedirPermissao,
+  salvarHorarioLembrete,
+  getHorarioLembrete,
+  setLembreteAtivo,
+  isLembreteAtivo,
+  iniciarVerificacaoLembrete,
+} from "./reminder.js";
 import { explicarTopico, perguntarLivre } from "./ai-tutor.js";
 import { logActivity, getAllTopics, getAllUserTopicProgress, getUserTopicProgress, upsertUserTopicProgress } from "./data-schema.js";
 import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
@@ -117,6 +126,7 @@ onAuthStateChanged(auth, async (user) => {
 
     await carregarHoje();
     await inicializarCronometroUI();
+    iniciarVerificacaoLembrete();
   } else {
     currentUser = null;
     document.getElementById("login-screen").classList.remove("hidden");
@@ -141,7 +151,10 @@ function trocarTela(nome) {
   document.querySelectorAll(".bottomnav button").forEach((b) => b.classList.toggle("active", b.dataset.tela === nome));
 
   if (nome === "flashcards") carregarFlashcards();
-  if (nome === "dashboard") carregarDashboard();
+  if (nome === "dashboard") {
+    carregarDashboard();
+    inicializarLembreteUI();
+  }
   if (nome === "trilha") carregarTrilha();
   if (nome === "tarefas") carregarTarefas();
 }
@@ -733,4 +746,40 @@ document.querySelectorAll(".grupo-tarefas").forEach((el) => {
       await carregarTarefas();
     }
   });
+});
+
+// ---------- LEMBRETE DIÁRIO ----------
+
+function renderStatusLembrete() {
+  const statusEl = document.getElementById("lembrete-status");
+  const permissao = getPermissaoAtual();
+
+  const textos = {
+    unsupported: "⚠️ Seu navegador não suporta notificações.",
+    granted: "✅ Notificações permitidas.",
+    denied: "🚫 Notificações bloqueadas — ative manualmente nas configurações do navegador/site.",
+    default: "🔔 Ainda não pedimos permissão — isso acontece ao salvar o lembrete.",
+  };
+  statusEl.textContent = textos[permissao] || textos.default;
+}
+
+function inicializarLembreteUI() {
+  document.getElementById("input-lembrete-horario").value = getHorarioLembrete();
+  document.getElementById("checkbox-lembrete-ativo").checked = isLembreteAtivo();
+  renderStatusLembrete();
+}
+
+document.getElementById("btn-salvar-lembrete").addEventListener("click", async () => {
+  const horario = document.getElementById("input-lembrete-horario").value || "19:00";
+  const ativo = document.getElementById("checkbox-lembrete-ativo").checked;
+
+  salvarHorarioLembrete(horario);
+  setLembreteAtivo(ativo);
+
+  if (ativo && getPermissaoAtual() === "default") {
+    await pedirPermissao();
+  }
+
+  renderStatusLembrete();
+  iniciarVerificacaoLembrete();
 });
