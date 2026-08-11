@@ -183,6 +183,19 @@
         <button class="btn-primary" id="btn-definir-meta" style="width:auto; padding:10px 16px;">Definir</button>
       </div>
     </div>
+
+    <h3 style="margin:20px 0 8px; font-size:15px;">Lembrete diário</h3>
+    <div class="task-card" id="lembrete-card">
+      <p style="font-size:13px; margin-bottom:14px;">Funciona enquanto o app estiver aberto (mesmo minimizado) — não acorda o celular com tudo fechado, isso exigiria um servidor de push.</p>
+      <div id="lembrete-status" style="margin-bottom:12px; font-size:13px; color:var(--ink-soft);"></div>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+        <input id="input-lembrete-horario" type="time" value="19:00" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+          <input type="checkbox" id="checkbox-lembrete-ativo" /> Ativo
+        </label>
+      </div>
+      <button class="btn-primary" id="btn-salvar-lembrete">Salvar lembrete</button>
+    </div>
   </section>
 
   <!-- TELA: TUTOR IA -->
