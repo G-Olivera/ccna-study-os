@@ -40,6 +40,23 @@ import {
   buscarMinutosHoje,
 } from "./timer.js";
 
+// ---------- LOGOUT AUTOMÁTICO POR INATIVIDADE ----------
+// Útil em computador compartilhado: desloga sozinho se ninguém mexer no app.
+const TEMPO_INATIVIDADE_MS = 20 * 60 * 1000; // 20 minutos
+let timerInatividade = null;
+
+function resetarTimerInatividade() {
+  if (timerInatividade) clearTimeout(timerInatividade);
+  if (!currentUser) return;
+  timerInatividade = setTimeout(async () => {
+    await signOut(auth);
+  }, TEMPO_INATIVIDADE_MS);
+}
+
+["mousemove", "keydown", "click", "touchstart", "scroll"].forEach((evento) => {
+  document.addEventListener(evento, resetarTimerInatividade, { passive: true });
+});
+
 // ---------- PWA: registro do Service Worker ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -127,10 +144,12 @@ onAuthStateChanged(auth, async (user) => {
     await carregarHoje();
     await inicializarCronometroUI();
     iniciarVerificacaoLembrete();
+    resetarTimerInatividade();
   } else {
     currentUser = null;
     document.getElementById("login-screen").classList.remove("hidden");
     document.getElementById("app").classList.add("hidden");
+    if (timerInatividade) clearTimeout(timerInatividade);
   }
 });
 

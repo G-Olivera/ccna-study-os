@@ -6,6 +6,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/fireba
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { getAI, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-ai.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDCfSuD0tDJeT_9yiKe9cwzZI9dNZBNQaI",
@@ -19,6 +20,15 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// App Check: protege Firestore/Auth/AI Logic contra chamadas automatizadas (bots, scripts)
+// que não venham do seu app de verdade. Funciona no plano gratuito Spark.
+// Troque "SUA_CHAVE_RECAPTCHA_V3_AQUI" pela site key gerada em
+// Firebase Console > App Check > Registrar app > reCAPTCHA v3.
+export const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider("SUA_CHAVE_RECAPTCHA_V3_AQUI"),
+  isTokenAutoRefreshEnabled: true,
+});
 
 // Firebase AI Logic, backend "Gemini Developer API" — funciona no plano Spark (gratuito),
 // sem precisar de Cloud Functions nem cartão de crédito. Precisa estar ativado em
