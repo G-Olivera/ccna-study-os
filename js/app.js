@@ -996,14 +996,21 @@ async function carregarFinancas() {
       .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum cartão cadastrado.</p>`;
 }
 
+document.getElementById("select-cartao-banco").addEventListener("change", (e) => {
+  document.getElementById("input-cartao-banco-outro").classList.toggle("hidden", e.target.value !== "Outro");
+});
+
 document.getElementById("btn-add-cartao").addEventListener("click", async () => {
-  const nome = document.getElementById("input-cartao-nome").value;
+  const bancoSelecionado = document.getElementById("select-cartao-banco").value;
+  const nome = bancoSelecionado === "Outro" ? document.getElementById("input-cartao-banco-outro").value : bancoSelecionado;
   const fechamento = document.getElementById("input-cartao-fechamento").value;
   const vencimento = document.getElementById("input-cartao-vencimento").value;
   if (!nome || !fechamento || !vencimento) return;
 
   await adicionarCartao(currentUser.uid, { nome, fechamento, vencimento });
-  document.getElementById("input-cartao-nome").value = "";
+  document.getElementById("input-cartao-banco-outro").value = "";
+  document.getElementById("input-cartao-banco-outro").classList.add("hidden");
+  document.getElementById("select-cartao-banco").selectedIndex = 0;
   document.getElementById("input-cartao-fechamento").value = "";
   document.getElementById("input-cartao-vencimento").value = "";
   await carregarFinancas();
