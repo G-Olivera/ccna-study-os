@@ -288,8 +288,21 @@
 
     <h3 style="margin:20px 0 12px; font-size:15px;">Cartões de crédito</h3>
     <div class="task-card" style="margin-bottom:20px;">
+      <select id="select-cartao-banco" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body); margin-bottom:8px;">
+        <option value="Nubank">Nubank</option>
+        <option value="Itaú">Itaú</option>
+        <option value="Bradesco">Bradesco</option>
+        <option value="Santander">Santander</option>
+        <option value="Banco do Brasil">Banco do Brasil</option>
+        <option value="Caixa">Caixa</option>
+        <option value="Inter">Inter</option>
+        <option value="C6 Bank">C6 Bank</option>
+        <option value="PicPay">PicPay</option>
+        <option value="XP">XP</option>
+        <option value="Outro">Outro banco</option>
+      </select>
+      <input id="input-cartao-banco-outro" type="text" placeholder="Nome do banco" class="hidden" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:8px;" />
       <div style="display:flex; gap:8px;">
-        <input id="input-cartao-nome" type="text" placeholder="Nome do cartão" style="flex:2; padding:10px; border-radius:8px; border:1px solid var(--border);" />
         <input id="input-cartao-fechamento" type="number" min="1" max="31" placeholder="Fecha dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
         <input id="input-cartao-vencimento" type="number" min="1" max="31" placeholder="Vence dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
       </div>
