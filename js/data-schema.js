@@ -152,9 +152,13 @@ export async function createTransacao(uid, transacao) {
 
 /** Busca as transações de um mês específico ("YYYY-MM"). */
 export async function getTransacoesByMonth(uid, anoMes) {
-  const q = query(userSub(uid, "transacoes"), where("anoMes", "==", anoMes), orderBy("data", "desc"));
+  // Sem orderBy no Firestore de propósito — combinar where + orderBy em campos
+  // diferentes exige um índice composto configurado manualmente no Console.
+  // Ordenamos por data no próprio navegador depois de buscar (lista pequena, sem custo real).
+  const q = query(userSub(uid, "transacoes"), where("anoMes", "==", anoMes));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const transacoes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  return transacoes.sort((a, b) => (a.data < b.data ? 1 : -1));
 }
 
 export async function deleteTransacao(uid, transacaoId) {

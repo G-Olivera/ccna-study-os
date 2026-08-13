@@ -25,10 +25,17 @@ export const db = getFirestore(app);
 // que não venham do seu app de verdade. Funciona no plano gratuito Spark.
 // Troque "SUA_CHAVE_RECAPTCHA_V3_AQUI" pela site key gerada em
 // Firebase Console > App Check > Registrar app > reCAPTCHA v3.
-export const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider("SUA_CHAVE_RECAPTCHA_V3_AQUI"),
-  isTokenAutoRefreshEnabled: true,
-});
+const CHAVE_RECAPTCHA_V3 = "SUA_CHAVE_RECAPTCHA_V3_AQUI";
+
+export let appCheck = null;
+if (CHAVE_RECAPTCHA_V3 !== "SUA_CHAVE_RECAPTCHA_V3_AQUI") {
+  appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(CHAVE_RECAPTCHA_V3),
+    isTokenAutoRefreshEnabled: true,
+  });
+} else {
+  console.info("[App Check] Ainda não configurado — troque CHAVE_RECAPTCHA_V3 em firebase-config.js quando quiser ativar essa camada extra de segurança.");
+}
 
 // Firebase AI Logic, backend "Gemini Developer API" — funciona no plano Spark (gratuito),
 // sem precisar de Cloud Functions nem cartão de crédito. Precisa estar ativado em
