@@ -977,22 +977,42 @@ async function carregarFinancas() {
       )
       .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum gasto fixo cadastrado.</p>`;
 
+// Cores associadas a cada banco (só a cor de marca, não a logo em si — evita
+// reproduzir qualquer logotipo protegido). Um bom identificador visual já
+// funciona com cor + inicial, sem precisar da arte oficial.
+const CORES_BANCO = {
+  Nubank: "#820AD1",
+  "Itaú": "#EC7000",
+  Bradesco: "#CC092F",
+  Santander: "#EC0000",
+  "Banco do Brasil": "#F8D30F",
+  Caixa: "#0033A0",
+  Inter: "#FF7A00",
+  "C6 Bank": "#242424",
+  PicPay: "#21C25E",
+  XP: "#000000",
+};
+
+function corDoBanco(nome) {
+  return CORES_BANCO[nome] || "#3E6B6B"; // teal do app como cor padrão pra bancos fora da lista
+}
+
   const cartoes = await listarCartoes(currentUser.uid);
   document.getElementById("lista-cartoes").innerHTML =
     cartoes
-      .map(
-        (c) => `
+      .map((c) => {
+        const cor = corDoBanco(c.nome);
+        const inicial = c.nome.trim().charAt(0).toUpperCase();
+        return `
       <div class="cartao-item">
-        <div class="cartao-icone">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
-        </div>
+        <div class="cartao-icone" style="background:${cor}22; color:${cor};">${inicial}</div>
         <div class="transacao-info">
           <div>${escapeHtml(c.nome)}</div>
           <div class="transacao-grupo">Fecha dia ${c.fechamento} · Vence dia ${c.vencimento}</div>
         </div>
         <button class="tarefa-remover" data-remover-cartao="${c.id}">✕</button>
-      </div>`
-      )
+      </div>`;
+      })
       .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum cartão cadastrado.</p>`;
 }
 
