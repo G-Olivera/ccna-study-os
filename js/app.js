@@ -116,6 +116,42 @@ const SECOES_LABEL = { teoria: "Teoria", lab: "Laboratório", revisao: "Revisão
 
 // ---------- AUTH ----------
 
+// Medidor de força de senha — heurística simples (tamanho + variedade de caracteres),
+// só um retorno visual pra ajudar a escolher senhas melhores.
+function avaliarForcaSenha(senha) {
+  let pontos = 0;
+  if (senha.length >= 8) pontos++;
+  if (senha.length >= 12) pontos++;
+  if (/[a-z]/.test(senha) && /[A-Z]/.test(senha)) pontos++;
+  if (/[0-9]/.test(senha)) pontos++;
+  if (/[^A-Za-z0-9]/.test(senha)) pontos++;
+
+  const niveis = [
+    { min: 0, largura: "20%", cor: "var(--terracotta)", label: "Fraca" },
+    { min: 2, largura: "50%", cor: "var(--amber)", label: "Razoável" },
+    { min: 4, largura: "80%", cor: "var(--sage)", label: "Forte" },
+    { min: 5, largura: "100%", cor: "var(--teal)", label: "Muito forte" },
+  ];
+  return [...niveis].reverse().find((n) => pontos >= n.min);
+}
+
+document.getElementById("login-senha").addEventListener("input", (e) => {
+  const senha = e.target.value;
+  const wrapper = document.getElementById("forca-senha-wrapper");
+
+  if (!senha) {
+    wrapper.classList.add("hidden");
+    return;
+  }
+  wrapper.classList.remove("hidden");
+
+  const nivel = avaliarForcaSenha(senha);
+  const fill = document.getElementById("forca-senha-fill");
+  fill.style.width = nivel.largura;
+  fill.style.background = nivel.cor;
+  document.getElementById("forca-senha-label").textContent = nivel.label;
+});
+
 document.getElementById("btn-login").addEventListener("click", async () => {
   const email = document.getElementById("login-email").value;
   const senha = document.getElementById("login-senha").value;
