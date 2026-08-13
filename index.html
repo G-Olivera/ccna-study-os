@@ -285,6 +285,17 @@
       <button class="btn-primary" id="btn-add-gastofixo" style="margin-top:10px;">Adicionar gasto fixo</button>
     </div>
     <div id="lista-gastos-fixos"></div>
+
+    <h3 style="margin:20px 0 12px; font-size:15px;">Cartões de crédito</h3>
+    <div class="task-card" style="margin-bottom:20px;">
+      <div style="display:flex; gap:8px;">
+        <input id="input-cartao-nome" type="text" placeholder="Nome do cartão" style="flex:2; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+        <input id="input-cartao-fechamento" type="number" min="1" max="31" placeholder="Fecha dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+        <input id="input-cartao-vencimento" type="number" min="1" max="31" placeholder="Vence dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+      </div>
+      <button class="btn-primary" id="btn-add-cartao" style="margin-top:10px;">Adicionar cartão</button>
+    </div>
+    <div id="lista-cartoes"></div>
   </section>
 
   <nav class="bottomnav">
