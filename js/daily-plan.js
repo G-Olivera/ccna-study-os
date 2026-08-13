@@ -176,7 +176,9 @@ export async function generateDailyPlan(uid, opções = {}) {
       topicId: focusTopic.id,
       questoes: quizQuestions.map((q) => q.id),
       concluido: false,
-      pendente: quizQuestions.length === 0 ? "banco de questões ainda não populado (Fase 6)" : undefined,
+      // Nunca usar "undefined" aqui — o Firestore rejeita esse valor. Só inclui o
+      // campo "pendente" quando de fato falta conteúdo; senão ele nem aparece no doc.
+      ...(quizQuestions.length === 0 ? { pendente: "banco de questões ainda não populado (Fase 6)" } : {}),
     },
     desafio: {
       topicId: focusTopic.id,
