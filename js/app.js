@@ -28,6 +28,16 @@ import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
 import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
 import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
+import {
+  GRUPO_LABEL,
+  adicionarTransacao,
+  removerTransacao,
+  getResumoDoMes,
+  adicionarGastoFixo,
+  listarGastosFixos,
+  removerGastoFixo,
+  definirMetaGasto,
+} from "./finance.js";
 import { escapeHtml } from "./utils.js";
 import {
   iniciarCronometro,
@@ -176,6 +186,7 @@ function trocarTela(nome) {
   }
   if (nome === "trilha") carregarTrilha();
   if (nome === "tarefas") carregarTarefas();
+  if (nome === "financas") carregarFinancas();
 }
 
 // ---------- TELA HOJE ----------
@@ -849,4 +860,127 @@ document.getElementById("btn-salvar-lembrete").addEventListener("click", async (
 
   renderStatusLembrete();
   iniciarVerificacaoLembrete();
+});
+
+// ---------- FINANÇAS ----------
+
+let tipoTransacaoSelecionado = "saida";
+
+document.getElementById("financas-tipo-tabs").addEventListener("click", (e) => {
+  const btn = e.target.closest(".cat-tab");
+  if (!btn) return;
+  tipoTransacaoSelecionado = btn.dataset.tipo;
+  document.querySelectorAll("#financas-tipo-tabs .cat-tab").forEach((b) => b.classList.toggle("selecionada", b === btn));
+});
+
+async function carregarFinancas() {
+  const resumo = await getResumoDoMes(currentUser.uid);
+
+  document.getElementById("financas-resumo-texto").textContent = `${resumo.transacoes.length} transações neste mês`;
+
+  document.getElementById("financas-stats").innerHTML = `
+    <div class="stat-card"><div class="valor" style="color:var(--sage);">R$ ${resumo.totalEntradas.toFixed(0)}</div><div class="label">Entradas</div></div>
+    <div class="stat-card"><div class="valor" style="color:var(--terracotta);">R$ ${resumo.totalSaidas.toFixed(0)}</div><div class="label">Saídas</div></div>
+    <div class="stat-card"><div class="valor">R$ ${resumo.saldo.toFixed(0)}</div><div class="label">Saldo</div></div>
+  `;
+
+  const maiorGrupo = Math.max(1, ...Object.values(resumo.porGrupo));
+  document.getElementById("financas-grupos-bars").innerHTML =
+    Object.entries(resumo.porGrupo)
+      .sort((a, b) => b[1] - a[1])
+      .map(
+        ([grupo, valor]) => `
+      <div class="domain-bar">
+        <div class="head"><span>${GRUPO_LABEL[grupo] || grupo}</span><span>R$ ${valor.toFixed(0)}</span></div>
+        <div class="track"><div class="fill" style="width:${Math.round((valor / maiorGrupo) * 100)}%"></div></div>
+      </div>`
+      )
+      .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum gasto registrado ainda.</p>`;
+
+  if (resumo.metaGasto) {
+    document.getElementById("financas-meta-texto").textContent = `R$ ${resumo.totalSaidas.toFixed(0)} de R$ ${resumo.metaGasto.toFixed(0)} gastos`;
+    document.getElementById("financas-meta-fill").style.width = `${resumo.percentualDaMeta}%`;
+    document.getElementById("financas-meta-fill").style.background = resumo.percentualDaMeta >= 90 ? "var(--terracotta)" : "var(--sage)";
+    document.getElementById("input-meta-financas").value = resumo.metaGasto;
+  } else {
+    document.getElementById("financas-meta-texto").textContent = "Nenhuma meta definida ainda.";
+    document.getElementById("financas-meta-fill").style.width = "0%";
+  }
+
+  document.getElementById("lista-transacoes").innerHTML =
+    resumo.transacoes
+      .map(
+        (t) => `
+      <div class="transacao-item">
+        <div class="transacao-info">
+          <div>${escapeHtml(t.descricao) || GRUPO_LABEL[t.grupo] || t.grupo}</div>
+          <div class="transacao-grupo">${GRUPO_LABEL[t.grupo] || t.grupo} · ${t.data}</div>
+        </div>
+        <span class="transacao-valor ${t.tipo}">${t.tipo === "entrada" ? "+" : "-"}R$ ${t.valor.toFixed(2)}</span>
+        <button class="tarefa-remover" data-remover-transacao="${t.id}">✕</button>
+      </div>`
+      )
+      .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhuma transação neste mês.</p>`;
+
+  const gastosFixos = await listarGastosFixos(currentUser.uid);
+  document.getElementById("lista-gastos-fixos").innerHTML =
+    gastosFixos
+      .map(
+        (g) => `
+      <div class="gastofixo-item">
+        <div class="gastofixo-dia">${g.diaVencimento}</div>
+        <div class="transacao-info">
+          <div>${escapeHtml(g.descricao)}</div>
+          <div class="transacao-grupo">R$ ${g.valorMedio.toFixed(2)}/mês</div>
+        </div>
+        <button class="tarefa-remover" data-remover-gastofixo="${g.id}">✕</button>
+      </div>`
+      )
+      .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum gasto fixo cadastrado.</p>`;
+}
+
+document.getElementById("btn-add-transacao").addEventListener("click", async () => {
+  const valor = document.getElementById("input-valor-financas").value;
+  const descricao = document.getElementById("input-descricao-financas").value;
+  const grupo = document.getElementById("select-grupo-financas").value;
+  if (!valor || Number(valor) <= 0) return;
+
+  await adicionarTransacao(currentUser.uid, { tipo: tipoTransacaoSelecionado, grupo, descricao, valor });
+  document.getElementById("input-valor-financas").value = "";
+  document.getElementById("input-descricao-financas").value = "";
+  await carregarFinancas();
+});
+
+document.getElementById("btn-definir-meta-financas").addEventListener("click", async () => {
+  const valor = document.getElementById("input-meta-financas").value;
+  if (!valor) return;
+  await definirMetaGasto(currentUser.uid, valor);
+  await carregarFinancas();
+});
+
+document.getElementById("btn-add-gastofixo").addEventListener("click", async () => {
+  const descricao = document.getElementById("input-gastofixo-desc").value;
+  const dia = document.getElementById("input-gastofixo-dia").value;
+  const valor = document.getElementById("input-gastofixo-valor").value;
+  if (!descricao || !dia || !valor) return;
+
+  await adicionarGastoFixo(currentUser.uid, { descricao, diaVencimento: dia, valorMedio: valor });
+  document.getElementById("input-gastofixo-desc").value = "";
+  document.getElementById("input-gastofixo-dia").value = "";
+  document.getElementById("input-gastofixo-valor").value = "";
+  await carregarFinancas();
+});
+
+document.getElementById("lista-transacoes").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-remover-transacao]");
+  if (!btn) return;
+  await removerTransacao(currentUser.uid, btn.dataset.removerTransacao);
+  await carregarFinancas();
+});
+
+document.getElementById("lista-gastos-fixos").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-remover-gastofixo]");
+  if (!btn) return;
+  await removerGastoFixo(currentUser.uid, btn.dataset.removerGastofixo);
+  await carregarFinancas();
 });

@@ -140,6 +140,70 @@ export async function deleteTarefa(uid, tarefaId) {
   await deleteDoc(ref);
 }
 
+// ---------- FINANÇAS ----------
+
+/** Registra uma transação (entrada ou saída). */
+export async function createTransacao(uid, transacao) {
+  return addDoc(userSub(uid, "transacoes"), {
+    ...transacao,
+    criadaEm: serverTimestamp(),
+  });
+}
+
+/** Busca as transações de um mês específico ("YYYY-MM"). */
+export async function getTransacoesByMonth(uid, anoMes) {
+  const q = query(userSub(uid, "transacoes"), where("anoMes", "==", anoMes), orderBy("data", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function deleteTransacao(uid, transacaoId) {
+  const ref = doc(db, "users", uid, "transacoes", transacaoId);
+  await deleteDoc(ref);
+}
+
+/** Gastos fixos recorrentes (aluguel, assinaturas etc.), com dia de vencimento. */
+export async function createGastoFixo(uid, gastoFixo) {
+  return addDoc(userSub(uid, "gastosFixos"), gastoFixo);
+}
+
+export async function getGastosFixos(uid) {
+  const snap = await getDocs(userSub(uid, "gastosFixos"));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function deleteGastoFixo(uid, gastoFixoId) {
+  const ref = doc(db, "users", uid, "gastosFixos", gastoFixoId);
+  await deleteDoc(ref);
+}
+
+/** Cartões de crédito cadastrados (vencimento/fechamento). */
+export async function createCartao(uid, cartao) {
+  return addDoc(userSub(uid, "cartoes"), cartao);
+}
+
+export async function getCartoes(uid) {
+  const snap = await getDocs(userSub(uid, "cartoes"));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function deleteCartao(uid, cartaoId) {
+  const ref = doc(db, "users", uid, "cartoes", cartaoId);
+  await deleteDoc(ref);
+}
+
+/** Meta de limite de gasto pra um mês específico. */
+export async function salvarMetaGasto(uid, anoMes, valorLimite) {
+  const ref = doc(db, "users", uid, "metasGasto", anoMes);
+  await setDoc(ref, { valorLimite, atualizadaEm: new Date().toISOString() }, { merge: true });
+}
+
+export async function getMetaGasto(uid, anoMes) {
+  const ref = doc(db, "users", uid, "metasGasto", anoMes);
+  const snap = await getDoc(ref);
+  return snap.exists() ? snap.data() : null;
+}
+
 /** Log genérico de atividade — alimenta streak, XP e o dashboard. */
 export async function logActivity(uid, tipo, topicId, duracaoMin) {
   return addDoc(userSub(uid, "activityLog"), {
