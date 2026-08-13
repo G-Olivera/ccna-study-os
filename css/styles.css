@@ -255,6 +255,9 @@ button { font-family: var(--font-body); cursor: pointer; }
 .transacao-grupo { font-size: 11px; color: var(--ink-soft); }
 .gastofixo-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; }
 .gastofixo-dia { width: 34px; height: 34px; border-radius: 50%; background: var(--amber-soft); color: var(--amber); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+.cartao-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; }
+.cartao-icone { width: 34px; height: 34px; border-radius: 8px; background: var(--teal-soft); color: var(--teal); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cartao-icone svg { width: 18px; height: 18px; }
 
 /* ===== CELEBRAÇÃO DE CONQUISTA ===== */
 .confete { position: fixed; top: -10px; width: 8px; height: 8px; pointer-events: none; z-index: 9999; opacity: 0.9; animation: cair linear forwards; }
