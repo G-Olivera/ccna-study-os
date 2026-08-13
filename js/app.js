@@ -37,6 +37,9 @@ import {
   listarGastosFixos,
   removerGastoFixo,
   definirMetaGasto,
+  adicionarCartao,
+  listarCartoes,
+  removerCartao,
 } from "./finance.js";
 import { escapeHtml } from "./utils.js";
 import {
@@ -973,7 +976,45 @@ async function carregarFinancas() {
       </div>`
       )
       .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum gasto fixo cadastrado.</p>`;
+
+  const cartoes = await listarCartoes(currentUser.uid);
+  document.getElementById("lista-cartoes").innerHTML =
+    cartoes
+      .map(
+        (c) => `
+      <div class="cartao-item">
+        <div class="cartao-icone">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+        </div>
+        <div class="transacao-info">
+          <div>${escapeHtml(c.nome)}</div>
+          <div class="transacao-grupo">Fecha dia ${c.fechamento} · Vence dia ${c.vencimento}</div>
+        </div>
+        <button class="tarefa-remover" data-remover-cartao="${c.id}">✕</button>
+      </div>`
+      )
+      .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum cartão cadastrado.</p>`;
 }
+
+document.getElementById("btn-add-cartao").addEventListener("click", async () => {
+  const nome = document.getElementById("input-cartao-nome").value;
+  const fechamento = document.getElementById("input-cartao-fechamento").value;
+  const vencimento = document.getElementById("input-cartao-vencimento").value;
+  if (!nome || !fechamento || !vencimento) return;
+
+  await adicionarCartao(currentUser.uid, { nome, fechamento, vencimento });
+  document.getElementById("input-cartao-nome").value = "";
+  document.getElementById("input-cartao-fechamento").value = "";
+  document.getElementById("input-cartao-vencimento").value = "";
+  await carregarFinancas();
+});
+
+document.getElementById("lista-cartoes").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-remover-cartao]");
+  if (!btn) return;
+  await removerCartao(currentUser.uid, btn.dataset.removerCartao);
+  await carregarFinancas();
+});
 
 document.getElementById("btn-add-transacao").addEventListener("click", async () => {
   const valor = document.getElementById("input-valor-financas").value;
