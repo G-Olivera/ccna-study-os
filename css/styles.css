@@ -84,7 +84,7 @@ button { font-family: var(--font-body); cursor: pointer; }
 .btn-logout:hover { color: var(--terracotta); border-color: var(--terracotta); }
 .btn-logout svg { width: 17px; height: 17px; }
 
-/* ===== BOTTOM NAV — 5 itens, ícones + texto, nada além ===== */
+/* ===== BOTTOM NAV — item ativo expande revelando o rótulo (toque, não hover) ===== */
 .bottomnav {
   position: fixed; bottom: 0; left: 0; right: 0;
   background: var(--surface); border-top: 1px solid var(--border);
@@ -93,14 +93,30 @@ button { font-family: var(--font-body); cursor: pointer; }
 }
 .bottomnav-inner {
   max-width: 640px; margin: 0 auto;
-  display: flex; justify-content: space-around; padding: var(--space-2) 0;
+  display: flex; justify-content: center; align-items: center; gap: 6px;
+  padding: var(--space-2) var(--space-3);
 }
 .bottomnav button {
-  background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px;
-  color: var(--ink-soft); font-size: 11px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);
-  flex: 1;
+  background: none; border: none; display: flex; flex-direction: row; align-items: center;
+  gap: 0; color: var(--ink-soft); font-size: 12px; font-weight: 600;
+  height: 44px; padding: 0 12px; border-radius: 999px;
+  overflow: hidden;
+  transition: width 0.35s cubic-bezier(.22,1,.36,1), background-color 0.25s ease, color 0.25s ease, padding 0.35s ease;
+  flex-shrink: 0;
 }
-.bottomnav button.active { color: var(--teal); background: var(--teal-soft); }
+.bottomnav button svg { flex-shrink: 0; }
+.bottomnav button span {
+  display: inline-block; white-space: nowrap; overflow: hidden;
+  max-width: 0; opacity: 0; transform: translateX(-6px);
+  margin-left: 0;
+  transition: max-width 0.3s ease, opacity 0.25s ease, transform 0.3s ease, margin-left 0.3s ease;
+}
+.bottomnav button.active {
+  color: var(--teal); background: var(--teal-soft);
+}
+.bottomnav button.active span {
+  max-width: 120px; opacity: 1; transform: translateX(0); margin-left: 8px;
+}
 .bottomnav svg { width: 21px; height: 21px; }
 
 /* ===== TELA "HOJE": uma tarefa por vez ===== */
