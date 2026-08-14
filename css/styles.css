@@ -234,6 +234,12 @@ button { font-family: var(--font-body); cursor: pointer; }
 
 .hidden { display: none !important; }
 
+/* ===== LEITOR DE LIVRO ===== */
+.livro-canvas-wrapper { display: flex; justify-content: center; background: var(--surface-quiet); border-radius: var(--radius); padding: var(--space-3); overflow-x: auto; margin-bottom: 12px; }
+.livro-canvas-wrapper canvas { max-width: 100%; height: auto; box-shadow: var(--shadow); border-radius: 4px; }
+.livro-controles { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.livro-controles button { flex: 1; }
+
 /* ===== MODAL: CONFIGURAÇÕES ===== */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.5);
