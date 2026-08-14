@@ -240,19 +240,41 @@ button { font-family: var(--font-body); cursor: pointer; }
 .livro-controles { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .livro-controles button { flex: 1; }
 
-/* ===== MODAL: CONFIGURAÇÕES ===== */
+/* ===== BIBLIOTECA DE LIVROS ===== */
+.grid-livros { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.livro-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+.livro-capa {
+  aspect-ratio: 3 / 4; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 28px; color: white;
+  position: relative;
+}
+.livro-capa .btn-favorito {
+  position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.25); border: none;
+  width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 15px;
+}
+.livro-info { padding: 10px 12px 12px; flex: 1; display: flex; flex-direction: column; }
+.livro-titulo { font-size: 13px; font-weight: 600; line-height: 1.3; margin-bottom: 2px; }
+.livro-meta { font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
+.livro-progresso-track { height: 5px; background: var(--surface-quiet); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+.livro-progresso-fill { height: 100%; background: var(--sage); border-radius: 3px; }
+.livro-progresso-texto { font-size: 10px; color: var(--ink-soft); margin-bottom: 8px; }
+.livro-card .btn-primary { margin-top: auto; padding: 8px; font-size: 12px; }
+
+/* ===== PAINEL DE CONFIGURAÇÕES (dropdown compacto, ancorado na engrenagem) ===== */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-  display: flex; align-items: flex-end; justify-content: center;
-  z-index: 200; animation: fadeIn 0.2s ease;
+  position: fixed; inset: 0; background: transparent;
+  z-index: 200;
 }
 .modal-conteudo {
-  background: var(--bg); width: 100%; max-width: 640px;
-  max-height: 85vh; overflow-y: auto;
-  border-radius: 20px 20px 0 0; padding: var(--space-5) var(--space-4) var(--space-7);
-  animation: subirModal 0.3s cubic-bezier(.22,1,.36,1);
+  position: absolute; top: 68px; right: 16px;
+  background: var(--surface); width: 300px; max-width: calc(100vw - 32px);
+  max-height: 70vh; overflow-y: auto;
+  border-radius: var(--radius); padding: var(--space-4);
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  animation: dropdownIn 0.18s ease;
 }
-@keyframes subirModal { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes dropdownIn { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 /* ===== CALENDÁRIO DE STREAK (mapa de calor) ===== */
 .streak-calendar-wrapper { overflow-x: auto; margin-bottom: 8px; padding-bottom: 4px; }
