@@ -43,7 +43,7 @@ import {
   removerCartao,
 } from "./finance.js";
 import { escapeHtml } from "./utils.js";
-import { LIVROS_DISPONIVEIS, abrirLivro, proximaPagina, paginaAnterior } from "./reader.js";
+import { LIVROS_DISPONIVEIS, abrirLivro, proximaPagina, paginaAnterior, listarProgressoLeituras, toggleFavorito } from "./reader.js";
 import {
   iniciarCronometro,
   pausarCronometro,
@@ -1255,31 +1255,132 @@ async function iniciarFluxoAtivacaoMFA() {
 
 // ---------- LIVRO (leitor de PDF pessoal) ----------
 
-async function carregarLivro() {
-  const statusEl = document.getElementById("livro-status");
+// ---------- BIBLIOTECA ----------
+
+let progressoLivrosCache = {};
+let filtroTextoLivro = "";
+let filtroCategoriaLivro = "";
+
+function corTextoContraste(hex) {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#24303A" : "#FFFFFF";
+}
+
+function iniciaisTitulo(titulo) {
+  return titulo
+    .split(" ")
+    .filter((p) => p.length > 2)
+    .slice(0, 2)
+    .map((p) => p[0].toUpperCase())
+    .join("") || titulo.slice(0, 2).toUpperCase();
+}
+
+function popularFiltroCategorias() {
+  const select = document.getElementById("select-categoria-livro");
+  const categorias = [...new Set(LIVROS_DISPONIVEIS.map((l) => l.categoria).filter(Boolean))];
+  select.innerHTML = `<option value="">Todas categorias</option>` + categorias.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+}
+
+function renderBiblioteca() {
+  const grid = document.getElementById("grid-livros");
   const vazioEl = document.getElementById("livro-vazio");
-  const leitorEl = document.getElementById("livro-leitor");
-  const canvas = document.getElementById("livro-canvas");
 
   if (LIVROS_DISPONIVEIS.length === 0) {
-    statusEl.textContent = "";
     vazioEl.classList.remove("hidden");
-    leitorEl.classList.add("hidden");
+    grid.innerHTML = "";
     return;
   }
-
   vazioEl.classList.add("hidden");
-  leitorEl.classList.remove("hidden");
+
+  const filtrados = LIVROS_DISPONIVEIS.filter((l) => {
+    const bateTexto = !filtroTextoLivro || l.titulo.toLowerCase().includes(filtroTextoLivro.toLowerCase());
+    const bateCategoria = !filtroCategoriaLivro || l.categoria === filtroCategoriaLivro;
+    return bateTexto && bateCategoria;
+  });
+
+  grid.innerHTML = filtrados
+    .map((livro) => {
+      const progresso = progressoLivrosCache[livro.id];
+      const percent = progresso?.totalPaginas ? Math.round((progresso.paginaAtual / progresso.totalPaginas) * 100) : 0;
+      const favorito = progresso?.favorito || false;
+      const corTexto = corTextoContraste(livro.corCapa);
+
+      return `
+      <div class="livro-card">
+        <div class="livro-capa" style="background:${livro.corCapa}; color:${corTexto};">
+          ${iniciaisTitulo(livro.titulo)}
+          <button class="btn-favorito" data-favorito="${livro.id}" data-favorito-atual="${favorito}">${favorito ? "★" : "☆"}</button>
+        </div>
+        <div class="livro-info">
+          <div class="livro-titulo">${escapeHtml(livro.titulo)}</div>
+          <div class="livro-meta">${escapeHtml(livro.volume || "")}${livro.volume && livro.autor ? " · " : ""}${escapeHtml(livro.autor || "")}</div>
+          ${
+            progresso
+              ? `<div class="livro-progresso-track"><div class="livro-progresso-fill" style="width:${percent}%"></div></div>
+                 <div class="livro-progresso-texto">Pág. ${progresso.paginaAtual} de ${progresso.totalPaginas || "?"} (${percent}%)</div>`
+              : `<div class="livro-progresso-texto">Ainda não iniciado</div>`
+          }
+          <button class="btn-primary" data-abrir-livro="${livro.id}">Abrir livro</button>
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+async function carregarLivro() {
+  progressoLivrosCache = await listarProgressoLeituras(currentUser.uid).catch(() => ({}));
+  popularFiltroCategorias();
+  renderBiblioteca();
+  document.getElementById("livro-biblioteca-view").classList.remove("hidden");
+  document.getElementById("livro-leitura-view").classList.add("hidden");
+}
+
+document.getElementById("input-busca-livro").addEventListener("input", (e) => {
+  filtroTextoLivro = e.target.value;
+  renderBiblioteca();
+});
+
+document.getElementById("select-categoria-livro").addEventListener("change", (e) => {
+  filtroCategoriaLivro = e.target.value;
+  renderBiblioteca();
+});
+
+document.getElementById("grid-livros").addEventListener("click", async (e) => {
+  const btnFavorito = e.target.closest("[data-favorito]");
+  const btnAbrir = e.target.closest("[data-abrir-livro]");
+
+  if (btnFavorito) {
+    const atual = btnFavorito.dataset.favoritoAtual === "true";
+    const novo = await toggleFavorito(currentUser.uid, btnFavorito.dataset.favorito, atual);
+    progressoLivrosCache[btnFavorito.dataset.favorito] = { ...(progressoLivrosCache[btnFavorito.dataset.favorito] || {}), favorito: novo };
+    renderBiblioteca();
+  } else if (btnAbrir) {
+    await abrirLeitorDoLivro(btnAbrir.dataset.abrirLivro);
+  }
+});
+
+document.getElementById("btn-voltar-biblioteca").addEventListener("click", () => {
+  document.getElementById("livro-leitura-view").classList.add("hidden");
+  document.getElementById("livro-biblioteca-view").classList.remove("hidden");
+  carregarLivro(); // atualiza progresso ao voltar
+});
+
+async function abrirLeitorDoLivro(livroId) {
+  const livro = LIVROS_DISPONIVEIS.find((l) => l.id === livroId);
+  const statusEl = document.getElementById("livro-status");
+  const canvas = document.getElementById("livro-canvas");
+
+  document.getElementById("livro-biblioteca-view").classList.add("hidden");
+  document.getElementById("livro-leitura-view").classList.remove("hidden");
   statusEl.textContent = "Carregando…";
 
   try {
-    await abrirLivro(currentUser.uid, LIVROS_DISPONIVEIS[0].id, canvas, (pagina, total) => {
+    await abrirLivro(currentUser.uid, livroId, canvas, (pagina, total) => {
       document.getElementById("livro-pagina-texto").textContent = `Página ${pagina} de ${total}`;
-      statusEl.textContent = LIVROS_DISPONIVEIS[0].titulo;
+      statusEl.textContent = livro.titulo;
     });
   } catch (e) {
     statusEl.textContent = "Não consegui abrir o livro. Confira se o arquivo foi adicionado na pasta /livros do repositório.";
-    leitorEl.classList.add("hidden");
   }
 }
 
