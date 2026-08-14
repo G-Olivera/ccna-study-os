@@ -243,12 +243,24 @@ function trocarTela(nome) {
   if (nome === "dashboard") {
     carregarDashboard();
     inicializarLembreteUI();
-    carregarMFA();
   }
   if (nome === "trilha") carregarTrilha();
   if (nome === "tarefas") carregarTarefas();
   if (nome === "financas") carregarFinancas();
 }
+
+document.getElementById("btn-abrir-config").addEventListener("click", () => {
+  document.getElementById("modal-config").classList.remove("hidden");
+  carregarMFA();
+});
+
+document.getElementById("btn-fechar-config").addEventListener("click", () => {
+  document.getElementById("modal-config").classList.add("hidden");
+});
+
+document.getElementById("modal-config").addEventListener("click", (e) => {
+  if (e.target.id === "modal-config") document.getElementById("modal-config").classList.add("hidden");
+});
 
 // ---------- TELA HOJE ----------
 
