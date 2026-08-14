@@ -168,7 +168,10 @@ document.getElementById("btn-login").addEventListener("click", async () => {
   } catch (e) {
     if (e.code === "auth/multi-factor-auth-required") {
       resolverMFAAtivo = getResolverMFA(e);
-      document.getElementById("mfa-login-desafio").classList.remove("hidden");
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("mfa-screen").classList.remove("hidden");
+      document.getElementById("mfa-erro").textContent = "";
+      document.getElementById("input-mfa-login-codigo").value = "";
       document.getElementById("input-mfa-login-codigo").focus();
     } else {
       document.getElementById("login-erro").textContent = "E-mail ou senha inválidos.";
@@ -176,19 +179,39 @@ document.getElementById("btn-login").addEventListener("click", async () => {
   }
 });
 
+// Só aceita números no código MFA, limitado a 6 dígitos.
+document.getElementById("input-mfa-login-codigo").addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+});
+
 document.getElementById("btn-confirmar-mfa-login").addEventListener("click", async () => {
   const codigo = document.getElementById("input-mfa-login-codigo").value;
   if (!codigo || !resolverMFAAtivo) return;
   try {
     await confirmarLoginMFA(resolverMFAAtivo, codigo);
-    // Limpa o código assim que valida — não deixa resquício no campo depois do login.
+    // Limpa o código assim que valida — não deixa resquício no campo, nem no navegador.
     document.getElementById("input-mfa-login-codigo").value = "";
-    document.getElementById("mfa-login-desafio").classList.add("hidden");
+    document.getElementById("mfa-screen").classList.add("hidden");
     resolverMFAAtivo = null;
+    // onAuthStateChanged cuida de mostrar o app a partir daqui.
   } catch (e) {
-    document.getElementById("login-erro").textContent = "Código inválido ou expirado. Tente de novo.";
+    document.getElementById("mfa-erro").textContent = "Código inválido ou expirado. Tente de novo.";
     document.getElementById("input-mfa-login-codigo").value = "";
+    document.getElementById("input-mfa-login-codigo").focus();
   }
+});
+
+document.getElementById("btn-voltar-login").addEventListener("click", () => {
+  // Volta pro login do zero — limpa tudo, útil pra trocar de usuário.
+  resolverMFAAtivo = null;
+  document.getElementById("mfa-screen").classList.add("hidden");
+  document.getElementById("login-screen").classList.remove("hidden");
+  document.getElementById("input-mfa-login-codigo").value = "";
+  document.getElementById("mfa-erro").textContent = "";
+  document.getElementById("login-email").value = "";
+  document.getElementById("login-senha").value = "";
+  document.getElementById("login-erro").textContent = "";
+  document.getElementById("forca-senha-wrapper").classList.add("hidden");
 });
 
 // "Criar conta" fica desativado por padrão (app pessoal, sem cadastro público).
@@ -232,7 +255,8 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("login-senha").value = "";
     document.getElementById("login-erro").textContent = "";
     document.getElementById("forca-senha-wrapper").classList.add("hidden");
-    document.getElementById("mfa-login-desafio").classList.add("hidden");
+    document.getElementById("mfa-screen").classList.add("hidden");
+    document.getElementById("mfa-erro").textContent = "";
     document.getElementById("input-mfa-login-codigo").value = "";
     resolverMFAAtivo = null;
   }
