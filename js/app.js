@@ -1,5 +1,6 @@
 // app.js
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { listarFatoresMFA, iniciarCadastroMFA, confirmarCadastroMFA, removerFatorMFA, getResolverMFA, confirmarLoginMFA } from "./mfa.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
@@ -155,13 +156,33 @@ document.getElementById("login-senha").addEventListener("input", (e) => {
   document.getElementById("forca-senha-label").textContent = nivel.label;
 });
 
+let resolverMFAAtivo = null;
+
 document.getElementById("btn-login").addEventListener("click", async () => {
   const email = document.getElementById("login-email").value;
   const senha = document.getElementById("login-senha").value;
+  document.getElementById("login-erro").textContent = "";
   try {
     await signInWithEmailAndPassword(auth, email, senha);
   } catch (e) {
-    document.getElementById("login-erro").textContent = "E-mail ou senha inválidos.";
+    if (e.code === "auth/multi-factor-auth-required") {
+      resolverMFAAtivo = getResolverMFA(e);
+      document.getElementById("mfa-login-desafio").classList.remove("hidden");
+      document.getElementById("input-mfa-login-codigo").focus();
+    } else {
+      document.getElementById("login-erro").textContent = "E-mail ou senha inválidos.";
+    }
+  }
+});
+
+document.getElementById("btn-confirmar-mfa-login").addEventListener("click", async () => {
+  const codigo = document.getElementById("input-mfa-login-codigo").value;
+  if (!codigo || !resolverMFAAtivo) return;
+  try {
+    await confirmarLoginMFA(resolverMFAAtivo, codigo);
+    document.getElementById("mfa-login-desafio").classList.add("hidden");
+  } catch (e) {
+    document.getElementById("login-erro").textContent = "Código inválido ou expirado. Tente de novo.";
   }
 });
 
@@ -222,6 +243,7 @@ function trocarTela(nome) {
   if (nome === "dashboard") {
     carregarDashboard();
     inicializarLembreteUI();
+    carregarMFA();
   }
   if (nome === "trilha") carregarTrilha();
   if (nome === "tarefas") carregarTarefas();
@@ -912,15 +934,34 @@ document.getElementById("financas-tipo-tabs").addEventListener("click", (e) => {
   document.querySelectorAll("#financas-tipo-tabs .cat-tab").forEach((b) => b.classList.toggle("selecionada", b === btn));
 });
 
+let valoresOcultos = localStorage.getItem("ccna-study-os-ocultar-valores") === "1";
+
+function formatarValor(v) {
+  return valoresOcultos ? "••••" : `R$ ${v.toFixed(2)}`;
+}
+function formatarValorInteiro(v) {
+  return valoresOcultos ? "••••" : `R$ ${v.toFixed(0)}`;
+}
+
+document.getElementById("btn-toggle-valores").addEventListener("click", () => {
+  valoresOcultos = !valoresOcultos;
+  localStorage.setItem("ccna-study-os-ocultar-valores", valoresOcultos ? "1" : "0");
+  document.getElementById("icon-olho-aberto").classList.toggle("hidden", valoresOcultos);
+  document.getElementById("icon-olho-fechado").classList.toggle("hidden", !valoresOcultos);
+  carregarFinancas();
+});
+
 async function carregarFinancas() {
   const resumo = await getResumoDoMes(currentUser.uid);
+  document.getElementById("icon-olho-aberto").classList.toggle("hidden", valoresOcultos);
+  document.getElementById("icon-olho-fechado").classList.toggle("hidden", !valoresOcultos);
 
   document.getElementById("financas-resumo-texto").textContent = `${resumo.transacoes.length} transações neste mês`;
 
   document.getElementById("financas-stats").innerHTML = `
-    <div class="stat-card"><div class="valor" style="color:var(--sage);">R$ ${resumo.totalEntradas.toFixed(0)}</div><div class="label">Entradas</div></div>
-    <div class="stat-card"><div class="valor" style="color:var(--terracotta);">R$ ${resumo.totalSaidas.toFixed(0)}</div><div class="label">Saídas</div></div>
-    <div class="stat-card"><div class="valor">R$ ${resumo.saldo.toFixed(0)}</div><div class="label">Saldo</div></div>
+    <div class="stat-card"><div class="valor" style="color:var(--sage);">${formatarValorInteiro(resumo.totalEntradas)}</div><div class="label">Entradas</div></div>
+    <div class="stat-card"><div class="valor" style="color:var(--terracotta);">${formatarValorInteiro(resumo.totalSaidas)}</div><div class="label">Saídas</div></div>
+    <div class="stat-card"><div class="valor">${formatarValorInteiro(resumo.saldo)}</div><div class="label">Saldo</div></div>
   `;
 
   const maiorGrupo = Math.max(1, ...Object.values(resumo.porGrupo));
@@ -930,15 +971,15 @@ async function carregarFinancas() {
       .map(
         ([grupo, valor]) => `
       <div class="domain-bar">
-        <div class="head"><span>${GRUPO_LABEL[grupo] || grupo}</span><span>R$ ${valor.toFixed(0)}</span></div>
-        <div class="track"><div class="fill" style="width:${Math.round((valor / maiorGrupo) * 100)}%"></div></div>
+        <div class="head"><span>${GRUPO_LABEL[grupo] || grupo}</span><span>${formatarValorInteiro(valor)}</span></div>
+        <div class="track"><div class="fill" style="width:${valoresOcultos ? 0 : Math.round((valor / maiorGrupo) * 100)}%"></div></div>
       </div>`
       )
       .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum gasto registrado ainda.</p>`;
 
   if (resumo.metaGasto) {
-    document.getElementById("financas-meta-texto").textContent = `R$ ${resumo.totalSaidas.toFixed(0)} de R$ ${resumo.metaGasto.toFixed(0)} gastos`;
-    document.getElementById("financas-meta-fill").style.width = `${resumo.percentualDaMeta}%`;
+    document.getElementById("financas-meta-texto").textContent = `${formatarValorInteiro(resumo.totalSaidas)} de ${formatarValorInteiro(resumo.metaGasto)} gastos`;
+    document.getElementById("financas-meta-fill").style.width = `${valoresOcultos ? 0 : resumo.percentualDaMeta}%`;
     document.getElementById("financas-meta-fill").style.background = resumo.percentualDaMeta >= 90 ? "var(--terracotta)" : "var(--sage)";
     document.getElementById("input-meta-financas").value = resumo.metaGasto;
   } else {
@@ -955,7 +996,7 @@ async function carregarFinancas() {
           <div>${escapeHtml(t.descricao) || GRUPO_LABEL[t.grupo] || t.grupo}</div>
           <div class="transacao-grupo">${GRUPO_LABEL[t.grupo] || t.grupo} · ${t.data}</div>
         </div>
-        <span class="transacao-valor ${t.tipo}">${t.tipo === "entrada" ? "+" : "-"}R$ ${t.valor.toFixed(2)}</span>
+        <span class="transacao-valor ${t.tipo}">${valoresOcultos ? "••••" : `${t.tipo === "entrada" ? "+" : "-"}R$ ${t.valor.toFixed(2)}`}</span>
         <button class="tarefa-remover" data-remover-transacao="${t.id}">✕</button>
       </div>`
       )
@@ -970,7 +1011,7 @@ async function carregarFinancas() {
         <div class="gastofixo-dia">${g.diaVencimento}</div>
         <div class="transacao-info">
           <div>${escapeHtml(g.descricao)}</div>
-          <div class="transacao-grupo">R$ ${g.valorMedio.toFixed(2)}/mês</div>
+          <div class="transacao-grupo">${formatarValor(g.valorMedio)}/mês</div>
         </div>
         <button class="tarefa-remover" data-remover-gastofixo="${g.id}">✕</button>
       </div>`
@@ -1088,3 +1129,59 @@ document.getElementById("lista-gastos-fixos").addEventListener("click", async (e
   await removerGastoFixo(currentUser.uid, btn.dataset.removerGastofixo);
   await carregarFinancas();
 });
+
+// ---------- MFA (autenticação de dois fatores) ----------
+
+let totpSecretPendente = null;
+
+async function carregarMFA() {
+  const fatores = listarFatoresMFA(currentUser);
+  const statusEl = document.getElementById("mfa-status");
+  const areaEl = document.getElementById("mfa-area");
+
+  if (fatores.length > 0) {
+    statusEl.textContent = "✅ Dois fatores ativado — seu login pede o código do app autenticador.";
+    areaEl.innerHTML = `<button class="btn-secondary" id="btn-remover-mfa" style="color:var(--terracotta); border-color:var(--terracotta);">Desativar dois fatores</button>`;
+    document.getElementById("btn-remover-mfa").addEventListener("click", async () => {
+      await removerFatorMFA(currentUser, fatores[0].uid);
+      await carregarMFA();
+    });
+  } else {
+    statusEl.textContent = "🔓 Dois fatores desativado. Recomendado, especialmente com dados financeiros no app.";
+    areaEl.innerHTML = `<button class="btn-primary" id="btn-ativar-mfa">Ativar dois fatores</button>`;
+    document.getElementById("btn-ativar-mfa").addEventListener("click", iniciarFluxoAtivacaoMFA);
+  }
+}
+
+async function iniciarFluxoAtivacaoMFA() {
+  const areaEl = document.getElementById("mfa-area");
+  try {
+    const { totpSecret, secretKey } = await iniciarCadastroMFA(currentUser);
+    totpSecretPendente = totpSecret;
+
+    areaEl.innerHTML = `
+      <p style="font-size:13px; margin-bottom:8px;">1. Abra o Google Authenticator, Authy ou similar e adicione uma conta manualmente com esta chave:</p>
+      <div style="font-family:var(--font-mono); font-size:14px; background:var(--surface-quiet); padding:10px; border-radius:8px; margin-bottom:12px; word-break:break-all; user-select:all;">${secretKey}</div>
+      <p style="font-size:13px; margin-bottom:8px;">2. Digite o código de 6 dígitos que o app gerou:</p>
+      <input id="input-mfa-cadastro-codigo" type="text" inputmode="numeric" maxlength="6" placeholder="000000" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); text-align:center; letter-spacing:4px; font-family:var(--font-mono); margin-bottom:10px;" />
+      <button class="btn-primary" id="btn-confirmar-cadastro-mfa">Confirmar e ativar</button>
+    `;
+
+    document.getElementById("btn-confirmar-cadastro-mfa").addEventListener("click", async () => {
+      const codigo = document.getElementById("input-mfa-cadastro-codigo").value;
+      if (!codigo) return;
+      try {
+        await confirmarCadastroMFA(currentUser, totpSecretPendente, codigo);
+        await carregarMFA();
+      } catch (e) {
+        areaEl.insertAdjacentHTML("beforeend", `<p style="color:var(--terracotta); font-size:13px; margin-top:8px;">Código inválido. Tente gerar um novo código no app e digitar de novo.</p>`);
+      }
+    });
+  } catch (e) {
+    if (e.code === "auth/requires-recent-login") {
+      areaEl.innerHTML = `<p style="color:var(--terracotta); font-size:13px;">Por segurança, ative o MFA logo após logar. Saia e entre de novo, depois tente ativar.</p>`;
+    } else {
+      areaEl.innerHTML = `<p style="color:var(--terracotta); font-size:13px;">Não foi possível iniciar o cadastro. Tente novamente.</p>`;
+    }
+  }
+}
