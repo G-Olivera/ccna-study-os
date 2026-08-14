@@ -1,5 +1,5 @@
 // app.js
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import { listarFatoresMFA, iniciarCadastroMFA, confirmarCadastroMFA, removerFatorMFA, getResolverMFA, confirmarLoginMFA } from "./mfa.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
@@ -1146,11 +1146,26 @@ async function carregarMFA() {
       await removerFatorMFA(currentUser, fatores[0].uid);
       await carregarMFA();
     });
-  } else {
-    statusEl.textContent = "🔓 Dois fatores desativado. Recomendado, especialmente com dados financeiros no app.";
-    areaEl.innerHTML = `<button class="btn-primary" id="btn-ativar-mfa">Ativar dois fatores</button>`;
-    document.getElementById("btn-ativar-mfa").addEventListener("click", iniciarFluxoAtivacaoMFA);
+    return;
   }
+
+  if (!currentUser.emailVerified) {
+    statusEl.textContent = "📧 Antes de ativar o MFA, o Firebase exige que seu e-mail esteja verificado.";
+    areaEl.innerHTML = `<button class="btn-primary" id="btn-verificar-email">Enviar e-mail de verificação</button><p id="mfa-email-status" style="font-size:12px; margin-top:8px; color:var(--ink-soft);"></p>`;
+    document.getElementById("btn-verificar-email").addEventListener("click", async () => {
+      try {
+        await sendEmailVerification(currentUser);
+        document.getElementById("mfa-email-status").textContent = "E-mail enviado! Abra sua caixa de entrada, clique no link, depois volte aqui e saia/entre de novo pra atualizar.";
+      } catch (e) {
+        document.getElementById("mfa-email-status").textContent = "Não foi possível enviar agora. Tente de novo em alguns minutos.";
+      }
+    });
+    return;
+  }
+
+  statusEl.textContent = "🔓 Dois fatores desativado. Recomendado, especialmente com dados financeiros no app.";
+  areaEl.innerHTML = `<button class="btn-primary" id="btn-ativar-mfa">Ativar dois fatores</button>`;
+  document.getElementById("btn-ativar-mfa").addEventListener("click", iniciarFluxoAtivacaoMFA);
 }
 
 async function iniciarFluxoAtivacaoMFA() {
