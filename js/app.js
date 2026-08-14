@@ -43,6 +43,7 @@ import {
   removerCartao,
 } from "./finance.js";
 import { escapeHtml } from "./utils.js";
+import { LIVROS_DISPONIVEIS, abrirLivro, proximaPagina, paginaAnterior } from "./reader.js";
 import {
   iniciarCronometro,
   pausarCronometro,
@@ -247,6 +248,7 @@ function trocarTela(nome) {
   if (nome === "trilha") carregarTrilha();
   if (nome === "tarefas") carregarTarefas();
   if (nome === "financas") carregarFinancas();
+  if (nome === "livro") carregarLivro();
 }
 
 document.getElementById("btn-abrir-config").addEventListener("click", () => {
@@ -1212,3 +1214,47 @@ async function iniciarFluxoAtivacaoMFA() {
     }
   }
 }
+
+// ---------- LIVRO (leitor de PDF pessoal) ----------
+
+async function carregarLivro() {
+  const statusEl = document.getElementById("livro-status");
+  const vazioEl = document.getElementById("livro-vazio");
+  const leitorEl = document.getElementById("livro-leitor");
+  const canvas = document.getElementById("livro-canvas");
+
+  if (LIVROS_DISPONIVEIS.length === 0) {
+    statusEl.textContent = "";
+    vazioEl.classList.remove("hidden");
+    leitorEl.classList.add("hidden");
+    return;
+  }
+
+  vazioEl.classList.add("hidden");
+  leitorEl.classList.remove("hidden");
+  statusEl.textContent = "Carregando…";
+
+  try {
+    await abrirLivro(currentUser.uid, LIVROS_DISPONIVEIS[0].id, canvas, (pagina, total) => {
+      document.getElementById("livro-pagina-texto").textContent = `Página ${pagina} de ${total}`;
+      statusEl.textContent = LIVROS_DISPONIVEIS[0].titulo;
+    });
+  } catch (e) {
+    statusEl.textContent = "Não consegui abrir o livro. Confira se o arquivo foi adicionado na pasta /livros do repositório.";
+    leitorEl.classList.add("hidden");
+  }
+}
+
+document.getElementById("btn-pagina-anterior").addEventListener("click", async () => {
+  const canvas = document.getElementById("livro-canvas");
+  await paginaAnterior(currentUser.uid, canvas, (pagina, total) => {
+    document.getElementById("livro-pagina-texto").textContent = `Página ${pagina} de ${total}`;
+  });
+});
+
+document.getElementById("btn-pagina-proxima").addEventListener("click", async () => {
+  const canvas = document.getElementById("livro-canvas");
+  await proximaPagina(currentUser.uid, canvas, (pagina, total) => {
+    document.getElementById("livro-pagina-texto").textContent = `Página ${pagina} de ${total}`;
+  });
+});
