@@ -181,9 +181,13 @@ document.getElementById("btn-confirmar-mfa-login").addEventListener("click", asy
   if (!codigo || !resolverMFAAtivo) return;
   try {
     await confirmarLoginMFA(resolverMFAAtivo, codigo);
+    // Limpa o código assim que valida — não deixa resquício no campo depois do login.
+    document.getElementById("input-mfa-login-codigo").value = "";
     document.getElementById("mfa-login-desafio").classList.add("hidden");
+    resolverMFAAtivo = null;
   } catch (e) {
     document.getElementById("login-erro").textContent = "Código inválido ou expirado. Tente de novo.";
+    document.getElementById("input-mfa-login-codigo").value = "";
   }
 });
 
@@ -221,6 +225,16 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("login-screen").classList.remove("hidden");
     document.getElementById("app").classList.add("hidden");
     if (timerInatividade) clearTimeout(timerInatividade);
+
+    // Limpa qualquer resíduo da sessão anterior — e-mail, senha, código MFA e
+    // mensagens de erro não devem sobreviver a um logout.
+    document.getElementById("login-email").value = "";
+    document.getElementById("login-senha").value = "";
+    document.getElementById("login-erro").textContent = "";
+    document.getElementById("forca-senha-wrapper").classList.add("hidden");
+    document.getElementById("mfa-login-desafio").classList.add("hidden");
+    document.getElementById("input-mfa-login-codigo").value = "";
+    resolverMFAAtivo = null;
   }
 });
 
