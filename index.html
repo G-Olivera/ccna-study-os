@@ -350,14 +350,30 @@
 
   <!-- TELA: LIVRO -->
   <section id="tela-livro" class="tela hidden">
-    <h1 style="margin-bottom: 4px;">Livro</h1>
-    <p style="margin-bottom: 16px; font-size:13px;" id="livro-status">Carregando…</p>
+    <!-- VISÃO: BIBLIOTECA -->
+    <div id="livro-biblioteca-view">
+      <h1 style="margin-bottom: 4px;">Biblioteca</h1>
+      <p style="margin-bottom: 16px; font-size:13px; color:var(--ink-soft);">Seus livros de estudo, com progresso de leitura salvo automaticamente.</p>
 
-    <div id="livro-vazio" class="task-card hidden">
-      <p>Nenhum livro adicionado ainda. Veja como adicionar um na conversa com o Claude, ou no arquivo js/reader.js.</p>
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <input id="input-busca-livro" type="text" placeholder="Buscar por nome…" style="flex:2; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body);" />
+        <select id="select-categoria-livro" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body);">
+          <option value="">Todas categorias</option>
+        </select>
+      </div>
+
+      <div id="livro-vazio" class="task-card hidden">
+        <p>Nenhum livro adicionado ainda. Adicione um PDF na pasta <code>/livros</code> do repositório e cadastre ele em <code>js/reader.js</code> (array LIVROS_DISPONIVEIS).</p>
+      </div>
+
+      <div id="grid-livros" class="grid-livros"></div>
     </div>
 
-    <div id="livro-leitor" class="hidden">
+    <!-- VISÃO: LEITURA (abre ao clicar num livro) -->
+    <div id="livro-leitura-view" class="hidden">
+      <button class="btn-secondary" id="btn-voltar-biblioteca" style="margin-bottom:12px;">← Voltar pra biblioteca</button>
+      <p style="margin-bottom: 12px; font-size:13px; color:var(--ink-soft);" id="livro-status"></p>
+
       <div class="livro-canvas-wrapper">
         <canvas id="livro-canvas"></canvas>
       </div>
