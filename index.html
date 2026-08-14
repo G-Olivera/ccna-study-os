@@ -20,8 +20,8 @@
 <div id="login-screen" class="login-screen">
   <h1>CCNA Study OS</h1>
   <p class="tagline">Uma tarefa por vez. Sem sobrecarga.</p>
-  <input id="login-email" type="email" placeholder="E-mail" />
-  <input id="login-senha" type="password" placeholder="Senha" />
+  <input id="login-email" type="email" placeholder="E-mail" autocomplete="username" />
+  <input id="login-senha" type="password" placeholder="Senha" autocomplete="current-password" />
   <div id="forca-senha-wrapper" class="forca-senha-wrapper hidden">
     <div class="forca-senha-track"><div class="forca-senha-fill" id="forca-senha-fill"></div></div>
     <span class="forca-senha-label" id="forca-senha-label"></span>
@@ -32,12 +32,17 @@
        outra conta (ex: outro e-mail seu), reative temporariamente esse botão:
   <button class="btn-secondary" id="btn-signup">Criar conta</button>
   -->
-  <div id="mfa-login-desafio" class="hidden" style="margin-top:16px;">
-    <p style="font-size:13px; margin-bottom:8px; text-align:center;">Digite o código de 6 dígitos do seu app autenticador:</p>
-    <input id="input-mfa-login-codigo" type="text" inputmode="numeric" maxlength="6" placeholder="000000" style="text-align:center; letter-spacing:4px; font-family:var(--font-mono);" />
-    <button class="btn-primary" id="btn-confirmar-mfa-login" style="margin-top:10px;">Confirmar</button>
-  </div>
   <p id="login-erro" style="color:var(--terracotta); font-size:13px; margin-top:12px; text-align:center;"></p>
+</div>
+
+<!-- ===== MFA (tela separada, só aparece depois de login+senha corretos) ===== -->
+<div id="mfa-screen" class="login-screen hidden">
+  <h1 style="font-size:22px;">Verificação em duas etapas</h1>
+  <p class="tagline">Digite o código de 6 dígitos do seu aplicativo autenticador.</p>
+  <input id="input-mfa-login-codigo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="000000" style="text-align:center; letter-spacing:6px; font-family:var(--font-mono); font-size:20px;" />
+  <button class="btn-primary" id="btn-confirmar-mfa-login" style="margin-top:14px;">Confirmar</button>
+  <button class="btn-secondary" id="btn-voltar-login">Voltar para o login</button>
+  <p id="mfa-erro" style="color:var(--terracotta); font-size:13px; margin-top:12px; text-align:center;"></p>
 </div>
 
 <!-- ===== APP ===== -->
