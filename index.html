@@ -355,6 +355,10 @@
       <h1 style="margin-bottom: 4px;">Biblioteca</h1>
       <p style="margin-bottom: 16px; font-size:13px; color:var(--ink-soft);">Seus livros de estudo, com progresso de leitura salvo automaticamente.</p>
 
+      <input type="file" id="input-arquivo-livro" accept="application/pdf" class="hidden" />
+      <button class="btn-primary" id="btn-adicionar-livro" style="margin-bottom:16px;">+ Adicionar livro (PDF)</button>
+      <p id="livro-add-status" style="font-size:12px; color:var(--ink-soft); margin-bottom:12px;"></p>
+
       <div style="display:flex; gap:8px; margin-bottom:16px;">
         <input id="input-busca-livro" type="text" placeholder="Buscar por nome…" style="flex:2; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body);" />
         <select id="select-categoria-livro" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body);">
@@ -363,7 +367,7 @@
       </div>
 
       <div id="livro-vazio" class="task-card hidden">
-        <p>Nenhum livro adicionado ainda. Adicione um PDF na pasta <code>/livros</code> do repositório e cadastre ele em <code>js/reader.js</code> (array LIVROS_DISPONIVEIS).</p>
+        <p>Nenhum livro adicionado ainda. Toque em "Adicionar livro" acima, ou suba um PDF na pasta <code>/livros</code> do repositório e cadastre ele em <code>js/reader.js</code>.</p>
       </div>
 
       <div id="grid-livros" class="grid-livros"></div>
