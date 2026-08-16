@@ -43,7 +43,7 @@ import {
   removerCartao,
 } from "./finance.js";
 import { escapeHtml } from "./utils.js";
-import { LIVROS_DISPONIVEIS, abrirLivro, proximaPagina, paginaAnterior, listarProgressoLeituras, toggleFavorito } from "./reader.js";
+import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, removerLivroLocal, removerProgressoLeitura } from "./reader.js";
 import {
   iniciarCronometro,
   pausarCronometro,
@@ -1258,6 +1258,7 @@ async function iniciarFluxoAtivacaoMFA() {
 // ---------- BIBLIOTECA ----------
 
 let progressoLivrosCache = {};
+let todosLivrosCache = [];
 let filtroTextoLivro = "";
 let filtroCategoriaLivro = "";
 
@@ -1277,7 +1278,7 @@ function iniciaisTitulo(titulo) {
 
 function popularFiltroCategorias() {
   const select = document.getElementById("select-categoria-livro");
-  const categorias = [...new Set(LIVROS_DISPONIVEIS.map((l) => l.categoria).filter(Boolean))];
+  const categorias = [...new Set(todosLivrosCache.map((l) => l.categoria).filter(Boolean))];
   select.innerHTML = `<option value="">Todas categorias</option>` + categorias.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
 }
 
@@ -1285,14 +1286,14 @@ function renderBiblioteca() {
   const grid = document.getElementById("grid-livros");
   const vazioEl = document.getElementById("livro-vazio");
 
-  if (LIVROS_DISPONIVEIS.length === 0) {
+  if (todosLivrosCache.length === 0) {
     vazioEl.classList.remove("hidden");
     grid.innerHTML = "";
     return;
   }
   vazioEl.classList.add("hidden");
 
-  const filtrados = LIVROS_DISPONIVEIS.filter((l) => {
+  const filtrados = todosLivrosCache.filter((l) => {
     const bateTexto = !filtroTextoLivro || l.titulo.toLowerCase().includes(filtroTextoLivro.toLowerCase());
     const bateCategoria = !filtroCategoriaLivro || l.categoria === filtroCategoriaLivro;
     return bateTexto && bateCategoria;
@@ -1310,6 +1311,7 @@ function renderBiblioteca() {
         <div class="livro-capa" style="background:${livro.corCapa}; color:${corTexto};">
           ${iniciaisTitulo(livro.titulo)}
           <button class="btn-favorito" data-favorito="${livro.id}" data-favorito-atual="${favorito}">${favorito ? "★" : "☆"}</button>
+          ${livro.origem === "local" ? `<span class="livro-tag-local">Neste aparelho</span>` : ""}
         </div>
         <div class="livro-info">
           <div class="livro-titulo">${escapeHtml(livro.titulo)}</div>
@@ -1321,6 +1323,7 @@ function renderBiblioteca() {
               : `<div class="livro-progresso-texto">Ainda não iniciado</div>`
           }
           <button class="btn-primary" data-abrir-livro="${livro.id}">Abrir livro</button>
+          ${livro.origem === "local" ? `<button class="btn-secondary" data-remover-livro="${livro.id}" style="margin-top:6px; color:var(--terracotta); border-color:var(--terracotta);">Remover</button>` : ""}
         </div>
       </div>`;
     })
@@ -1328,12 +1331,32 @@ function renderBiblioteca() {
 }
 
 async function carregarLivro() {
+  todosLivrosCache = await listarTodosLivros().catch(() => []);
   progressoLivrosCache = await listarProgressoLeituras(currentUser.uid).catch(() => ({}));
   popularFiltroCategorias();
   renderBiblioteca();
   document.getElementById("livro-biblioteca-view").classList.remove("hidden");
   document.getElementById("livro-leitura-view").classList.add("hidden");
 }
+
+document.getElementById("btn-adicionar-livro").addEventListener("click", () => {
+  document.getElementById("input-arquivo-livro").click();
+});
+
+document.getElementById("input-arquivo-livro").addEventListener("change", async (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+  const statusEl = document.getElementById("livro-add-status");
+  statusEl.textContent = "Salvando no aparelho…";
+  try {
+    await adicionarLivroLocal(arquivo);
+    statusEl.textContent = "Livro adicionado! (salvo só neste aparelho)";
+    await carregarLivro();
+  } catch (err) {
+    statusEl.textContent = "Não consegui salvar esse arquivo. Confirme que é um PDF.";
+  }
+  e.target.value = "";
+});
 
 document.getElementById("input-busca-livro").addEventListener("input", (e) => {
   filtroTextoLivro = e.target.value;
@@ -1348,6 +1371,7 @@ document.getElementById("select-categoria-livro").addEventListener("change", (e)
 document.getElementById("grid-livros").addEventListener("click", async (e) => {
   const btnFavorito = e.target.closest("[data-favorito]");
   const btnAbrir = e.target.closest("[data-abrir-livro]");
+  const btnRemover = e.target.closest("[data-remover-livro]");
 
   if (btnFavorito) {
     const atual = btnFavorito.dataset.favoritoAtual === "true";
@@ -1356,6 +1380,10 @@ document.getElementById("grid-livros").addEventListener("click", async (e) => {
     renderBiblioteca();
   } else if (btnAbrir) {
     await abrirLeitorDoLivro(btnAbrir.dataset.abrirLivro);
+  } else if (btnRemover) {
+    await removerLivroLocal(btnRemover.dataset.removerLivro);
+    await removerProgressoLeitura(currentUser.uid, btnRemover.dataset.removerLivro).catch(() => {});
+    await carregarLivro();
   }
 });
 
@@ -1366,7 +1394,7 @@ document.getElementById("btn-voltar-biblioteca").addEventListener("click", () =>
 });
 
 async function abrirLeitorDoLivro(livroId) {
-  const livro = LIVROS_DISPONIVEIS.find((l) => l.id === livroId);
+  const livro = todosLivrosCache.find((l) => l.id === livroId);
   const statusEl = document.getElementById("livro-status");
   const canvas = document.getElementById("livro-canvas");
 
@@ -1375,12 +1403,12 @@ async function abrirLeitorDoLivro(livroId) {
   statusEl.textContent = "Carregando…";
 
   try {
-    await abrirLivro(currentUser.uid, livroId, canvas, (pagina, total) => {
+    await abrirLivro(currentUser.uid, livro, canvas, (pagina, total) => {
       document.getElementById("livro-pagina-texto").textContent = `Página ${pagina} de ${total}`;
       statusEl.textContent = livro.titulo;
     });
   } catch (e) {
-    statusEl.textContent = "Não consegui abrir o livro. Confira se o arquivo foi adicionado na pasta /livros do repositório.";
+    statusEl.textContent = "Não consegui abrir o livro. Confira se o arquivo ainda está disponível.";
   }
 }
 
