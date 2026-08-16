@@ -253,6 +253,10 @@ button { font-family: var(--font-body); cursor: pointer; }
   width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   color: white; font-size: 15px;
 }
+.livro-tag-local {
+  position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.35); color: white;
+  font-size: 9px; padding: 3px 7px; border-radius: 999px; font-family: var(--font-body); font-weight: 600;
+}
 .livro-info { padding: 10px 12px 12px; flex: 1; display: flex; flex-direction: column; }
 .livro-titulo { font-size: 13px; font-weight: 600; line-height: 1.3; margin-bottom: 2px; }
 .livro-meta { font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
