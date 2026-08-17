@@ -150,6 +150,12 @@ export async function createTransacao(uid, transacao) {
   });
 }
 
+/** Edita uma transação existente (usado por editar/duplicar). */
+export async function updateTransacao(uid, transacaoId, dados) {
+  const ref = doc(db, "users", uid, "transacoes", transacaoId);
+  await setDoc(ref, { ...dados, atualizadaEm: serverTimestamp() }, { merge: true });
+}
+
 /** Busca as transações de um mês específico ("YYYY-MM"). */
 export async function getTransacoesByMonth(uid, anoMes) {
   // Sem orderBy no Firestore de propósito — combinar where + orderBy em campos
@@ -178,6 +184,26 @@ export async function getGastosFixos(uid) {
 
 export async function deleteGastoFixo(uid, gastoFixoId) {
   const ref = doc(db, "users", uid, "gastosFixos", gastoFixoId);
+  await deleteDoc(ref);
+}
+
+/** Categorias financeiras (independentes de Grupo — "onde o dinheiro foi usado"). */
+export async function createCategoriaFinanceira(uid, categoria) {
+  return addDoc(userSub(uid, "categoriasFinanceiras"), categoria);
+}
+
+export async function getCategoriasFinanceiras(uid) {
+  const snap = await getDocs(userSub(uid, "categoriasFinanceiras"));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function updateCategoriaFinanceira(uid, categoriaId, dados) {
+  const ref = doc(db, "users", uid, "categoriasFinanceiras", categoriaId);
+  await setDoc(ref, dados, { merge: true });
+}
+
+export async function deleteCategoriaFinanceira(uid, categoriaId) {
+  const ref = doc(db, "users", uid, "categoriasFinanceiras", categoriaId);
   await deleteDoc(ref);
 }
 

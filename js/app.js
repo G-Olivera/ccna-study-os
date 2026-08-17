@@ -8,6 +8,7 @@ import { seedContentIfNeeded, getModulosResumo } from "./seed-content.js";
 import { seedQuestionsIfNeeded } from "./seed-questions.js";
 import { seedLabsIfNeeded } from "./seed-labs.js";
 import { seedFlashcardsIfNeeded } from "./seed-flashcards.js";
+import { seedCategoriasIfNeeded } from "./finance.js";
 import { generateDailyPlan, markPlanSectionComplete } from "./daily-plan.js";
 import { getDueCards, reviewAndSave, QUALITY } from "./srs-engine.js";
 import { getDashboardData, getHistoricoStreak } from "./dashboard.js";
@@ -238,6 +239,7 @@ onAuthStateChanged(auth, async (user) => {
     seedQuestionsIfNeeded().catch(() => {});
     seedLabsIfNeeded().catch(() => {});
     seedFlashcardsIfNeeded().catch(() => {});
+    seedCategoriasIfNeeded(user.uid).catch(() => {});
 
     await carregarHoje();
     await inicializarCronometroUI();

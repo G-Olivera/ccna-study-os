@@ -1,10 +1,12 @@
 // finance.js
-// Controle financeiro pessoal — captura rápida, resumo do mês, gastos fixos,
-// cartões e meta de gasto. Inspirado na estrutura que você já usa e valida
-// numa planilha pessoal (grupos, tipos, formas de pagamento).
+// Fachada do módulo financeiro — reexporta os submódulos de js/finance/*.js
+// e mantém as funções de captura rápida (transações, gastos fixos, cartões,
+// meta). Dividido em arquivos menores desde a Fase 2 da reformulação, pra
+// não deixar tudo dependendo de um arquivo gigante só.
 
 import {
   createTransacao,
+  updateTransacao,
   getTransacoesByMonth,
   deleteTransacao,
   createGastoFixo,
@@ -17,43 +19,94 @@ import {
   getMetaGasto,
 } from "./data-schema.js";
 
-export const GRUPOS = {
-  FIXOS: "fixos",
-  ASSINATURA: "assinatura",
-  VARIAVEIS: "variaveis",
-  TEMPORARIAS: "temporarias",
-  FATURA: "fatura",
-  RECEITA: "receita",
-};
+export {
+  GRUPOS,
+  GRUPO_LABEL,
+  GRUPOS_SAIDA,
+  GRUPOS_ENTRADA,
+  FORMAS_PAGAMENTO,
+  OPCOES_PARCELAMENTO,
+  OPCOES_RECORRENCIA,
+  CATEGORIAS_PADRAO,
+} from "./finance/constants.js";
 
-export const GRUPO_LABEL = {
-  fixos: "🏠 Gastos Fixos",
-  assinatura: "📺 Assinatura",
-  variaveis: "💸 Gastos Variáveis",
-  temporarias: "🧾 Despesas Temporárias",
-  fatura: "💳 Pagamento de Fatura",
-  receita: "💵 Ganhos",
-};
+export {
+  anoMesDeHoje,
+  formatarAnoMes,
+  deslocarAnoMes,
+  listarAnoMesEntre,
+  faixaRapida,
+  formatarMoeda,
+  formatarDataBR,
+} from "./finance/period.js";
 
-export const FORMAS_PAGAMENTO = ["Débito", "Crédito", "Pix", "Dinheiro"];
+export {
+  seedCategoriasIfNeeded,
+  listarCategorias,
+  criarCategoria,
+  editarCategoria,
+  alternarAtivaCategoria,
+  removerCategoria,
+} from "./finance/categories.js";
 
-function anoMesDeHoje() {
-  return new Date().toISOString().slice(0, 7); // "YYYY-MM"
-}
+import { anoMesDeHoje as _anoMesDeHoje } from "./finance/period.js";
 
-/** Registra uma transação rápida (entrada ou saída). */
-export async function adicionarTransacao(uid, { tipo, grupo, categoria, descricao, valor, formaPagamento, data }) {
+/**
+ * Registra uma transação. Aceita os campos novos (categoriaId, cartaoId,
+ * parcela, totalParcelas, valorParcela, transacaoOriginalId, recorrente,
+ * observacoes) além dos já existentes — todos opcionais, então chamadas
+ * antigas continuam funcionando sem alteração (compatibilidade com a UI
+ * atual, que será substituída na Fase 3).
+ */
+export async function adicionarTransacao(uid, dadosTransacao) {
+  const {
+    tipo,
+    grupo,
+    categoria, // texto livre legado — mantido por compatibilidade com dados antigos
+    categoriaId, // novo: referência à coleção categoriasFinanceiras
+    descricao,
+    valor,
+    formaPagamento,
+    data,
+    cartaoId,
+    parcela,
+    totalParcelas,
+    valorParcela,
+    transacaoOriginalId,
+    recorrente,
+    observacoes,
+  } = dadosTransacao;
+
   const dataFinal = data || new Date().toISOString().slice(0, 10);
+
   return createTransacao(uid, {
     tipo, // "entrada" | "saida"
     grupo,
     categoria: categoria || "",
+    ...(categoriaId ? { categoriaId } : {}),
     descricao: descricao || "",
     valor: Number(valor) || 0,
     formaPagamento: formaPagamento || "",
     data: dataFinal,
     anoMes: dataFinal.slice(0, 7),
+    ...(cartaoId ? { cartaoId } : {}),
+    ...(parcela ? { parcela: Number(parcela) } : {}),
+    ...(totalParcelas ? { totalParcelas: Number(totalParcelas) } : {}),
+    ...(valorParcela ? { valorParcela: Number(valorParcela) } : {}),
+    ...(transacaoOriginalId ? { transacaoOriginalId } : {}),
+    ...(recorrente !== undefined ? { recorrente: !!recorrente } : {}),
+    ...(observacoes ? { observacoes } : {}),
   });
+}
+
+export async function editarTransacao(uid, transacaoId, dados) {
+  return updateTransacao(uid, transacaoId, dados);
+}
+
+export async function duplicarTransacao(uid, transacao) {
+  // eslint-disable-next-line no-unused-vars
+  const { id, criadaEm, atualizadaEm, ...resto } = transacao;
+  return createTransacao(uid, resto);
 }
 
 export async function removerTransacao(uid, id) {
@@ -61,7 +114,7 @@ export async function removerTransacao(uid, id) {
 }
 
 /** Monta o resumo financeiro de um mês: total entrada, saída, saldo e por grupo. */
-export async function getResumoDoMes(uid, anoMes = anoMesDeHoje()) {
+export async function getResumoDoMes(uid, anoMes = _anoMesDeHoje()) {
   const transacoes = await getTransacoesByMonth(uid, anoMes);
 
   const totalEntradas = transacoes.filter((t) => t.tipo === "entrada").reduce((acc, t) => acc + t.valor, 0);
@@ -74,6 +127,14 @@ export async function getResumoDoMes(uid, anoMes = anoMesDeHoje()) {
       porGrupo[t.grupo] = (porGrupo[t.grupo] || 0) + t.valor;
     });
 
+  const porCategoria = {};
+  transacoes
+    .filter((t) => t.tipo === "saida" && (t.categoriaId || t.categoria))
+    .forEach((t) => {
+      const chave = t.categoriaId || t.categoria;
+      porCategoria[chave] = (porCategoria[chave] || 0) + t.valor;
+    });
+
   const meta = await getMetaGasto(uid, anoMes);
 
   return {
@@ -83,6 +144,7 @@ export async function getResumoDoMes(uid, anoMes = anoMesDeHoje()) {
     totalSaidas,
     saldo: totalEntradas - totalSaidas,
     porGrupo,
+    porCategoria,
     metaGasto: meta?.valorLimite || null,
     percentualDaMeta: meta?.valorLimite ? Math.min(100, Math.round((totalSaidas / meta.valorLimite) * 100)) : null,
   };
@@ -119,6 +181,7 @@ export async function removerCartao(uid, id) {
 
 // ---------- META DE GASTO ----------
 
-export async function definirMetaGasto(uid, valorLimite, anoMes = anoMesDeHoje()) {
+export async function definirMetaGasto(uid, valorLimite, anoMes = _anoMesDeHoje()) {
   return salvarMetaGasto(uid, anoMes, Number(valorLimite));
 }
+
