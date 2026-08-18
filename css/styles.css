@@ -301,6 +301,85 @@ button { font-family: var(--font-body); cursor: pointer; }
 .transacao-grupo { font-size: 11px; color: var(--ink-soft); }
 .gastofixo-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; }
 .gastofixo-dia { width: 34px; height: 34px; border-radius: 50%; background: var(--amber-soft); color: var(--amber); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+
+/* ===== SELETOR DE PERÍODO ===== */
+.periodo-seletor { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 12px; }
+.periodo-nav-btn { background: var(--surface); border: 1px solid var(--border); width: 34px; height: 34px; border-radius: 50%; font-size: 18px; color: var(--ink); display: flex; align-items: center; justify-content: center; }
+#periodo-label { font-family: var(--font-display); font-weight: 700; font-size: 15px; min-width: 140px; text-align: center; }
+
+/* ===== FILTROS DE TRANSAÇÃO ===== */
+.financas-filtros-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.financas-filtros-row select { padding: 8px; border-radius: 8px; border: 1px solid var(--border); font-family: var(--font-body); font-size: 12px; }
+.transacao-acoes { display: flex; gap: 4px; }
+.transacao-acao-btn { background: none; border: none; color: var(--ink-soft); padding: 4px 6px; font-size: 13px; border-radius: 6px; }
+.transacao-acao-btn:hover { background: var(--surface-quiet); }
+.transacao-parcela-tag { font-size: 10px; background: var(--teal-soft); color: var(--teal); padding: 2px 6px; border-radius: 999px; margin-left: 6px; }
+
+/* ===== MODAL DE FORMULÁRIO (nova/editar transação) ===== */
+.modal-form-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 250; animation: fadeIn 0.2s ease;
+}
+.modal-form-conteudo {
+  background: var(--bg); width: 100%; max-width: 640px;
+  max-height: 90vh; overflow-y: auto;
+  border-radius: 20px 20px 0 0; padding: var(--space-5) var(--space-4) var(--space-7);
+  animation: subirModal 0.3s cubic-bezier(.22,1,.36,1);
+}
+@keyframes subirModal { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.campo-label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-soft); margin-bottom: 4px; margin-top: 12px; }
+.campo-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-family: var(--font-body); font-size: 14px; }
+
+/* ===== DASHBOARD: RESUMO, GRÁFICOS ===== */
+.resumo-automatico-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; margin-bottom: 8px; line-height: 1.4; }
+.resumo-automatico-item:last-child { margin-bottom: 0; }
+.donut-legenda-item { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; }
+.donut-legenda-cor { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.comparacao-chip { background: var(--surface-quiet); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 600; }
+.comparacao-chip.positivo { color: var(--terracotta); }
+.comparacao-chip.negativo { color: var(--sage); }
+
+/* ===== ALERTAS DE ORÇAMENTO (Fase 7) ===== */
+.alerta-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--surface-quiet); }
+.meta-categoria-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 8px; }
+.meta-categoria-linha { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 6px; }
+.meta-categoria-track { height: 5px; background: var(--surface-quiet); border-radius: 3px; overflow: hidden; }
+.meta-categoria-fill { height: 100%; border-radius: 3px; }
+
+/* ===== VENCIMENTOS E FATURA (Fases 5/6) ===== */
+.vencimento-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; }
+.vencimento-status-btn { font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; border: none; }
+.status-pago { background: var(--sage-soft); color: var(--sage); }
+.status-pendente { background: var(--amber-soft); color: var(--amber); }
+.status-atrasado { background: var(--terracotta-soft); color: var(--terracotta); }
+.cartao-fatura-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
+.cartao-limite-track { height: 5px; background: var(--surface-quiet); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+.cartao-limite-fill { height: 100%; background: var(--teal); border-radius: 3px; }
+.btn-ver-fatura { background: none; border: 1px solid var(--border); border-radius: 999px; font-size: 11px; padding: 4px 10px; color: var(--ink-soft); margin-top: 8px; }
+
+/* ===== ACESSIBILIDADE: FOCO VISÍVEL (Fase 10) ===== */
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 2px solid var(--teal); outline-offset: 2px;
+}
+/* Garante contraste mínimo nos badges de status mesmo em telas muito claras/escuras */
+.status-pago, .status-pendente, .status-atrasado, .alerta-badge { font-weight: 700; }
+
+/* ===== RESPONSIVIDADE: FINANÇAS EM TELA GRANDE (Fase 10) ===== */
+/* Por padrão (celular), tudo empilhado em coluna única — já era o comportamento. */
+.financas-grid-desktop { display: block; }
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet: mantém 1 coluna, mas com um pouco mais de respiro. */
+  #app.modo-financas-largo { max-width: 760px; }
+}
+
+@media (min-width: 1024px) {
+  /* Desktop: abre o container só da tela Finanças (não mexe nas outras telas,
+     que continuam no formato "uma coisa de cada vez" de propósito). */
+  #app.modo-financas-largo { max-width: 1100px; }
+  .financas-grid-desktop { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+}
 .cartao-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; }
 .cartao-icone { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: var(--font-display); font-weight: 700; font-size: 15px; }
 
@@ -318,6 +397,19 @@ button { font-family: var(--font-body); cursor: pointer; }
 }
 @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes toastOut { to { opacity: 0; transform: translate(-50%, -20px); } }
+
+/* ===== TOAST GENÉRICO (sucesso/erro) — Fase 10 UX ===== */
+.toast-feedback {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: var(--surface); border-radius: var(--radius); padding: 12px 20px;
+  box-shadow: var(--shadow); z-index: 10000; font-weight: 600; font-size: 13px;
+  max-width: 90vw; text-align: center;
+  animation: toastFeedbackIn 0.25s ease, toastFeedbackOut 0.3s ease 2.4s forwards;
+}
+.toast-feedback.sucesso { border: 2px solid var(--sage); color: var(--sage); }
+.toast-feedback.erro { border: 2px solid var(--terracotta); color: var(--terracotta); }
+@keyframes toastFeedbackIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes toastFeedbackOut { to { opacity: 0; transform: translate(-50%, 10px); } }
 
 /* ===== POLIMENTO VISUAL ===== */
 * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
