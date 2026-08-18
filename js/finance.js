@@ -38,6 +38,7 @@ export {
   faixaRapida,
   formatarMoeda,
   formatarDataBR,
+  somarMesesData,
 } from "./finance/period.js";
 
 export {
@@ -49,7 +50,41 @@ export {
   removerCategoria,
 } from "./finance/categories.js";
 
-import { anoMesDeHoje as _anoMesDeHoje } from "./finance/period.js";
+export { gerarDonutSVG, gerarLinhasSVG, CORES_GRAFICO } from "./finance/charts.js";
+export { gerarResumoFinanceiro, gerarComparacaoAnterior } from "./finance/insights.js";
+
+export {
+  adicionarGastoRecorrente,
+  listarGastosRecorrentes,
+  calcularStatusVencimento,
+  marcarStatusGasto,
+  alternarAtivoGasto,
+  editarGastoRecorrente,
+  removerGastoRecorrente,
+} from "./finance/recurring.js";
+
+export {
+  adicionarCartaoCompleto,
+  listarCartoesCompleto,
+  editarCartao,
+  removerCartaoCompleto,
+  cicloDaTransacao,
+  buscarFaturaCartao,
+  cicloAtualDoCartao,
+} from "./finance/cards.js";
+
+export {
+  nivelAlerta,
+  definirMetaPorGrupo,
+  listarMetasPorGrupo,
+  definirMetaPorCategoria,
+  listarMetasPorCategoria,
+} from "./finance/budgets.js";
+
+export { gerarCSVTransacoes, baixarCSV } from "./finance/export.js";
+
+import { anoMesDeHoje as _anoMesDeHoje, somarMesesData as _somarMesesData, deslocarAnoMes as _deslocarAnoMes, listarAnoMesEntre as _listarAnoMesEntre } from "./finance/period.js";
+import { GRUPOS } from "./finance/constants.js";
 
 /**
  * Registra uma transação. Aceita os campos novos (categoriaId, cartaoId,
@@ -109,6 +144,37 @@ export async function duplicarTransacao(uid, transacao) {
   return createTransacao(uid, resto);
 }
 
+/**
+ * Cria uma transação parcelada: divide o valor em N lançamentos, um por mês,
+ * todos ligados por um mesmo `transacaoOriginalId` (grupo da parcela). A
+ * última parcela absorve a diferença de arredondamento, pra soma bater exato
+ * com o valor total digitado.
+ */
+export async function adicionarTransacaoParcelada(uid, dadosBase, numParcelas) {
+  const grupoParcelaId = (crypto.randomUUID && crypto.randomUUID()) || `parc-${Date.now()}`;
+  const valorTotal = Number(dadosBase.valor) || 0;
+  const valorParcelaBase = Math.round((valorTotal / numParcelas) * 100) / 100;
+  const somaParcelasAnteriores = valorParcelaBase * (numParcelas - 1);
+  const valorUltimaParcela = Math.round((valorTotal - somaParcelasAnteriores) * 100) / 100;
+
+  const criadas = [];
+  for (let i = 0; i < numParcelas; i++) {
+    const dataParcela = _somarMesesData(dadosBase.data, i);
+    const valorDaVez = i === numParcelas - 1 ? valorUltimaParcela : valorParcelaBase;
+    const ref = await adicionarTransacao(uid, {
+      ...dadosBase,
+      valor: valorDaVez,
+      data: dataParcela,
+      parcela: i + 1,
+      totalParcelas: numParcelas,
+      valorParcela: valorDaVez,
+      transacaoOriginalId: grupoParcelaId,
+    });
+    criadas.push(ref);
+  }
+  return criadas;
+}
+
 export async function removerTransacao(uid, id) {
   return deleteTransacao(uid, id);
 }
@@ -118,7 +184,10 @@ export async function getResumoDoMes(uid, anoMes = _anoMesDeHoje()) {
   const transacoes = await getTransacoesByMonth(uid, anoMes);
 
   const totalEntradas = transacoes.filter((t) => t.tipo === "entrada").reduce((acc, t) => acc + t.valor, 0);
-  const totalSaidas = transacoes.filter((t) => t.tipo === "saida").reduce((acc, t) => acc + t.valor, 0);
+  // Exclui o grupo "fatura" do total de saídas de propósito: as compras no cartão
+  // já foram contabilizadas individualmente (cada uma no seu próprio grupo/categoria).
+  // Contar o pagamento da fatura de novo aqui duplicaria o valor.
+  const totalSaidas = transacoes.filter((t) => t.tipo === "saida" && t.grupo !== GRUPOS.FATURA).reduce((acc, t) => acc + t.valor, 0);
 
   const porGrupo = {};
   transacoes
@@ -183,5 +252,16 @@ export async function removerCartao(uid, id) {
 
 export async function definirMetaGasto(uid, valorLimite, anoMes = _anoMesDeHoje()) {
   return salvarMetaGasto(uid, anoMes, Number(valorLimite));
+}
+
+// ---------- EVOLUÇÃO MENSAL (Fase 4/9) ----------
+
+/** Busca o resumo dos últimos `n` meses (incluindo o mês de referência), pro gráfico de evolução. */
+export async function buscarEvolucaoMensal(uid, anoMesReferencia, n = 6) {
+  const inicio = _deslocarAnoMes(anoMesReferencia, -(n - 1));
+  const meses = _listarAnoMesEntre(inicio, anoMesReferencia);
+  // Todas as buscas em paralelo (Promise.all) em vez de uma esperando a outra —
+  // são consultas independentes, então rodar em sequência só deixava mais lento à toa.
+  return Promise.all(meses.map((anoMes) => getResumoDoMes(uid, anoMes)));
 }
 

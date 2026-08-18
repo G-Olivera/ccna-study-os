@@ -187,6 +187,11 @@ export async function deleteGastoFixo(uid, gastoFixoId) {
   await deleteDoc(ref);
 }
 
+export async function updateGastoFixo(uid, gastoFixoId, dados) {
+  const ref = doc(db, "users", uid, "gastosFixos", gastoFixoId);
+  await setDoc(ref, dados, { merge: true });
+}
+
 /** Categorias financeiras (independentes de Grupo — "onde o dinheiro foi usado"). */
 export async function createCategoriaFinanceira(uid, categoria) {
   return addDoc(userSub(uid, "categoriasFinanceiras"), categoria);
@@ -220,6 +225,34 @@ export async function getCartoes(uid) {
 export async function deleteCartao(uid, cartaoId) {
   const ref = doc(db, "users", uid, "cartoes", cartaoId);
   await deleteDoc(ref);
+}
+
+export async function updateCartao(uid, cartaoId, dados) {
+  const ref = doc(db, "users", uid, "cartoes", cartaoId);
+  await setDoc(ref, dados, { merge: true });
+}
+
+/** Metas de gasto por grupo e por categoria, específicas de um mês. */
+export async function salvarMetaGrupo(uid, anoMes, grupo, valorLimite) {
+  const ref = doc(db, "users", uid, "metasGastoGrupo", `${anoMes}_${grupo}`);
+  await setDoc(ref, { anoMes, grupo, valorLimite }, { merge: true });
+}
+
+export async function getMetasGrupo(uid, anoMes) {
+  const q = query(userSub(uid, "metasGastoGrupo"), where("anoMes", "==", anoMes));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function salvarMetaCategoria(uid, anoMes, categoriaId, valorLimite) {
+  const ref = doc(db, "users", uid, "metasGastoCategoria", `${anoMes}_${categoriaId}`);
+  await setDoc(ref, { anoMes, categoriaId, valorLimite }, { merge: true });
+}
+
+export async function getMetasCategoria(uid, anoMes) {
+  const q = query(userSub(uid, "metasGastoCategoria"), where("anoMes", "==", anoMes));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
 /** Meta de limite de gasto pra um mês específico. */

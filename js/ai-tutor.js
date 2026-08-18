@@ -8,11 +8,15 @@
 
 import { getGenerativeModel } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-ai.js";
 import { ai } from "./firebase-config.js";
+import { montarContextoRAG } from "./rag.js";
 
 const SYSTEM_INSTRUCTION =
   "Você é um instrutor Cisco CCNA 200-301 explicando para um estudante com TDAH. " +
   "Seja direto, use frases curtas, divida em passos pequenos, e evite parágrafos longos. " +
-  "Responda em texto puro, sem formatação Markdown (sem asteriscos, sem #, sem listas com traço).";
+  "Responda em texto puro, sem formatação Markdown (sem asteriscos, sem #, sem listas com traço). " +
+  "Quando receber contexto do app do usuário (lições ou flashcards já existentes), use isso pra manter " +
+  "consistência com o que ele já estudou e pra sugerir lições relacionadas quando fizer sentido — mas sem " +
+  "fugir do foco principal da pergunta.";
 
 const model = getGenerativeModel(ai, {
   model: "gemini-3.6-flash",
@@ -33,16 +37,23 @@ const INSTRUCAO_POR_MODO = {
   prova: "Explique focando exatamente em como a Cisco cobra esse assunto na prova CCNA 200-301, incluindo pegadinhas comuns.",
 };
 
-/** Pede explicação de um tópico do blueprint em um dos 4 estilos. */
+/** Pede explicação de um tópico do blueprint em um dos 4 estilos, com RAG sobre o próprio app. */
 export async function explicarTopico(nomeTopico, modo = MODOS_EXPLICACAO.INICIANTE) {
   const instrucao = INSTRUCAO_POR_MODO[modo] || INSTRUCAO_POR_MODO.iniciante;
-  const prompt = `${instrucao}\n\nAssunto: ${nomeTopico} (blueprint CCNA 200-301).`;
+  const contextoRAG = await montarContextoRAG(nomeTopico);
+
+  const prompt = contextoRAG
+    ? `${instrucao}\n\nAssunto: ${nomeTopico} (blueprint CCNA 200-301).\n\n${contextoRAG}`
+    : `${instrucao}\n\nAssunto: ${nomeTopico} (blueprint CCNA 200-301).`;
+
   const result = await model.generateContent(prompt);
   return result.response.text();
 }
 
-/** Pergunta livre pro tutor (ex: "por que meu ping não funciona nessa topologia?"). */
+/** Pergunta livre pro tutor, com RAG buscando contexto relevante na sua própria Trilha. */
 export async function perguntarLivre(pergunta) {
-  const result = await model.generateContent(pergunta);
+  const contextoRAG = await montarContextoRAG(pergunta);
+  const prompt = contextoRAG ? `${contextoRAG}\n\nPergunta do usuário: ${pergunta}` : pergunta;
+  const result = await model.generateContent(prompt);
   return result.response.text();
 }

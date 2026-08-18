@@ -573,13 +573,160 @@ const questoesExemplo = [
     respostaCorreta: "B",
     justificativa: "O fabric do SD-Access é a camada lógica que abstrai a topologia física, permitindo políticas baseadas em identidade em vez de endereço IP/porta.",
   },
+
+  // ===== COBERTURA COMPLETA — questões pras lições de maior peso que ainda estavam sem nenhuma =====
+  {
+    id: "q-gap-01", dominio: "IP Connectivity", topicId: "m21-01", dificuldade: "medio",
+    enunciado: "O que caracteriza um protocolo de roteamento link-state como o OSPF?",
+    alternativas: { A: "Confia só na palavra dos vizinhos diretos", B: "Cada roteador constrói um mapa completo da topologia da rede", C: "Não precisa de área alguma", D: "Usa apenas rotas estáticas" },
+    respostaCorreta: "B", justificativa: "Protocolos link-state constroem uma visão completa da topologia (banco de dados de estado de enlace) pra calcular o menor caminho.",
+  },
+  {
+    id: "q-gap-02", dominio: "IP Connectivity", topicId: "m23-01", dificuldade: "medio",
+    enunciado: "O que acontece com uma interface marcada como passiva no OSPF?",
+    alternativas: { A: "Para de anunciar a rede", B: "Não envia/recebe Hello, mas ainda anuncia a rede conectada", C: "Vira automaticamente DR", D: "É removida da tabela de roteamento" },
+    respostaCorreta: "B", justificativa: "Interface passiva impede a formação de vizinhança ali, mas a rede continua sendo anunciada aos outros roteadores.",
+  },
+  {
+    id: "q-gap-03", dominio: "IP Connectivity", topicId: "m23-02", dificuldade: "dificil",
+    enunciado: "Qual comando propaga uma rota padrão (default route) para os demais roteadores num domínio OSPF?",
+    alternativas: { A: "default-route ospf", B: "default-information originate", C: "network 0.0.0.0", D: "redistribute default" },
+    respostaCorreta: "B", justificativa: "default-information originate, no modo router ospf, propaga a rota padrão local para todo o domínio OSPF.",
+  },
+  {
+    id: "q-gap-04", dominio: "Network Fundamentals", topicId: "m14-01", dificuldade: "medio",
+    enunciado: "Como se calcula o endereço de rede a partir de um IP e sua máscara de sub-rede?",
+    alternativas: { A: "Soma o IP com a máscara", B: "Aplica um AND lógico bit a bit entre IP e máscara", C: "Subtrai a máscara do IP", D: "Inverte todos os bits do IP" },
+    respostaCorreta: "B", justificativa: "O AND lógico bit a bit entre o IP e a máscara resulta no endereço de rede (parte de host zerada).",
+  },
+  {
+    id: "q-gap-05", dominio: "Network Fundamentals", topicId: "m14-02", dificuldade: "medio",
+    enunciado: "Como se obtém o endereço de broadcast de uma sub-rede?",
+    alternativas: { A: "Zerando todos os bits de host", B: "Colocando todos os bits de host em 1", C: "Somando 1 ao endereço de rede", D: "Usando a máscara invertida como IP" },
+    respostaCorreta: "B", justificativa: "O endereço de broadcast é obtido colocando todos os bits da parte de host em 1, mantendo os bits de rede.",
+  },
+  {
+    id: "q-gap-06", dominio: "Network Fundamentals", topicId: "m12-02", dificuldade: "facil",
+    enunciado: "Qual a máscara padrão de uma rede IPv4 classe A?",
+    alternativas: { A: "255.0.0.0", B: "255.255.0.0", C: "255.255.255.0", D: "255.255.255.252" },
+    respostaCorreta: "A", justificativa: "Classe A usa os primeiros 8 bits pra rede, resultando na máscara 255.0.0.0 (/8).",
+  },
+  {
+    id: "q-gap-07", dominio: "Network Access", topicId: "m08-03", dificuldade: "medio",
+    enunciado: "Qual o propósito de configurar uma VLAN de voz numa porta de acesso?",
+    alternativas: { A: "Aumentar a velocidade da porta", B: "Separar e priorizar o tráfego de telefonia IP do tráfego de dados normal", C: "Desativar o PoE na porta", D: "Bloquear tráfego de dados na porta" },
+    respostaCorreta: "B", justificativa: "A VLAN de voz separa o tráfego de VoIP do tráfego de dados na mesma porta física, facilitando QoS e segmentação.",
+  },
+  {
+    id: "q-gap-08", dominio: "Network Access", topicId: "m09-01", dificuldade: "facil",
+    enunciado: "Por que uma topologia de rede com links redundantes de camada 2 precisa do Spanning Tree Protocol?",
+    alternativas: { A: "Pra aumentar a velocidade dos links", B: "Pra evitar loops de camada 2 e tempestades de broadcast", C: "Pra criptografar o tráfego", D: "Pra rotear entre VLANs" },
+    respostaCorreta: "B", justificativa: "Sem STP, links redundantes de camada 2 causam loops que geram broadcast storms e derrubam a rede.",
+  },
+  {
+    id: "q-gap-09", dominio: "IP Connectivity", topicId: "m17-03", dificuldade: "dificil",
+    enunciado: "O que caracteriza uma rota estática flutuante?",
+    alternativas: { A: "Tem distância administrativa menor que a rota primária", B: "Tem distância administrativa maior que a rota primária, servindo de backup", C: "Não pode ser configurada com next-hop", D: "Só funciona com IPv6" },
+    respostaCorreta: "B", justificativa: "Uma rota flutuante tem AD maior, então só entra na tabela de roteamento se a rota primária cair.",
+  },
+  {
+    id: "q-gap-10", dominio: "IP Connectivity", topicId: "m18-02", dificuldade: "medio",
+    enunciado: "O que é uma SVI (Switch Virtual Interface)?",
+    alternativas: { A: "Uma porta física reservada para gerenciamento", B: "Uma interface virtual de VLAN configurada num switch de camada 3, permitindo roteamento entre VLANs", C: "Um tipo de VLAN nativa", D: "Uma interface exclusiva para Wi-Fi" },
+    respostaCorreta: "B", justificativa: "SVIs permitem que um switch de camada 3 roteie entre VLANs sem depender de um roteador externo.",
+  },
+  {
+    id: "q-gap-11", dominio: "Security Fundamentals", topicId: "m35-02", dificuldade: "dificil",
+    enunciado: "Numa ACL, o que significa um bit '1' numa wildcard mask?",
+    alternativas: { A: "O bit correspondente precisa bater exatamente", B: "O bit correspondente não importa (pode ser qualquer valor)", C: "Bloqueia o pacote automaticamente", D: "Indica que é uma ACL estendida" },
+    respostaCorreta: "B", justificativa: "Na wildcard mask, bit 0 = precisa bater exatamente; bit 1 = não importa o valor daquele bit.",
+  },
+  {
+    id: "q-gap-12", dominio: "Security Fundamentals", topicId: "m41-02", dificuldade: "dificil",
+    enunciado: "O que o Dynamic ARP Inspection (DAI) previne?",
+    alternativas: { A: "Ataques de DHCP starvation", B: "Ataques de ARP spoofing/poisoning", C: "Loops de camada 2", D: "Ataques de força bruta em senhas" },
+    respostaCorreta: "B", justificativa: "DAI valida mensagens ARP contra a base de dados confiável do DHCP Snooping, bloqueando ARP spoofing.",
+  },
+  {
+    id: "q-gap-13", dominio: "IP Services", topicId: "m43-02", dificuldade: "medio",
+    enunciado: "Qual a diferença entre NAT estático e NAT dinâmico?",
+    alternativas: {
+      A: "Estático usa IPv6; dinâmico usa IPv4",
+      B: "Estático mapeia um IP interno pra um IP externo fixo; dinâmico usa um pool de IPs atribuídos sob demanda",
+      C: "Não há diferença prática",
+      D: "Estático só funciona com UDP",
+    },
+    respostaCorreta: "B", justificativa: "NAT estático é um mapeamento 1:1 fixo; NAT dinâmico atribui IPs de um pool conforme a demanda.",
+  },
+  {
+    id: "q-gap-14", dominio: "IP Connectivity", topicId: "m45-01", dificuldade: "facil",
+    enunciado: "O que o HSRP fornece a uma rede?",
+    alternativas: { A: "Um servidor DNS redundante", B: "Um endereço IP de gateway virtual compartilhado entre roteadores redundantes", C: "Balanceamento de carga entre switches", D: "Criptografia do tráfego de gateway" },
+    respostaCorreta: "B", justificativa: "HSRP cria um gateway virtual compartilhado, garantindo continuidade se o roteador ativo falhar.",
+  },
+  {
+    id: "q-gap-15", dominio: "Network Fundamentals", topicId: "m34-02", dificuldade: "medio",
+    enunciado: "Por que aplicações de voz/streaming em tempo real costumam preferir UDP a TCP?",
+    alternativas: {
+      A: "UDP é mais seguro que TCP",
+      B: "UDP não retransmite pacotes perdidos, evitando atrasos causados por retransmissão",
+      C: "UDP usa menos endereços IP",
+      D: "TCP não funciona em redes wireless",
+    },
+    respostaCorreta: "B", justificativa: "Perder um pacote ocasional de voz é preferível a esperar a retransmissão do TCP, que atrasaria o áudio.",
+  },
+  {
+    id: "q-gap-16", dominio: "Network Access", topicId: "m32-03", dificuldade: "dificil",
+    enunciado: "O que é 802.1X numa rede wireless corporativa?",
+    alternativas: {
+      A: "Um padrão de cabeamento",
+      B: "Um framework de autenticação porta-a-porta usando EAP, validando credenciais individuais",
+      C: "Um protocolo de roteamento wireless",
+      D: "Um tipo de antena direcional",
+    },
+    respostaCorreta: "B", justificativa: "802.1X exige autenticação individual (via EAP) antes de liberar acesso à rede — usado em ambientes corporativos com WPA2/WPA3-Enterprise.",
+  },
+  {
+    id: "q-gap-17", dominio: "Network Fundamentals", topicId: "m30-01", dificuldade: "facil",
+    enunciado: "O que é um BSS (Basic Service Set) numa rede wireless?",
+    alternativas: { A: "Um grupo de vários APs interligados", B: "Um único AP e os clientes conectados a ele", C: "Um protocolo de segurança wireless", D: "Uma VLAN exclusiva para Wi-Fi" },
+    respostaCorreta: "B", justificativa: "BSS é a unidade básica: um AP e os clientes associados a ele, identificados por um BSSID.",
+  },
+  {
+    id: "q-gap-18", dominio: "Network Fundamentals", topicId: "m47-02", dificuldade: "medio",
+    enunciado: "Qual a principal vantagem da arquitetura spine-leaf sobre o modelo hierárquico clássico de 3 camadas?",
+    alternativas: {
+      A: "Usa menos cabos",
+      B: "Garante latência previsível, já que todo leaf se conecta a todo spine",
+      C: "Elimina a necessidade de switches",
+      D: "É mais barata em qualquer cenário",
+    },
+    respostaCorreta: "B", justificativa: "Na topologia spine-leaf, qualquer par de dispositivos está a exatamente 2 saltos de distância, garantindo latência consistente.",
+  },
+  {
+    id: "q-gap-19", dominio: "Automation and Programmability", topicId: "m52-02", dificuldade: "facil",
+    enunciado: "Qual NÃO é um tipo de dado suportado nativamente em JSON?",
+    alternativas: { A: "String", B: "Booleano", C: "Data (tipo Date nativo)", D: "Objeto" },
+    respostaCorreta: "C", justificativa: "JSON não tem um tipo 'Data' nativo — datas são representadas como strings. Os tipos nativos são string, número, booleano, null, array e objeto.",
+  },
+  {
+    id: "q-gap-20", dominio: "Automation and Programmability", topicId: "m53-02", dificuldade: "medio",
+    enunciado: "Qual o conceito central por trás do Terraform como ferramenta de infraestrutura como código?",
+    alternativas: {
+      A: "Executar comandos manuais um por um",
+      B: "Definir o estado desejado da infraestrutura de forma declarativa, e a ferramenta aplica as mudanças necessárias",
+      C: "Substituir completamente o uso de CLI",
+      D: "Funcionar só com AWS",
+    },
+    respostaCorreta: "B", justificativa: "Terraform usa uma abordagem declarativa: você descreve o estado final desejado, e a ferramenta calcula o plano pra chegar lá.",
+  },
 ];
 
 export async function seedQuestionsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().questionsSeededV5) {
+  if (metaSnap.exists() && metaSnap.data().questionsSeededV6) {
     console.log("[seed] Banco de questões já populado, pulando.");
     return { seeded: false };
   }
@@ -589,7 +736,7 @@ export async function seedQuestionsIfNeeded() {
     const ref = doc(db, "content", "questions", "items", q.id);
     batch.set(ref, q);
   });
-  batch.set(metaRef, { questionsSeededV5: true, questionsCount: questoesExemplo.length, questionsSeededV5At: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { questionsSeededV6: true, questionsCount: questoesExemplo.length, questionsSeededV6At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${questoesExemplo.length} questões gravadas`);

@@ -8,7 +8,48 @@ import { seedContentIfNeeded, getModulosResumo } from "./seed-content.js";
 import { seedQuestionsIfNeeded } from "./seed-questions.js";
 import { seedLabsIfNeeded } from "./seed-labs.js";
 import { seedFlashcardsIfNeeded } from "./seed-flashcards.js";
-import { seedCategoriasIfNeeded } from "./finance.js";
+import {
+  GRUPOS,
+  GRUPO_LABEL,
+  FORMAS_PAGAMENTO,
+  OPCOES_PARCELAMENTO,
+  adicionarTransacao,
+  editarTransacao,
+  duplicarTransacao,
+  adicionarTransacaoParcelada,
+  removerTransacao,
+  getResumoDoMes,
+  definirMetaGasto,
+  seedCategoriasIfNeeded,
+  listarCategorias,
+  anoMesDeHoje,
+  formatarAnoMes,
+  deslocarAnoMes,
+  formatarMoeda,
+  formatarDataBR,
+  gerarDonutSVG,
+  CORES_GRAFICO,
+  gerarLinhasSVG,
+  gerarResumoFinanceiro,
+  gerarComparacaoAnterior,
+  buscarEvolucaoMensal,
+  adicionarGastoRecorrente,
+  listarGastosRecorrentes,
+  calcularStatusVencimento,
+  marcarStatusGasto,
+  editarGastoRecorrente,
+  removerGastoRecorrente,
+  adicionarCartaoCompleto,
+  listarCartoesCompleto,
+  removerCartaoCompleto,
+  buscarFaturaCartao,
+  cicloAtualDoCartao,
+  nivelAlerta,
+  definirMetaPorCategoria,
+  listarMetasPorCategoria,
+  gerarCSVTransacoes,
+  baixarCSV,
+} from "./finance.js";
 import { generateDailyPlan, markPlanSectionComplete } from "./daily-plan.js";
 import { getDueCards, reviewAndSave, QUALITY } from "./srs-engine.js";
 import { getDashboardData, getHistoricoStreak } from "./dashboard.js";
@@ -30,19 +71,6 @@ import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
 import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
 import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
-import {
-  GRUPO_LABEL,
-  adicionarTransacao,
-  removerTransacao,
-  getResumoDoMes,
-  adicionarGastoFixo,
-  listarGastosFixos,
-  removerGastoFixo,
-  definirMetaGasto,
-  adicionarCartao,
-  listarCartoes,
-  removerCartao,
-} from "./finance.js";
 import { escapeHtml } from "./utils.js";
 import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, removerLivroLocal, removerProgressoLeitura } from "./reader.js";
 import {
@@ -279,6 +307,10 @@ function trocarTela(nome) {
   document.querySelectorAll(".tela").forEach((t) => t.classList.add("hidden"));
   document.getElementById(`tela-${nome}`).classList.remove("hidden");
   document.querySelectorAll(".bottomnav button").forEach((b) => b.classList.toggle("active", b.dataset.tela === nome));
+
+  // Só a tela Finanças ganha mais largura em telas grandes — as outras
+  // continuam no formato "uma coisa de cada vez", de propósito.
+  document.getElementById("app").classList.toggle("modo-financas-largo", nome === "financas");
 
   if (nome === "flashcards") carregarFlashcards();
   if (nome === "dashboard") {
@@ -593,6 +625,16 @@ async function carregarDashboard() {
 }
 
 // ---------- CELEBRAÇÃO DE CONQUISTA (confete + toast) ----------
+
+// ---------- FEEDBACK VISUAL GENÉRICO (Fase 10 UX) ----------
+
+function mostrarToast(mensagem, tipo = "sucesso") {
+  const toast = document.createElement("div");
+  toast.className = `toast-feedback ${tipo}`;
+  toast.textContent = mensagem;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2800);
+}
 
 function celebrarConquistas(novas) {
   const cores = ["#3E6B6B", "#C97B4A", "#5B8266", "#B3654A"];
@@ -979,22 +1021,18 @@ document.getElementById("btn-salvar-lembrete").addEventListener("click", async (
 
 // ---------- FINANÇAS ----------
 
-let tipoTransacaoSelecionado = "saida";
-
-document.getElementById("financas-tipo-tabs").addEventListener("click", (e) => {
-  const btn = e.target.closest(".cat-tab");
-  if (!btn) return;
-  tipoTransacaoSelecionado = btn.dataset.tipo;
-  document.querySelectorAll("#financas-tipo-tabs .cat-tab").forEach((b) => b.classList.toggle("selecionada", b === btn));
-});
-
 let valoresOcultos = localStorage.getItem("ccna-study-os-ocultar-valores") === "1";
+let periodoAtualFinancas = anoMesDeHoje();
+let resumoFinancasCache = null;
+let categoriasFinancasCache = [];
+let cartoesFinancasCache = [];
+let transacaoEditandoId = null;
 
 function formatarValor(v) {
-  return valoresOcultos ? "••••" : `R$ ${v.toFixed(2)}`;
+  return valoresOcultos ? "••••" : formatarMoeda(v);
 }
 function formatarValorInteiro(v) {
-  return valoresOcultos ? "••••" : `R$ ${v.toFixed(0)}`;
+  return valoresOcultos ? "••••" : `R$ ${Math.round(v)}`;
 }
 
 document.getElementById("btn-toggle-valores").addEventListener("click", () => {
@@ -1005,22 +1043,276 @@ document.getElementById("btn-toggle-valores").addEventListener("click", () => {
   carregarFinancas();
 });
 
+// ---- Período ----
+
+document.getElementById("btn-periodo-anterior").addEventListener("click", () => {
+  periodoAtualFinancas = deslocarAnoMes(periodoAtualFinancas, -1);
+  carregarFinancas();
+});
+document.getElementById("btn-periodo-proximo").addEventListener("click", () => {
+  periodoAtualFinancas = deslocarAnoMes(periodoAtualFinancas, 1);
+  carregarFinancas();
+});
+
+// ---- Carregamento principal ----
+
+async function renderGraficosEResumoFinancas() {
+  const mapaCategorias = Object.fromEntries(categoriasFinancasCache.map((c) => [c.id, c]));
+
+  // Gráfico donut por categoria
+  const dadosDonut = Object.entries(resumoFinancasCache.porCategoria || {})
+    .map(([catId, valor]) => ({ label: mapaCategorias[catId]?.nome || "Sem categoria", icone: mapaCategorias[catId]?.icone || "📦", valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  document.getElementById("financas-donut-categoria").innerHTML = valoresOcultos ? "" : gerarDonutSVG(dadosDonut);
+  document.getElementById("financas-donut-legenda").innerHTML = dadosDonut
+    .map(
+      (d, i) => `
+    <div class="donut-legenda-item">
+      <span class="donut-legenda-cor" style="background:${CORES_GRAFICO[i % CORES_GRAFICO.length]}"></span>
+      <span>${d.icone} ${escapeHtml(d.label)} — ${formatarValor(d.valor)}</span>
+    </div>`
+    )
+    .join("") || `<p style="font-size:12px; color:var(--ink-soft);">Sem despesas categorizadas ainda.</p>`;
+
+  // Evolução mensal (últimos 6 meses) + comparação com o mês anterior
+  const evolucao = await buscarEvolucaoMensal(currentUser.uid, periodoAtualFinancas, 6);
+  const resumoAnterior = evolucao.length >= 2 ? evolucao[evolucao.length - 2] : null;
+
+  document.getElementById("financas-evolucao-grafico").innerHTML = valoresOcultos
+    ? ""
+    : gerarLinhasSVG(evolucao.map((r) => r.totalEntradas), evolucao.map((r) => r.totalSaidas));
+
+  const comparacao = gerarComparacaoAnterior(resumoFinancasCache, resumoAnterior);
+  document.getElementById("financas-evolucao-comparacao").innerHTML = comparacao
+    ? `
+    <span class="comparacao-chip ${comparacao.despesas > 0 ? "positivo" : "negativo"}">Despesas ${comparacao.despesas >= 0 ? "+" : ""}${comparacao.despesas}%</span>
+    <span class="comparacao-chip ${comparacao.receitas > 0 ? "negativo" : "positivo"}">Receitas ${comparacao.receitas >= 0 ? "+" : ""}${comparacao.receitas}%</span>
+    <span class="comparacao-chip ${comparacao.saldo > 0 ? "negativo" : "positivo"}">Saldo ${comparacao.saldo >= 0 ? "+" : ""}${comparacao.saldo}%</span>
+  `
+    : `<p style="font-size:12px; color:var(--ink-soft);">Sem período anterior pra comparar ainda.</p>`;
+
+  // Resumo automático (frases)
+  const frases = gerarResumoFinanceiro(resumoFinancasCache, categoriasFinancasCache, resumoAnterior);
+  document.getElementById("financas-resumo-automatico").innerHTML = valoresOcultos
+    ? `<p style="font-size:13px; color:var(--ink-soft);">Valores ocultos.</p>`
+    : frases.map((f) => `<div class="resumo-automatico-item">💬 ${escapeHtml(f)}</div>`).join("");
+}
+
+// ---- Metas (geral + por categoria) — Fase 7 ----
+
+async function renderMetasFinancas() {
+  if (resumoFinancasCache.metaGasto) {
+    const alerta = nivelAlerta(resumoFinancasCache.percentualDaMeta || 0);
+    document.getElementById("financas-meta-alerta").textContent = alerta.label;
+    document.getElementById("financas-meta-alerta").style.color = alerta.cor;
+  } else {
+    document.getElementById("financas-meta-alerta").textContent = "";
+  }
+
+  const metasCategoria = await listarMetasPorCategoria(currentUser.uid, periodoAtualFinancas).catch(() => ({}));
+  const gastoPorCategoria = resumoFinancasCache.porCategoria || {};
+
+  document.getElementById("lista-metas-categoria").innerHTML =
+    categoriasFinancasCache
+      .filter((c) => metasCategoria[c.id] || gastoPorCategoria[c.id])
+      .map((c) => {
+        const limite = metasCategoria[c.id] || 0;
+        const gasto = gastoPorCategoria[c.id] || 0;
+        const percentual = limite > 0 ? Math.min(150, Math.round((gasto / limite) * 100)) : 0;
+        const alerta = limite > 0 ? nivelAlerta(percentual) : null;
+        return `
+      <div class="meta-categoria-item">
+        <div class="meta-categoria-linha">
+          <span>${c.icone} ${escapeHtml(c.nome)}</span>
+          <span>${limite > 0 ? `${formatarValor(gasto)} / ${formatarValor(limite)} (${percentual}%)` : formatarValor(gasto)}</span>
+        </div>
+        ${limite > 0 ? `<div class="meta-categoria-track"><div class="meta-categoria-fill" style="width:${valoresOcultos ? 0 : Math.min(100, percentual)}%; background:${alerta.cor};"></div></div>` : ""}
+        <div style="display:flex; gap:6px; margin-top:8px;">
+          <input type="number" placeholder="Definir meta" class="input-meta-categoria-inline" data-categoria-meta="${c.id}" style="flex:1; padding:6px; border-radius:6px; border:1px solid var(--border); font-size:12px;" />
+          <button class="btn-ver-fatura" data-salvar-meta-categoria="${c.id}">Salvar</button>
+        </div>
+      </div>`;
+      })
+      .join("") || `<p style="font-size:12px; color:var(--ink-soft);">Nenhuma categoria com meta ou gasto neste período ainda.</p>`;
+}
+
+document.getElementById("lista-metas-categoria").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-salvar-meta-categoria]");
+  if (!btn) return;
+  const input = document.querySelector(`[data-categoria-meta="${btn.dataset.salvarMetaCategoria}"]`);
+  const valor = input.value;
+  if (!valor) return;
+  await definirMetaPorCategoria(currentUser.uid, periodoAtualFinancas, btn.dataset.salvarMetaCategoria, valor);
+  await carregarFinancas();
+});
+
+// ---- Próximos vencimentos (Fase 5) ----
+
+async function renderProximosVencimentos() {
+  const gastos = await listarGastosRecorrentes(currentUser.uid);
+  const listaEl = document.getElementById("lista-proximos-vencimentos");
+
+  listaEl.innerHTML =
+    gastos
+      .map((g) => {
+        const status = calcularStatusVencimento(g, periodoAtualFinancas);
+        return `
+      <div class="vencimento-item">
+        <div class="gastofixo-dia">${g.diaVencimento}</div>
+        <div class="transacao-info">
+          <div>${escapeHtml(g.descricao)}</div>
+          <div class="transacao-grupo">${formatarValor(g.valorMedio)} · ${GRUPO_LABEL[g.grupo] || g.grupo}</div>
+        </div>
+        <button class="vencimento-status-btn status-${status}" data-toggle-status="${g.id}" data-status-atual="${status}">
+          ${status === "pago" ? "✓ Pago" : status === "atrasado" ? "⚠ Atrasado" : "Pendente"}
+        </button>
+      </div>`;
+      })
+      .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum gasto recorrente cadastrado.</p>`;
+}
+
+document.getElementById("lista-proximos-vencimentos").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-toggle-status]");
+  if (!btn) return;
+  const gastos = await listarGastosRecorrentes(currentUser.uid);
+  const gasto = gastos.find((g) => g.id === btn.dataset.toggleStatus);
+  if (!gasto) return;
+
+  const statusAtual = btn.dataset.statusAtual;
+  if (statusAtual === "pago") {
+    await marcarStatusGasto(currentUser.uid, gasto, periodoAtualFinancas, "pendente");
+  } else {
+    await marcarStatusGasto(currentUser.uid, gasto, periodoAtualFinancas, "pago");
+    // Gera automaticamente o lançamento no mês, pra ele entrar nos totais (Fase 5).
+    await adicionarTransacao(currentUser.uid, {
+      tipo: "saida",
+      grupo: gasto.grupo,
+      categoriaId: gasto.categoriaId,
+      descricao: gasto.descricao,
+      valor: gasto.valorMedio,
+      formaPagamento: gasto.formaPagamento || "",
+      data: `${periodoAtualFinancas}-${String(gasto.diaVencimento).padStart(2, "0")}`,
+    });
+  }
+  await carregarFinancas();
+});
+
+// ---- Cartões e fatura (Fase 6) ----
+
+async function renderCartoesCompleto() {
+  const CORES_BANCO = {
+    Nubank: "#820AD1", "Itaú": "#EC7000", Bradesco: "#CC092F", Santander: "#EC0000",
+    "Banco do Brasil": "#F8D30F", Caixa: "#0033A0", Inter: "#FF7A00", "C6 Bank": "#242424",
+    PicPay: "#21C25E", XP: "#000000",
+  };
+  const corDoBanco = (nome) => CORES_BANCO[nome] || "#3E6B6B";
+
+  const cartoesComFatura = await Promise.all(
+    cartoesFinancasCache.map(async (c) => {
+      const ciclo = cicloAtualDoCartao(c);
+      const fatura = await buscarFaturaCartao(currentUser.uid, c, ciclo);
+      return { ...c, faturaAtual: fatura.total, ciclo };
+    })
+  );
+
+  document.getElementById("lista-cartoes").innerHTML = cartoesComFatura
+    .map((c) => {
+      const cor = corDoBanco(c.nome);
+      const inicial = c.nome.trim().charAt(0).toUpperCase();
+      const percentualLimite = c.limiteTotal ? Math.min(100, Math.round((c.faturaAtual / c.limiteTotal) * 100)) : null;
+      return `
+      <div class="cartao-item" style="flex-direction:column; align-items:stretch;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="cartao-icone" style="background:${cor}22; color:${cor};">${inicial}</div>
+          <div class="transacao-info">
+            <div>${escapeHtml(c.nome)}</div>
+            <div class="transacao-grupo">Fecha dia ${c.fechamento} · Vence dia ${c.vencimento}</div>
+          </div>
+          <button class="tarefa-remover" data-remover-cartao="${c.id}">✕</button>
+        </div>
+        <div class="cartao-fatura-info">
+          <span>Fatura atual: ${formatarValor(c.faturaAtual)}</span>
+          ${c.limiteTotal ? `<span>Limite: ${formatarValor(c.limiteTotal)}</span>` : ""}
+        </div>
+        ${percentualLimite !== null ? `<div class="cartao-limite-track"><div class="cartao-limite-fill" style="width:${valoresOcultos ? 0 : percentualLimite}%;"></div></div>` : ""}
+        <button class="btn-ver-fatura" data-ver-fatura="${c.id}" data-ciclo="${c.ciclo}">Ver fatura</button>
+      </div>`;
+    })
+    .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum cartão cadastrado.</p>`;
+}
+
+document.getElementById("lista-cartoes").addEventListener("click", async (e) => {
+  const btnRemover = e.target.closest("[data-remover-cartao]");
+  const btnFatura = e.target.closest("[data-ver-fatura]");
+
+  if (btnRemover) {
+    if (!confirm("Remover esse cartão?")) return;
+    await removerCartaoCompleto(currentUser.uid, btnRemover.dataset.removerCartao);
+    await carregarFinancas();
+  } else if (btnFatura) {
+    const cartao = cartoesFinancasCache.find((c) => c.id === btnFatura.dataset.verFatura);
+    const fatura = await buscarFaturaCartao(currentUser.uid, cartao, btnFatura.dataset.ciclo);
+
+    document.getElementById("fatura-conteudo").innerHTML = `
+      <h3 style="margin-bottom:4px;">${escapeHtml(cartao.nome)}</h3>
+      <p style="font-size:13px; color:var(--ink-soft); margin-bottom:12px;">Fatura de ${formatarAnoMes(btnFatura.dataset.ciclo)} · Fecha dia ${cartao.fechamento} · Vence dia ${cartao.vencimento}</p>
+      <div class="stat-card" style="margin-bottom:16px;"><div class="valor">${formatarValor(fatura.total)}</div><div class="label">Total da fatura</div></div>
+      ${fatura.transacoes
+        .map(
+          (t) => `
+        <div class="transacao-item">
+          <div class="transacao-info">
+            <div>${escapeHtml(t.descricao)}${t.totalParcelas > 1 ? `<span class="transacao-parcela-tag">Parcela ${t.parcela}/${t.totalParcelas}</span>` : ""}</div>
+            <div class="transacao-grupo">${formatarDataBR(t.data)}</div>
+          </div>
+          <span class="transacao-valor saida">${formatarValor(t.valor)}</span>
+        </div>`
+        )
+        .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhuma compra nessa fatura.</p>`}
+    `;
+    document.getElementById("fatura-view").classList.remove("hidden");
+  }
+});
+
+document.getElementById("btn-fechar-fatura").addEventListener("click", () => {
+  document.getElementById("fatura-view").classList.add("hidden");
+});
+
+// ---- Exportar CSV (Fase 8) ----
+
+document.getElementById("btn-exportar-csv").addEventListener("click", () => {
+  if (!resumoFinancasCache) return;
+  if (resumoFinancasCache.transacoes.length === 0) {
+    mostrarToast("Nenhuma transação neste período pra exportar.", "erro");
+    return;
+  }
+  const mapaCategorias = Object.fromEntries(categoriasFinancasCache.map((c) => [c.id, c]));
+  const csv = gerarCSVTransacoes(resumoFinancasCache.transacoes, mapaCategorias, GRUPO_LABEL);
+  baixarCSV(csv, `financas-${periodoAtualFinancas}.csv`);
+  mostrarToast("CSV exportado.");
+});
+
 async function carregarFinancas() {
-  const resumo = await getResumoDoMes(currentUser.uid);
+  document.getElementById("periodo-label").textContent = formatarAnoMes(periodoAtualFinancas);
   document.getElementById("icon-olho-aberto").classList.toggle("hidden", valoresOcultos);
   document.getElementById("icon-olho-fechado").classList.toggle("hidden", !valoresOcultos);
 
-  document.getElementById("financas-resumo-texto").textContent = `${resumo.transacoes.length} transações neste mês`;
+  resumoFinancasCache = await getResumoDoMes(currentUser.uid, periodoAtualFinancas);
+  categoriasFinancasCache = await listarCategorias(currentUser.uid).catch(() => []);
+  cartoesFinancasCache = await listarCartoesCompleto(currentUser.uid).catch(() => []);
+
+  document.getElementById("financas-resumo-texto").textContent = `${resumoFinancasCache.transacoes.length} transações neste período`;
 
   document.getElementById("financas-stats").innerHTML = `
-    <div class="stat-card"><div class="valor" style="color:var(--sage);">${formatarValorInteiro(resumo.totalEntradas)}</div><div class="label">Entradas</div></div>
-    <div class="stat-card"><div class="valor" style="color:var(--terracotta);">${formatarValorInteiro(resumo.totalSaidas)}</div><div class="label">Saídas</div></div>
-    <div class="stat-card"><div class="valor">${formatarValorInteiro(resumo.saldo)}</div><div class="label">Saldo</div></div>
+    <div class="stat-card"><div class="valor" style="color:var(--sage);">${formatarValorInteiro(resumoFinancasCache.totalEntradas)}</div><div class="label">Entradas</div></div>
+    <div class="stat-card"><div class="valor" style="color:var(--terracotta);">${formatarValorInteiro(resumoFinancasCache.totalSaidas)}</div><div class="label">Saídas</div></div>
+    <div class="stat-card"><div class="valor">${formatarValorInteiro(resumoFinancasCache.saldo)}</div><div class="label">Saldo</div></div>
   `;
 
-  const maiorGrupo = Math.max(1, ...Object.values(resumo.porGrupo));
+  const maiorGrupo = Math.max(1, ...Object.values(resumoFinancasCache.porGrupo));
   document.getElementById("financas-grupos-bars").innerHTML =
-    Object.entries(resumo.porGrupo)
+    Object.entries(resumoFinancasCache.porGrupo)
       .sort((a, b) => b[1] - a[1])
       .map(
         ([grupo, valor]) => `
@@ -1029,34 +1321,26 @@ async function carregarFinancas() {
         <div class="track"><div class="fill" style="width:${valoresOcultos ? 0 : Math.round((valor / maiorGrupo) * 100)}%"></div></div>
       </div>`
       )
-      .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum gasto registrado ainda.</p>`;
+      .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum gasto registrado neste período.</p>`;
 
-  if (resumo.metaGasto) {
-    document.getElementById("financas-meta-texto").textContent = `${formatarValorInteiro(resumo.totalSaidas)} de ${formatarValorInteiro(resumo.metaGasto)} gastos`;
-    document.getElementById("financas-meta-fill").style.width = `${valoresOcultos ? 0 : resumo.percentualDaMeta}%`;
-    document.getElementById("financas-meta-fill").style.background = resumo.percentualDaMeta >= 90 ? "var(--terracotta)" : "var(--sage)";
-    document.getElementById("input-meta-financas").value = resumo.metaGasto;
+  if (resumoFinancasCache.metaGasto) {
+    document.getElementById("financas-meta-texto").textContent = `${formatarValorInteiro(resumoFinancasCache.totalSaidas)} de ${formatarValorInteiro(resumoFinancasCache.metaGasto)} gastos`;
+    document.getElementById("financas-meta-fill").style.width = `${valoresOcultos ? 0 : resumoFinancasCache.percentualDaMeta}%`;
+    document.getElementById("financas-meta-fill").style.background = resumoFinancasCache.percentualDaMeta >= 90 ? "var(--terracotta)" : "var(--sage)";
+    document.getElementById("input-meta-financas").value = resumoFinancasCache.metaGasto;
   } else {
     document.getElementById("financas-meta-texto").textContent = "Nenhuma meta definida ainda.";
     document.getElementById("financas-meta-fill").style.width = "0%";
   }
 
-  document.getElementById("lista-transacoes").innerHTML =
-    resumo.transacoes
-      .map(
-        (t) => `
-      <div class="transacao-item">
-        <div class="transacao-info">
-          <div>${escapeHtml(t.descricao) || GRUPO_LABEL[t.grupo] || t.grupo}</div>
-          <div class="transacao-grupo">${GRUPO_LABEL[t.grupo] || t.grupo} · ${t.data}</div>
-        </div>
-        <span class="transacao-valor ${t.tipo}">${valoresOcultos ? "••••" : `${t.tipo === "entrada" ? "+" : "-"}R$ ${t.valor.toFixed(2)}`}</span>
-        <button class="tarefa-remover" data-remover-transacao="${t.id}">✕</button>
-      </div>`
-      )
-      .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhuma transação neste mês.</p>`;
+  popularFiltrosFinancas();
+  renderListaTransacoes();
+  await renderGraficosEResumoFinancas();
+  await renderMetasFinancas();
+  await renderProximosVencimentos();
+  popularSelectsGastoFixo();
 
-  const gastosFixos = await listarGastosFixos(currentUser.uid);
+  const gastosFixos = await listarGastosRecorrentes(currentUser.uid);
   document.getElementById("lista-gastos-fixos").innerHTML =
     gastosFixos
       .map(
@@ -1065,51 +1349,233 @@ async function carregarFinancas() {
         <div class="gastofixo-dia">${g.diaVencimento}</div>
         <div class="transacao-info">
           <div>${escapeHtml(g.descricao)}</div>
-          <div class="transacao-grupo">${formatarValor(g.valorMedio)}/mês</div>
+          <div class="transacao-grupo">${formatarValor(g.valorMedio)} · ${g.recorrencia || "mensal"}</div>
         </div>
         <button class="tarefa-remover" data-remover-gastofixo="${g.id}">✕</button>
       </div>`
       )
       .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum gasto fixo cadastrado.</p>`;
 
-// Cores associadas a cada banco (só a cor de marca, não a logo em si — evita
-// reproduzir qualquer logotipo protegido). Um bom identificador visual já
-// funciona com cor + inicial, sem precisar da arte oficial.
-const CORES_BANCO = {
-  Nubank: "#820AD1",
-  "Itaú": "#EC7000",
-  Bradesco: "#CC092F",
-  Santander: "#EC0000",
-  "Banco do Brasil": "#F8D30F",
-  Caixa: "#0033A0",
-  Inter: "#FF7A00",
-  "C6 Bank": "#242424",
-  PicPay: "#21C25E",
-  XP: "#000000",
-};
-
-function corDoBanco(nome) {
-  return CORES_BANCO[nome] || "#3E6B6B"; // teal do app como cor padrão pra bancos fora da lista
+  await renderCartoesCompleto();
 }
 
-  const cartoes = await listarCartoes(currentUser.uid);
-  document.getElementById("lista-cartoes").innerHTML =
-    cartoes
-      .map((c) => {
-        const cor = corDoBanco(c.nome);
-        const inicial = c.nome.trim().charAt(0).toUpperCase();
+function popularSelectsGastoFixo() {
+  document.getElementById("select-gastofixo-grupo").innerHTML = Object.entries(GRUPO_LABEL).map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+  document.getElementById("select-gastofixo-categoria").innerHTML =
+    `<option value="">Sem categoria</option>` + categoriasFinancasCache.map((c) => `<option value="${c.id}">${c.icone} ${escapeHtml(c.nome)}</option>`).join("");
+}
+
+// ---- Filtros e busca ----
+
+function popularFiltrosFinancas() {
+  const selGrupo = document.getElementById("filtro-grupo");
+  const valorAtualGrupo = selGrupo.value;
+  selGrupo.innerHTML = `<option value="">Todos os grupos</option>` + Object.entries(GRUPO_LABEL).map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+  selGrupo.value = valorAtualGrupo;
+
+  const selCategoria = document.getElementById("filtro-categoria");
+  const valorAtualCategoria = selCategoria.value;
+  selCategoria.innerHTML = `<option value="">Todas categorias</option>` + categoriasFinancasCache.map((c) => `<option value="${c.id}">${c.icone} ${escapeHtml(c.nome)}</option>`).join("");
+  selCategoria.value = valorAtualCategoria;
+
+  const selForma = document.getElementById("filtro-forma-pagamento");
+  const valorAtualForma = selForma.value;
+  selForma.innerHTML = `<option value="">Todas formas</option>` + FORMAS_PAGAMENTO.map((f) => `<option value="${f}">${f}</option>`).join("");
+  selForma.value = valorAtualForma;
+}
+
+["input-busca-transacao", "filtro-grupo", "filtro-categoria", "filtro-tipo", "filtro-forma-pagamento"].forEach((id) => {
+  document.getElementById(id).addEventListener("input", renderListaTransacoes);
+  document.getElementById(id).addEventListener("change", renderListaTransacoes);
+});
+
+function renderListaTransacoes() {
+  if (!resumoFinancasCache) return;
+
+  const busca = document.getElementById("input-busca-transacao").value.toLowerCase();
+  const grupo = document.getElementById("filtro-grupo").value;
+  const categoriaId = document.getElementById("filtro-categoria").value;
+  const tipo = document.getElementById("filtro-tipo").value;
+  const forma = document.getElementById("filtro-forma-pagamento").value;
+
+  const filtradas = resumoFinancasCache.transacoes.filter((t) => {
+    if (busca && !(t.descricao || "").toLowerCase().includes(busca)) return false;
+    if (grupo && t.grupo !== grupo) return false;
+    if (categoriaId && t.categoriaId !== categoriaId) return false;
+    if (tipo && t.tipo !== tipo) return false;
+    if (forma && t.formaPagamento !== forma) return false;
+    return true;
+  });
+
+  const mapaCategorias = Object.fromEntries(categoriasFinancasCache.map((c) => [c.id, c]));
+
+  document.getElementById("lista-transacoes").innerHTML =
+    filtradas
+      .map((t) => {
+        const cat = mapaCategorias[t.categoriaId];
+        const parcelaTag = t.totalParcelas > 1 ? `<span class="transacao-parcela-tag">Parcela ${t.parcela}/${t.totalParcelas}</span>` : "";
         return `
-      <div class="cartao-item">
-        <div class="cartao-icone" style="background:${cor}22; color:${cor};">${inicial}</div>
+      <div class="transacao-item">
         <div class="transacao-info">
-          <div>${escapeHtml(c.nome)}</div>
-          <div class="transacao-grupo">Fecha dia ${c.fechamento} · Vence dia ${c.vencimento}</div>
+          <div>${escapeHtml(t.descricao) || (cat ? cat.nome : GRUPO_LABEL[t.grupo]) || t.grupo}${parcelaTag}</div>
+          <div class="transacao-grupo">${cat ? `${cat.icone} ${escapeHtml(cat.nome)} · ` : ""}${GRUPO_LABEL[t.grupo] || t.grupo} · ${formatarDataBR(t.data)}</div>
         </div>
-        <button class="tarefa-remover" data-remover-cartao="${c.id}">✕</button>
+        <span class="transacao-valor ${t.tipo}">${valoresOcultos ? "••••" : `${t.tipo === "entrada" ? "+" : "-"}${formatarMoeda(t.valor)}`}</span>
+        <div class="transacao-acoes">
+          <button class="transacao-acao-btn" data-editar-transacao="${t.id}" title="Editar" aria-label="Editar transação">✎</button>
+          <button class="transacao-acao-btn" data-duplicar-transacao="${t.id}" title="Duplicar" aria-label="Duplicar transação">⧉</button>
+          <button class="transacao-acao-btn" data-remover-transacao="${t.id}" title="Excluir" aria-label="Excluir transação" style="color:var(--terracotta);">✕</button>
+        </div>
       </div>`;
       })
-      .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum cartão cadastrado.</p>`;
+      .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhuma transação encontrada.</p>`;
 }
+
+document.getElementById("lista-transacoes").addEventListener("click", async (e) => {
+  const btnRemover = e.target.closest("[data-remover-transacao]");
+  const btnEditar = e.target.closest("[data-editar-transacao]");
+  const btnDuplicar = e.target.closest("[data-duplicar-transacao]");
+
+  if (btnRemover) {
+    if (!confirm("Excluir essa transação? Essa ação não pode ser desfeita.")) return;
+    await removerTransacao(currentUser.uid, btnRemover.dataset.removerTransacao);
+    mostrarToast("Transação excluída.");
+    await carregarFinancas();
+  } else if (btnEditar) {
+    const transacao = resumoFinancasCache.transacoes.find((t) => t.id === btnEditar.dataset.editarTransacao);
+    if (transacao) abrirModalTransacao(transacao);
+  } else if (btnDuplicar) {
+    const transacao = resumoFinancasCache.transacoes.find((t) => t.id === btnDuplicar.dataset.duplicarTransacao);
+    if (transacao) {
+      await duplicarTransacao(currentUser.uid, { ...transacao, data: new Date().toISOString().slice(0, 10) });
+      mostrarToast("Transação duplicada.");
+      await carregarFinancas();
+    }
+  }
+});
+
+// ---- Modal de nova/editar transação ----
+
+function popularSelectsModal() {
+  document.getElementById("modal-select-grupo").innerHTML = Object.entries(GRUPO_LABEL).map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+  document.getElementById("modal-select-categoria").innerHTML =
+    `<option value="">Sem categoria</option>` + categoriasFinancasCache.map((c) => `<option value="${c.id}">${c.icone} ${escapeHtml(c.nome)}</option>`).join("");
+  document.getElementById("modal-select-forma-pagamento").innerHTML = FORMAS_PAGAMENTO.map((f) => `<option value="${f}">${f}</option>`).join("");
+  document.getElementById("modal-select-cartao").innerHTML =
+    cartoesFinancasCache.length > 0
+      ? cartoesFinancasCache.map((c) => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join("")
+      : `<option value="">Nenhum cartão cadastrado</option>`;
+  document.getElementById("modal-select-parcelamento").innerHTML = OPCOES_PARCELAMENTO.map((p) => `<option value="${p}">${p}</option>`).join("");
+}
+
+function atualizarCamposCondicionaisModal() {
+  const forma = document.getElementById("modal-select-forma-pagamento").value;
+  document.getElementById("modal-campo-cartao").classList.toggle("hidden", forma !== "Crédito");
+  document.getElementById("modal-campo-parcelamento").classList.toggle("hidden", forma !== "Crédito");
+  atualizarPreviewParcelamento();
+}
+
+function atualizarPreviewParcelamento() {
+  const parcelamento = document.getElementById("modal-select-parcelamento").value;
+  const valor = Number(document.getElementById("modal-input-valor").value) || 0;
+  const previewEl = document.getElementById("modal-parcelamento-preview");
+
+  if (!parcelamento || parcelamento === "À vista" || valor <= 0) {
+    previewEl.textContent = "";
+    return;
+  }
+  const n = Number(parcelamento.replace("x", ""));
+  const valorParcela = valor / n;
+  previewEl.textContent = `${n}x de ${formatarMoeda(valorParcela)}`;
+}
+
+document.getElementById("modal-select-forma-pagamento").addEventListener("change", atualizarCamposCondicionaisModal);
+document.getElementById("modal-select-parcelamento").addEventListener("change", atualizarPreviewParcelamento);
+document.getElementById("modal-input-valor").addEventListener("input", atualizarPreviewParcelamento);
+
+document.getElementById("modal-tipo-tabs").addEventListener("click", (e) => {
+  const btn = e.target.closest(".cat-tab");
+  if (!btn) return;
+  document.querySelectorAll("#modal-tipo-tabs .cat-tab").forEach((b) => b.classList.toggle("selecionada", b === btn));
+});
+
+function abrirModalTransacao(transacaoExistente = null) {
+  popularSelectsModal();
+  transacaoEditandoId = transacaoExistente?.id || null;
+
+  document.getElementById("modal-transacao-titulo").textContent = transacaoEditandoId ? "Editar transação" : "Nova transação";
+
+  const tipo = transacaoExistente?.tipo || "saida";
+  document.querySelectorAll("#modal-tipo-tabs .cat-tab").forEach((b) => b.classList.toggle("selecionada", b.dataset.tipo === tipo));
+
+  document.getElementById("modal-select-grupo").value = transacaoExistente?.grupo || GRUPOS.VARIAVEIS;
+  document.getElementById("modal-select-categoria").value = transacaoExistente?.categoriaId || "";
+  document.getElementById("modal-input-descricao").value = transacaoExistente?.descricao || "";
+  document.getElementById("modal-input-valor").value = transacaoExistente?.valor || "";
+  document.getElementById("modal-input-data").value = transacaoExistente?.data || new Date().toISOString().slice(0, 10);
+  document.getElementById("modal-select-forma-pagamento").value = transacaoExistente?.formaPagamento || "Pix";
+  document.getElementById("modal-select-cartao").value = transacaoExistente?.cartaoId || "";
+  document.getElementById("modal-select-parcelamento").value = "À vista"; // parcelamento não é reeditável numa parcela já existente
+  document.getElementById("modal-checkbox-recorrente").checked = !!transacaoExistente?.recorrente;
+  document.getElementById("modal-input-observacoes").value = transacaoExistente?.observacoes || "";
+
+  // Ao editar uma parcela existente, trava o campo de parcelamento (evita duplicar a lógica de recriar o grupo de parcelas nessa fase).
+  document.getElementById("modal-select-parcelamento").disabled = !!transacaoExistente?.totalParcelas;
+
+  atualizarCamposCondicionaisModal();
+  document.getElementById("modal-transacao").classList.remove("hidden");
+}
+
+document.getElementById("btn-nova-transacao").addEventListener("click", () => abrirModalTransacao());
+document.getElementById("btn-fechar-modal-transacao").addEventListener("click", () => {
+  document.getElementById("modal-transacao").classList.add("hidden");
+});
+document.getElementById("modal-transacao").addEventListener("click", (e) => {
+  if (e.target.id === "modal-transacao") document.getElementById("modal-transacao").classList.add("hidden");
+});
+
+document.getElementById("btn-salvar-transacao").addEventListener("click", async () => {
+  const tipo = document.querySelector("#modal-tipo-tabs .cat-tab.selecionada").dataset.tipo;
+  const grupo = document.getElementById("modal-select-grupo").value;
+  const categoriaId = document.getElementById("modal-select-categoria").value || null;
+  const descricao = document.getElementById("modal-input-descricao").value;
+  const valor = document.getElementById("modal-input-valor").value;
+  const data = document.getElementById("modal-input-data").value;
+  const formaPagamento = document.getElementById("modal-select-forma-pagamento").value;
+  const cartaoId = document.getElementById("modal-select-cartao").value || null;
+  const parcelamento = document.getElementById("modal-select-parcelamento").value;
+  const recorrente = document.getElementById("modal-checkbox-recorrente").checked;
+  const observacoes = document.getElementById("modal-input-observacoes").value;
+
+  if (!valor || Number(valor) <= 0 || !data) {
+    mostrarToast("Preencha valor e data antes de salvar.", "erro");
+    return;
+  }
+
+  const dadosBase = { tipo, grupo, categoriaId, descricao, valor, data, formaPagamento, cartaoId, recorrente, observacoes };
+
+  try {
+    if (transacaoEditandoId) {
+      await editarTransacao(currentUser.uid, transacaoEditandoId, dadosBase);
+      mostrarToast("Transação atualizada.");
+    } else if (formaPagamento === "Crédito" && parcelamento !== "À vista") {
+      const numParcelas = Number(parcelamento.replace("x", ""));
+      await adicionarTransacaoParcelada(currentUser.uid, dadosBase, numParcelas);
+      mostrarToast(`Transação parcelada em ${numParcelas}x.`);
+    } else {
+      await adicionarTransacao(currentUser.uid, dadosBase);
+      mostrarToast("Transação registrada.");
+    }
+  } catch (e) {
+    mostrarToast("Não foi possível salvar. Tente de novo.", "erro");
+    return;
+  }
+
+  document.getElementById("modal-transacao").classList.add("hidden");
+  await carregarFinancas();
+});
+
+// ---- Meta, gastos fixos e cartões ----
 
 document.getElementById("select-cartao-banco").addEventListener("change", (e) => {
   document.getElementById("input-cartao-banco-outro").classList.toggle("hidden", e.target.value !== "Outro");
@@ -1120,67 +1586,59 @@ document.getElementById("btn-add-cartao").addEventListener("click", async () => 
   const nome = bancoSelecionado === "Outro" ? document.getElementById("input-cartao-banco-outro").value : bancoSelecionado;
   const fechamento = document.getElementById("input-cartao-fechamento").value;
   const vencimento = document.getElementById("input-cartao-vencimento").value;
-  if (!nome || !fechamento || !vencimento) return;
+  const limiteTotal = document.getElementById("input-cartao-limite").value || null;
+  if (!nome || !fechamento || !vencimento) {
+    mostrarToast("Preencha banco, fechamento e vencimento.", "erro");
+    return;
+  }
 
-  await adicionarCartao(currentUser.uid, { nome, fechamento, vencimento });
+  await adicionarCartaoCompleto(currentUser.uid, { nome, fechamento, vencimento, limiteTotal });
   document.getElementById("input-cartao-banco-outro").value = "";
   document.getElementById("input-cartao-banco-outro").classList.add("hidden");
   document.getElementById("select-cartao-banco").selectedIndex = 0;
   document.getElementById("input-cartao-fechamento").value = "";
   document.getElementById("input-cartao-vencimento").value = "";
-  await carregarFinancas();
-});
-
-document.getElementById("lista-cartoes").addEventListener("click", async (e) => {
-  const btn = e.target.closest("[data-remover-cartao]");
-  if (!btn) return;
-  await removerCartao(currentUser.uid, btn.dataset.removerCartao);
-  await carregarFinancas();
-});
-
-document.getElementById("btn-add-transacao").addEventListener("click", async () => {
-  const valor = document.getElementById("input-valor-financas").value;
-  const descricao = document.getElementById("input-descricao-financas").value;
-  const grupo = document.getElementById("select-grupo-financas").value;
-  if (!valor || Number(valor) <= 0) return;
-
-  await adicionarTransacao(currentUser.uid, { tipo: tipoTransacaoSelecionado, grupo, descricao, valor });
-  document.getElementById("input-valor-financas").value = "";
-  document.getElementById("input-descricao-financas").value = "";
+  document.getElementById("input-cartao-limite").value = "";
+  mostrarToast("Cartão adicionado.");
   await carregarFinancas();
 });
 
 document.getElementById("btn-definir-meta-financas").addEventListener("click", async () => {
   const valor = document.getElementById("input-meta-financas").value;
-  if (!valor) return;
-  await definirMetaGasto(currentUser.uid, valor);
+  if (!valor) {
+    mostrarToast("Digite um valor de meta.", "erro");
+    return;
+  }
+  await definirMetaGasto(currentUser.uid, valor, periodoAtualFinancas);
+  mostrarToast("Meta definida.");
   await carregarFinancas();
 });
 
 document.getElementById("btn-add-gastofixo").addEventListener("click", async () => {
   const descricao = document.getElementById("input-gastofixo-desc").value;
-  const dia = document.getElementById("input-gastofixo-dia").value;
-  const valor = document.getElementById("input-gastofixo-valor").value;
-  if (!descricao || !dia || !valor) return;
+  const grupo = document.getElementById("select-gastofixo-grupo").value;
+  const categoriaId = document.getElementById("select-gastofixo-categoria").value || null;
+  const diaVencimento = document.getElementById("input-gastofixo-dia").value;
+  const valorMedio = document.getElementById("input-gastofixo-valor").value;
+  const recorrencia = document.getElementById("select-gastofixo-recorrencia").value;
+  if (!descricao || !diaVencimento || !valorMedio) {
+    mostrarToast("Preencha descrição, dia e valor.", "erro");
+    return;
+  }
 
-  await adicionarGastoFixo(currentUser.uid, { descricao, diaVencimento: dia, valorMedio: valor });
+  await adicionarGastoRecorrente(currentUser.uid, { descricao, grupo, categoriaId, diaVencimento, valorMedio, recorrencia });
   document.getElementById("input-gastofixo-desc").value = "";
   document.getElementById("input-gastofixo-dia").value = "";
   document.getElementById("input-gastofixo-valor").value = "";
-  await carregarFinancas();
-});
-
-document.getElementById("lista-transacoes").addEventListener("click", async (e) => {
-  const btn = e.target.closest("[data-remover-transacao]");
-  if (!btn) return;
-  await removerTransacao(currentUser.uid, btn.dataset.removerTransacao);
+  mostrarToast("Gasto recorrente adicionado.");
   await carregarFinancas();
 });
 
 document.getElementById("lista-gastos-fixos").addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-remover-gastofixo]");
   if (!btn) return;
-  await removerGastoFixo(currentUser.uid, btn.dataset.removerGastofixo);
+  if (!confirm("Remover esse gasto fixo?")) return;
+  await removerGastoRecorrente(currentUser.uid, btn.dataset.removerGastofixo);
   await carregarFinancas();
 });
 
@@ -1312,7 +1770,7 @@ function renderBiblioteca() {
       <div class="livro-card">
         <div class="livro-capa" style="background:${livro.corCapa}; color:${corTexto};">
           ${iniciaisTitulo(livro.titulo)}
-          <button class="btn-favorito" data-favorito="${livro.id}" data-favorito-atual="${favorito}">${favorito ? "★" : "☆"}</button>
+          <button class="btn-favorito" data-favorito="${livro.id}" data-favorito-atual="${favorito}" aria-label="${favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}">${favorito ? "★" : "☆"}</button>
           ${livro.origem === "local" ? `<span class="livro-tag-local">Neste aparelho</span>` : ""}
         </div>
         <div class="livro-info">
