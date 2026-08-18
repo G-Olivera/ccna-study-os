@@ -51,14 +51,14 @@
     <span class="brand">CCNA Study OS</span>
     <div style="display:flex; align-items:center; gap:10px;">
       <span class="streak">🔥 <span id="streak-valor">0</span> dias</span>
-      <button id="btn-theme-toggle" class="btn-logout" title="Alternar tema claro/escuro">
+      <button id="btn-theme-toggle" class="btn-logout" title="Alternar tema claro/escuro" aria-label="Alternar tema claro ou escuro">
         <svg id="icon-theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
         <svg id="icon-theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <button id="btn-abrir-config" class="btn-logout" title="Configurações e segurança">
+      <button id="btn-abrir-config" class="btn-logout" title="Configurações e segurança" aria-label="Abrir configurações e segurança">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
-      <button id="btn-logout" class="btn-logout" title="Sair da conta">
+      <button id="btn-logout" class="btn-logout" title="Sair da conta" aria-label="Sair da conta">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       </button>
     </div>
@@ -69,7 +69,7 @@
     <div class="modal-conteudo">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h2 style="font-size:18px;">Configurações e segurança</h2>
-        <button id="btn-fechar-config" class="btn-logout" title="Fechar">
+        <button id="btn-fechar-config" class="btn-logout" title="Fechar" aria-label="Fechar configurações">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -267,41 +267,59 @@
   <section id="tela-financas" class="tela hidden">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
       <h1>Finanças</h1>
-      <button id="btn-toggle-valores" class="btn-logout" title="Ocultar/mostrar valores">
+      <button id="btn-toggle-valores" class="btn-logout" title="Ocultar/mostrar valores" aria-label="Ocultar ou mostrar valores">
         <svg id="icon-olho-aberto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         <svg id="icon-olho-fechado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
       </button>
     </div>
+
+    <!-- Seletor de período -->
+    <div class="periodo-seletor">
+      <button id="btn-periodo-anterior" class="periodo-nav-btn">‹</button>
+      <span id="periodo-label">Carregando…</span>
+      <button id="btn-periodo-proximo" class="periodo-nav-btn">›</button>
+    </div>
+
     <p style="margin-bottom: 16px;" id="financas-resumo-texto">Carregando…</p>
 
     <div class="stat-scroll" id="financas-stats"></div>
 
-    <div class="task-card" style="margin-bottom:20px;">
-      <div class="categoria-tabs" id="financas-tipo-tabs">
-        <button data-tipo="saida" class="cat-tab selecionada cat-trabalho">Saída</button>
-        <button data-tipo="entrada" class="cat-tab cat-estudo">Entrada</button>
-      </div>
-      <select id="select-grupo-financas" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-top:12px; font-family:var(--font-body);">
-        <option value="fixos">🏠 Gastos Fixos</option>
-        <option value="assinatura">📺 Assinatura</option>
-        <option value="variaveis" selected>💸 Gastos Variáveis</option>
-        <option value="temporarias">🧾 Despesas Temporárias</option>
-        <option value="fatura">💳 Pagamento de Fatura</option>
-        <option value="receita">💵 Ganhos</option>
-      </select>
-      <div style="display:flex; gap:8px; margin-top:10px;">
-        <input id="input-valor-financas" type="number" step="0.01" placeholder="Valor (R$)" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
-        <input id="input-descricao-financas" type="text" placeholder="Descrição (opcional)" style="flex:2; padding:10px; border-radius:8px; border:1px solid var(--border);" />
-      </div>
-      <button class="btn-primary" id="btn-add-transacao" style="margin-top:10px;">Registrar</button>
-    </div>
+    <button class="btn-primary" id="btn-nova-transacao" style="margin: 16px 0;">+ Nova transação</button>
 
-    <h3 style="margin-bottom:12px; font-size:15px;">Gasto por grupo</h3>
-    <div id="financas-grupos-bars" style="margin-bottom:20px;"></div>
+    <div class="financas-grid-desktop">
+      <div>
+        <h3 style="margin-bottom:12px; font-size:15px;">Resumo financeiro</h3>
+        <div class="task-card" id="financas-resumo-automatico" style="margin-bottom:20px;"></div>
+
+        <h3 style="margin-bottom:12px; font-size:15px;">Gasto por categoria</h3>
+        <div class="task-card" style="margin-bottom:20px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+          <div id="financas-donut-categoria"></div>
+          <div id="financas-donut-legenda" style="flex:1; min-width:140px;"></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:12px; font-size:15px;">Evolução mensal</h3>
+        <div class="task-card" style="margin-bottom:20px;">
+          <div id="financas-evolucao-comparacao" style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;"></div>
+          <div id="financas-evolucao-grafico"></div>
+          <div style="display:flex; gap:16px; margin-top:8px; font-size:11px; color:var(--ink-soft);">
+            <span>🟢 Entradas</span>
+            <span>🟠 Saídas</span>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom:12px; font-size:15px;">Gasto por grupo</h3>
+        <div id="financas-grupos-bars" style="margin-bottom:20px;"></div>
+      </div>
+    </div>
 
     <h3 style="margin-bottom:12px; font-size:15px;">Meta de gasto do mês</h3>
     <div class="task-card" style="margin-bottom:20px;">
-      <div id="financas-meta-texto" style="margin-bottom:10px; font-size:14px; color:var(--ink-soft);"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div id="financas-meta-texto" style="font-size:14px; color:var(--ink-soft);"></div>
+        <span id="financas-meta-alerta" class="alerta-badge"></span>
+      </div>
       <div class="track" style="height:10px; margin-bottom:14px;"><div class="fill" id="financas-meta-fill" style="height:100%; background:var(--sage); border-radius:5px; width:0%;"></div></div>
       <div style="display:flex; gap:8px;">
         <input id="input-meta-financas" type="number" placeholder="Limite de gasto (R$)" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
@@ -309,17 +327,43 @@
       </div>
     </div>
 
-    <h3 style="margin-bottom:12px; font-size:15px;">Transações do mês</h3>
-    <div id="lista-transacoes"></div>
+    <h3 style="margin-bottom:12px; font-size:15px;">Metas por categoria</h3>
+    <div id="lista-metas-categoria" style="margin-bottom:20px;"></div>
 
-    <h3 style="margin:20px 0 12px; font-size:15px;">Gastos fixos</h3>
+    <h3 style="margin-bottom:12px; font-size:15px;">Transações</h3>
+    <input id="input-busca-transacao" type="text" placeholder="Buscar por descrição…" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:8px; font-family:var(--font-body);" />
+    <div class="financas-filtros-row">
+      <select id="filtro-grupo"><option value="">Todos os grupos</option></select>
+      <select id="filtro-categoria"><option value="">Todas categorias</option></select>
+      <select id="filtro-tipo">
+        <option value="">Todos os tipos</option>
+        <option value="entrada">Só entradas</option>
+        <option value="saida">Só saídas</option>
+      </select>
+      <select id="filtro-forma-pagamento"><option value="">Todas formas</option></select>
+    </div>
+    <button class="btn-secondary" id="btn-exportar-csv" style="margin-top:8px;">⬇ Exportar CSV</button>
+    <div id="lista-transacoes" style="margin-top:12px;"></div>
+
+    <h3 style="margin:20px 0 12px; font-size:15px;">Próximos vencimentos</h3>
+    <div id="lista-proximos-vencimentos" style="margin-bottom:20px;"></div>
+
+    <h3 style="margin:20px 0 12px; font-size:15px;">Gastos fixos e recorrentes</h3>
     <div class="task-card" style="margin-bottom:20px;">
-      <div style="display:flex; gap:8px;">
-        <input id="input-gastofixo-desc" type="text" placeholder="Descrição" style="flex:2; padding:10px; border-radius:8px; border:1px solid var(--border);" />
-        <input id="input-gastofixo-dia" type="number" min="1" max="31" placeholder="Dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+      <input id="input-gastofixo-desc" type="text" placeholder="Descrição" class="campo-input" style="margin-top:0;" />
+      <select id="select-gastofixo-grupo" class="campo-input"></select>
+      <select id="select-gastofixo-categoria" class="campo-input"></select>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <input id="input-gastofixo-dia" type="number" min="1" max="31" placeholder="Dia venc." style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
         <input id="input-gastofixo-valor" type="number" step="0.01" placeholder="Valor" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
       </div>
-      <button class="btn-primary" id="btn-add-gastofixo" style="margin-top:10px;">Adicionar gasto fixo</button>
+      <select id="select-gastofixo-recorrencia" class="campo-input">
+        <option value="mensal">Mensal</option>
+        <option value="semanal">Semanal</option>
+        <option value="anual">Anual</option>
+        <option value="personalizada">Personalizada</option>
+      </select>
+      <button class="btn-primary" id="btn-add-gastofixo" style="margin-top:10px;">Adicionar gasto recorrente</button>
     </div>
     <div id="lista-gastos-fixos"></div>
 
@@ -339,13 +383,19 @@
         <option value="Outro">Outro banco</option>
       </select>
       <input id="input-cartao-banco-outro" type="text" placeholder="Nome do banco" class="hidden" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:8px;" />
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
         <input id="input-cartao-fechamento" type="number" min="1" max="31" placeholder="Fecha dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
         <input id="input-cartao-vencimento" type="number" min="1" max="31" placeholder="Vence dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
       </div>
+      <input id="input-cartao-limite" type="number" step="0.01" placeholder="Limite total (opcional)" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border);" />
       <button class="btn-primary" id="btn-add-cartao" style="margin-top:10px;">Adicionar cartão</button>
     </div>
     <div id="lista-cartoes"></div>
+
+    <div id="fatura-view" class="hidden">
+      <button class="btn-secondary" id="btn-fechar-fatura">← Voltar</button>
+      <div id="fatura-conteudo" style="margin-top:12px;"></div>
+    </div>
   </section>
 
   <!-- TELA: LIVRO -->
@@ -425,6 +475,61 @@
     </button>
     </div>
   </nav>
+</div>
+
+<!-- MODAL: NOVA/EDITAR TRANSAÇÃO -->
+<div id="modal-transacao" class="modal-form-overlay hidden">
+  <div class="modal-form-conteudo">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h2 id="modal-transacao-titulo" style="font-size:18px;">Nova transação</h2>
+      <button id="btn-fechar-modal-transacao" class="btn-logout" title="Fechar" aria-label="Fechar formulário de transação">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="categoria-tabs" id="modal-tipo-tabs" style="margin-bottom:12px;">
+      <button data-tipo="saida" class="cat-tab selecionada cat-trabalho">Saída</button>
+      <button data-tipo="entrada" class="cat-tab cat-estudo">Entrada</button>
+    </div>
+
+    <label class="campo-label">Grupo</label>
+    <select id="modal-select-grupo" class="campo-input"></select>
+
+    <label class="campo-label">Categoria</label>
+    <select id="modal-select-categoria" class="campo-input"></select>
+
+    <label class="campo-label">Descrição</label>
+    <input id="modal-input-descricao" type="text" class="campo-input" placeholder="Ex: Supermercado" />
+
+    <label class="campo-label">Valor (R$)</label>
+    <input id="modal-input-valor" type="number" step="0.01" min="0" class="campo-input" placeholder="0,00" />
+
+    <label class="campo-label">Data</label>
+    <input id="modal-input-data" type="date" class="campo-input" />
+
+    <label class="campo-label">Forma de pagamento</label>
+    <select id="modal-select-forma-pagamento" class="campo-input"></select>
+
+    <div id="modal-campo-cartao" class="hidden">
+      <label class="campo-label">Cartão</label>
+      <select id="modal-select-cartao" class="campo-input"></select>
+    </div>
+
+    <div id="modal-campo-parcelamento" class="hidden">
+      <label class="campo-label">Parcelamento</label>
+      <select id="modal-select-parcelamento" class="campo-input"></select>
+      <p id="modal-parcelamento-preview" style="font-size:12px; color:var(--ink-soft); margin-top:-8px; margin-bottom:12px;"></p>
+    </div>
+
+    <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px;">
+      <input type="checkbox" id="modal-checkbox-recorrente" /> Transação recorrente
+    </label>
+
+    <label class="campo-label">Observações (opcional)</label>
+    <textarea id="modal-input-observacoes" class="campo-input" rows="2" style="resize:vertical;"></textarea>
+
+    <button class="btn-primary" id="btn-salvar-transacao" style="margin-top:8px;">Salvar transação</button>
+  </div>
 </div>
 
 <script type="module" src="js/app.js"></script>
