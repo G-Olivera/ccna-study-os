@@ -68,3 +68,10 @@ export function formatarDataBR(dataIso) {
   const [ano, mes, dia] = dataIso.split("-");
   return `${dia}/${mes}/${ano}`;
 }
+
+/** Soma (ou subtrai) meses a uma data completa "YYYY-MM-DD" — usado no parcelamento. */
+export function somarMesesData(dataIso, n) {
+  const [ano, mes, dia] = dataIso.split("-").map(Number);
+  const data = new Date(ano, mes - 1 + n, dia);
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}-${String(data.getDate()).padStart(2, "0")}`;
+}
