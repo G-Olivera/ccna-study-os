@@ -246,12 +246,17 @@ button { font-family: var(--font-body); cursor: pointer; }
 .livro-capa {
   aspect-ratio: 3 / 4; display: flex; align-items: center; justify-content: center;
   font-family: var(--font-display); font-weight: 700; font-size: 28px; color: white;
-  position: relative;
+  position: relative; overflow: hidden;
+}
+.livro-capa-iniciais { transition: opacity 0.2s ease; }
+.livro-capa.livro-capa-com-imagem .livro-capa-iniciais { display: none; }
+.livro-capa.livro-capa-com-imagem .btn-favorito {
+  background: rgba(0,0,0,0.45); /* mais opaco por cima de uma foto real, pra manter legível */
 }
 .livro-capa .btn-favorito {
   position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.25); border: none;
   width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  color: white; font-size: 15px;
+  color: white; font-size: 15px; z-index: 1;
 }
 .livro-tag-local {
   position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.35); color: white;
@@ -269,6 +274,7 @@ button { font-family: var(--font-body); cursor: pointer; }
 .modal-overlay {
   position: fixed; inset: 0; background: transparent;
   z-index: 200;
+  perspective: 900px; /* necessário pro rotateY abaixo ter profundidade 3D de verdade */
 }
 .modal-conteudo {
   position: absolute; top: 68px; right: 16px;
@@ -276,9 +282,13 @@ button { font-family: var(--font-body); cursor: pointer; }
   max-height: 70vh; overflow-y: auto;
   border-radius: var(--radius); padding: var(--space-4);
   border: 1px solid var(--border); box-shadow: var(--shadow);
-  animation: dropdownIn 0.18s ease;
+  transform-origin: top right; /* gira a partir do canto perto da engrenagem, não do centro */
+  animation: flipInConfig 0.35s cubic-bezier(.22,1,.36,1);
 }
-@keyframes dropdownIn { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes flipInConfig {
+  from { opacity: 0; transform: rotateY(-90deg) scale(0.92); }
+  to { opacity: 1; transform: rotateY(0deg) scale(1); }
+}
 
 /* ===== CALENDÁRIO DE STREAK (mapa de calor) ===== */
 .streak-calendar-wrapper { overflow-x: auto; margin-bottom: 8px; padding-bottom: 4px; }
