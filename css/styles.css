@@ -84,6 +84,36 @@ button { font-family: var(--font-body); cursor: pointer; }
 .btn-logout:hover { color: var(--terracotta); border-color: var(--terracotta); }
 .btn-logout svg { width: 17px; height: 17px; }
 
+/* ===== MENU FLIP (topbar) ===== */
+.menu-wrapper { position: relative; perspective: 900px; }
+.menu-wrapper #menu-trigger { transition: color .2s, border-color .2s; }
+.menu-wrapper.open #menu-trigger { color: var(--terracotta); border-color: var(--terracotta); }
+.menu-flip {
+  position: absolute; top: 44px; right: 0; width: 236px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 6px; z-index: 60;
+  display: flex; flex-direction: column;
+  transform-origin: top right;
+  transform: rotateY(-100deg);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .4s cubic-bezier(.2,.8,.2,1), opacity .25s ease;
+}
+.menu-wrapper.open .menu-flip { transform: rotateY(0deg); opacity: 1; pointer-events: all; }
+.menu-flip-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 11px 12px; background: none; border: none; border-radius: var(--radius-sm);
+  color: var(--ink); font-family: var(--font-body); font-size: 14px; font-weight: 500; text-align: left;
+}
+.menu-flip-item:hover, .menu-flip-item:active { background: var(--surface-quiet); }
+.menu-flip-item svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--ink-soft); }
+.menu-flip-item-danger { color: var(--terracotta); }
+.menu-flip-item-danger svg { color: var(--terracotta); }
+.menu-flip-divider { height: 1px; background: var(--border); margin: 4px 6px; }
+@media (prefers-reduced-motion: reduce) {
+  .menu-flip { transition: opacity .15s ease; transform: none; }
+}
+
 /* ===== BOTTOM NAV — item ativo expande revelando o rótulo (toque, não hover) ===== */
 .bottomnav {
   position: fixed; bottom: 0; left: 0; right: 0;
@@ -184,6 +214,23 @@ button { font-family: var(--font-body); cursor: pointer; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-4); min-width: 140px; flex-shrink: 0; }
 .stat-card .valor { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--teal); }
 .stat-card .label { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+
+/* ===== KPI CARDS (Finanças) — estilo dashboard executivo ===== */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-6); }
+.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-4); box-shadow: var(--shadow); }
+.kpi-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.kpi-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kpi-icon svg { width: 17px; height: 17px; }
+.kpi-icon.entradas { background: color-mix(in srgb, var(--sage) 18%, transparent); color: var(--sage); }
+.kpi-icon.saidas { background: color-mix(in srgb, var(--terracotta) 18%, transparent); color: var(--terracotta); }
+.kpi-icon.saldo { background: color-mix(in srgb, var(--teal) 18%, transparent); color: var(--teal); }
+.kpi-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+.kpi-valor { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--ink); }
+.kpi-variacao { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--surface-quiet); }
+.kpi-variacao svg { width: 11px; height: 11px; }
+.kpi-variacao.up { color: var(--sage); }
+.kpi-variacao.down { color: var(--terracotta); }
+.kpi-variacao.neutro { color: var(--ink-soft); }
 
 .domain-bar { margin-bottom: var(--space-4); }
 .domain-bar .head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
