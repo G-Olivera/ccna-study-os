@@ -130,6 +130,38 @@ function temaPreferido() {
 
 aplicarTema(temaPreferido());
 
+// ===== MENU FLIP (topbar): abre/fecha por toque, não por hover =====
+const menuWrapperEl = document.getElementById("menu-wrapper");
+const menuTriggerEl = document.getElementById("menu-trigger");
+const menuFlipEl = document.getElementById("menu-flip");
+
+function fecharMenuFlip() {
+  menuWrapperEl.classList.remove("open");
+  menuTriggerEl.setAttribute("aria-expanded", "false");
+  menuFlipEl.setAttribute("aria-hidden", "true");
+}
+
+menuTriggerEl.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const abrindo = !menuWrapperEl.classList.contains("open");
+  menuWrapperEl.classList.toggle("open", abrindo);
+  menuTriggerEl.setAttribute("aria-expanded", String(abrindo));
+  menuFlipEl.setAttribute("aria-hidden", String(!abrindo));
+});
+
+document.addEventListener("click", (e) => {
+  if (menuWrapperEl.classList.contains("open") && !menuWrapperEl.contains(e.target)) {
+    fecharMenuFlip();
+  }
+});
+
+// Fecha o menu depois que qualquer item dentro dele for escolhido
+menuFlipEl.addEventListener("click", (e) => {
+  if (e.target.closest("button")) {
+    setTimeout(fecharMenuFlip, 120);
+  }
+});
+
 document.getElementById("btn-theme-toggle").addEventListener("click", () => {
   const atual = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
   const novo = atual === "dark" ? "light" : "dark";
@@ -1056,7 +1088,7 @@ document.getElementById("btn-periodo-proximo").addEventListener("click", () => {
 
 // ---- Carregamento principal ----
 
-async function renderGraficosEResumoFinancas() {
+async function renderGraficosEResumoFinancas(evolucaoJaCarregada) {
   const mapaCategorias = Object.fromEntries(categoriasFinancasCache.map((c) => [c.id, c]));
 
   // Gráfico donut por categoria
@@ -1076,7 +1108,7 @@ async function renderGraficosEResumoFinancas() {
     .join("") || `<p style="font-size:12px; color:var(--ink-soft);">Sem despesas categorizadas ainda.</p>`;
 
   // Evolução mensal (últimos 6 meses) + comparação com o mês anterior
-  const evolucao = await buscarEvolucaoMensal(currentUser.uid, periodoAtualFinancas, 6);
+  const evolucao = evolucaoJaCarregada || (await buscarEvolucaoMensal(currentUser.uid, periodoAtualFinancas, 6));
   const resumoAnterior = evolucao.length >= 2 ? evolucao[evolucao.length - 2] : null;
 
   document.getElementById("financas-evolucao-grafico").innerHTML = valoresOcultos
@@ -1304,10 +1336,48 @@ async function carregarFinancas() {
 
   document.getElementById("financas-resumo-texto").textContent = `${resumoFinancasCache.transacoes.length} transações neste período`;
 
+  // Busca a evolução mensal cedo para já ter a variação % pronta para os cards de KPI
+  const evolucaoParaCards = await buscarEvolucaoMensal(currentUser.uid, periodoAtualFinancas, 6);
+  const resumoAnteriorParaCards = evolucaoParaCards.length >= 2 ? evolucaoParaCards[evolucaoParaCards.length - 2] : null;
+  const comparacaoCards = gerarComparacaoAnterior(resumoFinancasCache, resumoAnteriorParaCards);
+
+  function chipVariacao(percentual, corBoaSeSubir) {
+    if (percentual === null || percentual === undefined) {
+      return `<span class="kpi-variacao neutro">— vs mês anterior</span>`;
+    }
+    const subiu = percentual >= 0;
+    const boa = corBoaSeSubir ? subiu : !subiu;
+    const seta = subiu
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`;
+    return `<span class="kpi-variacao ${boa ? "up" : "down"}">${seta}${subiu ? "+" : ""}${percentual}% vs mês anterior</span>`;
+  }
+
   document.getElementById("financas-stats").innerHTML = `
-    <div class="stat-card"><div class="valor" style="color:var(--sage);">${formatarValorInteiro(resumoFinancasCache.totalEntradas)}</div><div class="label">Entradas</div></div>
-    <div class="stat-card"><div class="valor" style="color:var(--terracotta);">${formatarValorInteiro(resumoFinancasCache.totalSaidas)}</div><div class="label">Saídas</div></div>
-    <div class="stat-card"><div class="valor">${formatarValorInteiro(resumoFinancasCache.saldo)}</div><div class="label">Saldo</div></div>
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="kpi-icon entradas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>
+        <span class="kpi-label">Entradas</span>
+      </div>
+      <div class="kpi-valor">${valoresOcultos ? "••••" : formatarValorInteiro(resumoFinancasCache.totalEntradas)}</div>
+      ${valoresOcultos ? "" : chipVariacao(comparacaoCards?.receitas, true)}
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="kpi-icon saidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
+        <span class="kpi-label">Saídas</span>
+      </div>
+      <div class="kpi-valor">${valoresOcultos ? "••••" : formatarValorInteiro(resumoFinancasCache.totalSaidas)}</div>
+      ${valoresOcultos ? "" : chipVariacao(comparacaoCards?.despesas, false)}
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="kpi-icon saldo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.1-2.8-2.8L7 14"/></svg></div>
+        <span class="kpi-label">Saldo do período</span>
+      </div>
+      <div class="kpi-valor">${valoresOcultos ? "••••" : formatarValorInteiro(resumoFinancasCache.saldo)}</div>
+      ${valoresOcultos ? "" : chipVariacao(comparacaoCards?.saldo, true)}
+    </div>
   `;
 
   const maiorGrupo = Math.max(1, ...Object.values(resumoFinancasCache.porGrupo));
@@ -1335,7 +1405,7 @@ async function carregarFinancas() {
 
   popularFiltrosFinancas();
   renderListaTransacoes();
-  await renderGraficosEResumoFinancas();
+  await renderGraficosEResumoFinancas(evolucaoParaCards);
   await renderMetasFinancas();
   await renderProximosVencimentos();
   popularSelectsGastoFixo();
