@@ -1721,8 +1721,19 @@ async function carregarMFA() {
   const statusEl = document.getElementById("mfa-status");
   const areaEl = document.getElementById("mfa-area");
 
+  const iconeEscudoCheck = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.5 3.4 9.7 8 11 4.6-1.3 8-5.5 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>`;
+  const iconeEscudoAlerta = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.5 3.4 9.7 8 11 4.6-1.3 8-5.5 8-11V5l-8-3z"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/></svg>`;
+  const iconeEmail = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>`;
+
   if (fatores.length > 0) {
-    statusEl.textContent = "✅ Dois fatores ativado — seu login pede o código do app autenticador.";
+    statusEl.innerHTML = `
+      <div class="mfa-status-row">
+        <div class="kpi-icon entradas">${iconeEscudoCheck}</div>
+        <div>
+          <div class="mfa-status-title">Dois fatores ativado</div>
+          <div class="mfa-status-desc">Seu login pede o código do app autenticador.</div>
+        </div>
+      </div>`;
     areaEl.innerHTML = `<button class="btn-secondary" id="btn-remover-mfa" style="color:var(--terracotta); border-color:var(--terracotta);">Desativar dois fatores</button>`;
     document.getElementById("btn-remover-mfa").addEventListener("click", async () => {
       await removerFatorMFA(currentUser, fatores[0].uid);
@@ -1732,7 +1743,14 @@ async function carregarMFA() {
   }
 
   if (!currentUser.emailVerified) {
-    statusEl.textContent = "📧 Antes de ativar o MFA, o Firebase exige que seu e-mail esteja verificado.";
+    statusEl.innerHTML = `
+      <div class="mfa-status-row">
+        <div class="kpi-icon saldo">${iconeEmail}</div>
+        <div>
+          <div class="mfa-status-title">Verifique seu e-mail primeiro</div>
+          <div class="mfa-status-desc">O Firebase exige e-mail verificado antes de ativar o MFA.</div>
+        </div>
+      </div>`;
     areaEl.innerHTML = `<button class="btn-primary" id="btn-verificar-email">Enviar e-mail de verificação</button><p id="mfa-email-status" style="font-size:12px; margin-top:8px; color:var(--ink-soft);"></p>`;
     document.getElementById("btn-verificar-email").addEventListener("click", async () => {
       try {
@@ -1745,7 +1763,14 @@ async function carregarMFA() {
     return;
   }
 
-  statusEl.textContent = "🔓 Dois fatores desativado. Recomendado, especialmente com dados financeiros no app.";
+  statusEl.innerHTML = `
+    <div class="mfa-status-row">
+      <div class="kpi-icon saidas">${iconeEscudoAlerta}</div>
+      <div>
+        <div class="mfa-status-title">Dois fatores desativado</div>
+        <div class="mfa-status-desc">Recomendado, especialmente com dados financeiros no app.</div>
+      </div>
+    </div>`;
   areaEl.innerHTML = `<button class="btn-primary" id="btn-ativar-mfa">Ativar dois fatores</button>`;
   document.getElementById("btn-ativar-mfa").addEventListener("click", iniciarFluxoAtivacaoMFA);
 }
