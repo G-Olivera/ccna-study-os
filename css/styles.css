@@ -84,22 +84,31 @@ button { font-family: var(--font-body); cursor: pointer; }
 .btn-logout:hover { color: var(--terracotta); border-color: var(--terracotta); }
 .btn-logout svg { width: 17px; height: 17px; }
 
-/* ===== MENU FLIP (topbar) ===== */
-.menu-wrapper { position: relative; perspective: 900px; }
-.menu-wrapper #menu-trigger { transition: color .2s, border-color .2s; }
-.menu-wrapper.open #menu-trigger { color: var(--terracotta); border-color: var(--terracotta); }
+/* ===== MENU DROPDOWN (topbar) ===== */
+.menu-wrapper { position: relative; }
+.menu-trigger-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+  padding: 7px 14px 7px 12px; color: var(--ink); font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  transition: border-color .2s, color .2s;
+}
+.menu-trigger-pill svg { flex-shrink: 0; }
+.menu-trigger-pill > svg:first-child { width: 16px; height: 16px; color: var(--ink-soft); }
+.menu-trigger-chevron { width: 14px; height: 14px; color: var(--ink-soft); transition: transform .25s ease; }
+.menu-wrapper.open .menu-trigger-pill { border-color: var(--teal); color: var(--teal); }
+.menu-wrapper.open .menu-trigger-chevron { transform: rotate(180deg); }
 .menu-flip {
-  position: absolute; top: 44px; right: 0; width: 236px;
+  position: absolute; top: calc(100% + 8px); right: 0; width: 220px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow); padding: 6px; z-index: 60;
   display: flex; flex-direction: column;
   transform-origin: top right;
-  transform: rotateY(-100deg);
+  transform: translateY(-6px);
   opacity: 0;
   pointer-events: none;
-  transition: transform .4s cubic-bezier(.2,.8,.2,1), opacity .25s ease;
+  transition: transform .2s cubic-bezier(.22,1,.36,1), opacity .18s ease;
 }
-.menu-wrapper.open .menu-flip { transform: rotateY(0deg); opacity: 1; pointer-events: all; }
+.menu-wrapper.open .menu-flip { transform: translateY(0); opacity: 1; pointer-events: all; }
 .menu-flip-item {
   display: flex; align-items: center; gap: 10px; width: 100%;
   padding: 11px 12px; background: none; border: none; border-radius: var(--radius-sm);
