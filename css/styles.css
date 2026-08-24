@@ -336,6 +336,9 @@ button { font-family: var(--font-body); cursor: pointer; }
   from { opacity: 0; transform: rotateY(-90deg) scale(0.92); }
   to { opacity: 1; transform: rotateY(0deg) scale(1); }
 }
+.mfa-status-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.mfa-status-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.mfa-status-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.4; }
 
 /* ===== CALENDÁRIO DE STREAK (mapa de calor) ===== */
 .streak-calendar-wrapper { overflow-x: auto; margin-bottom: 8px; padding-bottom: 4px; }
