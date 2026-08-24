@@ -78,16 +78,19 @@
   <!-- MODAL: CONFIGURAÇÕES E SEGURANÇA -->
   <div id="modal-config" class="modal-overlay hidden">
     <div class="modal-conteudo">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h2 style="font-size:18px;">Configurações e segurança</h2>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="kpi-icon saldo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h2 style="font-size:16px;">Configurações e segurança</h2>
+        </div>
         <button id="btn-fechar-config" class="btn-logout" title="Fechar" aria-label="Fechar configurações">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
 
-      <h3 style="margin-bottom:8px; font-size:14px;">Segurança (dois fatores)</h3>
+      <h3 style="margin-bottom:10px; font-size:13px; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft);">Segurança (dois fatores)</h3>
       <div class="task-card" id="mfa-card" style="margin-bottom:20px;">
-        <div id="mfa-status" style="margin-bottom:12px; font-size:14px; color:var(--ink-soft);">Carregando…</div>
+        <div id="mfa-status">Carregando…</div>
         <div id="mfa-area"></div>
       </div>
     </div>
