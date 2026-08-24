@@ -52,8 +52,10 @@
     <div style="display:flex; align-items:center; gap:10px;">
       <span class="streak">🔥 <span id="streak-valor">0</span> dias</span>
       <div class="menu-wrapper" id="menu-wrapper">
-        <button id="menu-trigger" class="btn-logout" title="Menu" aria-label="Abrir menu" aria-haspopup="true" aria-expanded="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
+        <button id="menu-trigger" class="menu-trigger-pill" title="Menu" aria-label="Abrir menu" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
+          <span>Menu</span>
+          <svg class="menu-trigger-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <aside class="menu-flip" id="menu-flip" role="menu" aria-hidden="true">
           <button id="btn-theme-toggle" class="menu-flip-item" role="menuitem" title="Alternar tema claro/escuro">
