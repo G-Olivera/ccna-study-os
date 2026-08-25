@@ -75,7 +75,18 @@ p { margin: 0; color: var(--ink-soft); }
 button { font-family: var(--font-body); cursor: pointer; }
 
 /* ===== SHELL ===== */
-#app { max-width: 640px; margin: 0 auto; padding: var(--space-5) var(--space-4) 96px; min-height: 100vh; }
+/* Largura base (celular): uma coluna, foco total — mantido de propósito. */
+#app { max-width: 640px; margin: 0 auto; padding: var(--space-5) var(--space-4) 96px; min-height: 100vh; transition: max-width 0.2s ease; }
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet: todas as telas ganham mais respiro, não só Finanças. */
+  #app { max-width: 760px; }
+}
+
+@media (min-width: 1024px) {
+  /* Desktop: todas as telas aproveitam a área útil da página, não só Finanças. */
+  #app { max-width: 1100px; padding-left: var(--space-6); padding-right: var(--space-6); }
+}
 
 .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); }
 .topbar .brand { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--teal); }
@@ -86,17 +97,8 @@ button { font-family: var(--font-body); cursor: pointer; }
 
 /* ===== MENU DROPDOWN (topbar) ===== */
 .menu-wrapper { position: relative; }
-.menu-trigger-pill {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
-  padding: 7px 14px 7px 12px; color: var(--ink); font-family: var(--font-body); font-size: 13px; font-weight: 600;
-  transition: border-color .2s, color .2s;
-}
-.menu-trigger-pill svg { flex-shrink: 0; }
-.menu-trigger-pill > svg:first-child { width: 16px; height: 16px; color: var(--ink-soft); }
-.menu-trigger-chevron { width: 14px; height: 14px; color: var(--ink-soft); transition: transform .25s ease; }
-.menu-wrapper.open .menu-trigger-pill { border-color: var(--teal); color: var(--teal); }
-.menu-wrapper.open .menu-trigger-chevron { transform: rotate(180deg); }
+.menu-wrapper #menu-trigger { transition: color .2s, border-color .2s, transform .2s ease; }
+.menu-wrapper.open #menu-trigger { color: var(--teal); border-color: var(--teal); transform: rotate(35deg); }
 .menu-flip {
   position: absolute; top: calc(100% + 8px); right: 0; width: 220px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -220,6 +222,10 @@ button { font-family: var(--font-body); cursor: pointer; }
 
 /* ===== DASHBOARD ===== */
 .stat-scroll { display: flex; gap: var(--space-3); overflow-x: auto; margin-bottom: var(--space-6); padding-bottom: var(--space-2); }
+@media (min-width: 768px) {
+  .stat-scroll { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); overflow-x: visible; }
+  .stat-scroll .stat-card { min-width: 0; }
+}
 .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-4); min-width: 140px; flex-shrink: 0; }
 .stat-card .valor { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--teal); }
 .stat-card .label { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
@@ -434,19 +440,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Garante contraste mínimo nos badges de status mesmo em telas muito claras/escuras */
 .status-pago, .status-pendente, .status-atrasado, .alerta-badge { font-weight: 700; }
 
-/* ===== RESPONSIVIDADE: FINANÇAS EM TELA GRANDE (Fase 10) ===== */
+/* ===== RESPONSIVIDADE: GRID DE 2 COLUNAS EM TELA GRANDE ===== */
 /* Por padrão (celular), tudo empilhado em coluna única — já era o comportamento. */
 .financas-grid-desktop { display: block; }
 
-@media (min-width: 768px) and (max-width: 1023px) {
-  /* Tablet: mantém 1 coluna, mas com um pouco mais de respiro. */
-  #app.modo-financas-largo { max-width: 760px; }
-}
-
 @media (min-width: 1024px) {
-  /* Desktop: abre o container só da tela Finanças (não mexe nas outras telas,
-     que continuam no formato "uma coisa de cada vez" de propósito). */
-  #app.modo-financas-largo { max-width: 1100px; }
   .financas-grid-desktop { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
 }
 .cartao-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; }
