@@ -50,7 +50,7 @@
 
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="12" cy="18" r="2.2"/><path d="M8.1 7.1 15.9 7.1M7.4 8.1 11 16M16.6 8.1 13 16"/></svg>
+      <img src="apple-touch-icon.png" alt="CCNA Study OS" class="sidebar-brand-logo" />
       <div class="sidebar-brand-text"><span class="sidebar-brand-line1">CCNA <b>Study OS</b></span></div>
       <button class="sidebar-collapse-btn" id="btn-sidebar-collapse" title="Recolher menu" aria-label="Recolher menu lateral">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -109,9 +109,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
 
-      <div class="topbar-search">
+      <div class="topbar-search" id="topbar-search-wrapper">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="Buscar conteúdo… (em breve)" disabled title="Busca chega em uma próxima versão" />
+        <input type="text" id="input-busca-global" placeholder="Buscar conteúdo… (teoria, laboratório, questões, flashcards)" autocomplete="off" />
+        <div class="busca-resultados hidden" id="busca-resultados"></div>
       </div>
 
       <span class="streak" id="streak-topbar">🔥 <span id="streak-valor">0</span> dias</span>
