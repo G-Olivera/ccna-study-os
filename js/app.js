@@ -9,6 +9,7 @@ import { seedQuestionsIfNeeded } from "./seed-questions.js";
 import { seedLabsIfNeeded } from "./seed-labs.js";
 import { seedFlashcardsIfNeeded } from "./seed-flashcards.js";
 import { initTopologia } from "./topology.js";
+import { carregarIndiceBusca, buscarConteudo, totalResultados } from "./search.js";
 import {
   GRUPOS,
   GRUPO_LABEL,
@@ -208,6 +209,137 @@ document.getElementById("select-periodo-desempenho").addEventListener("change", 
   renderDesempenhoRecente(Number(e.target.value));
 });
 
+// ===== BUSCA GLOBAL (topbar) =====
+const ICONES_BUSCA = {
+  topico: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>`,
+  lab: `<circle cx="12" cy="12" r="9"/><path d="M7 12h10M7 9h6M7 15h4"/>`,
+  flashcard: `<rect x="4" y="5" width="14" height="10" rx="2"/><path d="M8 19h14a2 2 0 0 0 2-2V9"/>`,
+  questao: `<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.7 1.2c0 1.5-2 1.8-2.2 3.3"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/>`,
+};
+
+function iconeBusca(tipo) {
+  return `<div class="busca-item-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONES_BUSCA[tipo]}</svg></div>`;
+}
+
+function renderResultadosBusca(resultado) {
+  const painel = document.getElementById("busca-resultados");
+
+  if (totalResultados(resultado) === 0) {
+    painel.innerHTML = `<div class="busca-vazio">Nada encontrado. Tente outro termo.</div>`;
+    painel.classList.remove("hidden");
+    return;
+  }
+
+  let html = "";
+
+  if (resultado.topicos.length) {
+    html += `<div class="busca-grupo-titulo">Teoria</div>`;
+    html += resultado.topicos
+      .map(
+        (t) => `
+        <button class="busca-item" data-tipo="topico" data-nome="${escaparAtributo(t.nome)}" data-dominio="${escaparAtributo(t.dominio)}">
+          ${iconeBusca("topico")}
+          <div><div class="busca-item-titulo">${t.nome}</div><div class="busca-item-sub">${t.dominio}</div></div>
+        </button>`
+      )
+      .join("");
+  }
+
+  if (resultado.labs.length) {
+    html += `<div class="busca-grupo-titulo">Laboratórios</div>`;
+    html += resultado.labs
+      .map(
+        (l) => `
+        <button class="busca-item" data-tipo="lab" data-nome="${escaparAtributo(l.titulo)}">
+          ${iconeBusca("lab")}
+          <div><div class="busca-item-titulo">${l.titulo}</div><div class="busca-item-sub">Laboratório prático</div></div>
+        </button>`
+      )
+      .join("");
+  }
+
+  if (resultado.flashcards.length) {
+    html += `<div class="busca-grupo-titulo">Flashcards</div>`;
+    html += resultado.flashcards
+      .map(
+        (f) => `
+        <button class="busca-item" data-tipo="flashcard" data-nome="${escaparAtributo(f.front)}" data-dominio="${escaparAtributo(f.categoria)}">
+          ${iconeBusca("flashcard")}
+          <div><div class="busca-item-titulo">${f.front}</div><div class="busca-item-sub">${f.categoria || ""}</div></div>
+        </button>`
+      )
+      .join("");
+  }
+
+  if (resultado.questoes.length) {
+    html += `<div class="busca-grupo-titulo">Questões</div>`;
+    html += resultado.questoes
+      .map(
+        (q) => `
+        <button class="busca-item" data-tipo="questao" data-nome="${escaparAtributo(q.enunciado)}">
+          ${iconeBusca("questao")}
+          <div><div class="busca-item-titulo">${q.enunciado}</div><div class="busca-item-sub">Questão de prática</div></div>
+        </button>`
+      )
+      .join("");
+  }
+
+  painel.innerHTML = html;
+  painel.classList.remove("hidden");
+
+  painel.querySelectorAll(".busca-item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const { tipo, nome, dominio } = btn.dataset;
+      fecharResultadosBusca();
+      document.getElementById("input-busca-global").value = "";
+
+      if (tipo === "topico") {
+        trocarTela("trilha");
+        mostrarToast(`"${nome}" — domínio ${dominio}. Encontre o tópico na Trilha.`, "sucesso");
+      } else if (tipo === "lab") {
+        trocarTela("dashboard");
+        mostrarToast(`Laboratório "${nome}" — toque em "Ver laboratórios" na tela Progressão.`, "sucesso");
+      } else if (tipo === "flashcard") {
+        trocarTela("flashcards");
+        mostrarToast(`Card sobre "${dominio || "esse tema"}" pode aparecer na sua fila de revisão.`, "sucesso");
+      } else if (tipo === "questao") {
+        trocarTela("trilha");
+        mostrarToast(`Questão relacionada a esse tema aparece no Quiz do dia quando esse for o foco.`, "sucesso");
+      }
+    });
+  });
+}
+
+function fecharResultadosBusca() {
+  document.getElementById("busca-resultados").classList.add("hidden");
+}
+
+function escaparAtributo(texto) {
+  return (texto || "").replace(/"/g, "&quot;");
+}
+
+let timeoutBusca = null;
+document.getElementById("input-busca-global").addEventListener("input", (e) => {
+  clearTimeout(timeoutBusca);
+  const termo = e.target.value;
+  if (termo.trim().length < 2) {
+    fecharResultadosBusca();
+    return;
+  }
+  timeoutBusca = setTimeout(async () => {
+    await carregarIndiceBusca().catch(() => {});
+    renderResultadosBusca(buscarConteudo(termo));
+  }, 200);
+});
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#topbar-search-wrapper")) fecharResultadosBusca();
+});
+
+document.getElementById("input-busca-global").addEventListener("keydown", (e) => {
+  if (e.key === "Escape") fecharResultadosBusca();
+});
+
 let currentUser = null;
 let planoHoje = null;
 let filaCards = [];
@@ -346,6 +478,7 @@ onAuthStateChanged(auth, async (user) => {
     await inicializarCronometroUI();
     iniciarVerificacaoLembrete();
     resetarTimerInatividade();
+    carregarIndiceBusca().catch(() => {});
   } else {
     currentUser = null;
     document.getElementById("login-screen").classList.remove("hidden");
