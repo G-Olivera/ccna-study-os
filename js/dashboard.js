@@ -119,6 +119,45 @@ function computeStudyHours(activityLog) {
   return Math.round((totalMinutos / 60) * 10) / 10; // 1 casa decimal
 }
 
+// ---------- SÉRIE DE DESEMPENHO RECENTE (dados reais, sem estimativa) ----------
+
+function chaveDia(data) {
+  return data.toISOString().slice(0, 10);
+}
+
+/** Minutos estudados e questões respondidas por dia, nos últimos `dias` dias (hoje incluso). */
+export function computeSeriePeriodo(activityLog, questionAttempts, dias = 7) {
+  const porDia = new Map();
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  for (let i = dias - 1; i >= 0; i--) {
+    const d = new Date(hoje);
+    d.setDate(d.getDate() - i);
+    porDia.set(chaveDia(d), { data: d, minutos: 0, questoes: 0, acertos: 0 });
+  }
+
+  activityLog.forEach((a) => {
+    const ts = a.timestamp?.toDate?.();
+    if (!ts) return;
+    const chave = chaveDia(ts);
+    if (porDia.has(chave)) porDia.get(chave).minutos += a.duracao || 0;
+  });
+
+  questionAttempts.forEach((q) => {
+    const ts = q.timestamp?.toDate?.();
+    if (!ts) return;
+    const chave = chaveDia(ts);
+    if (porDia.has(chave)) {
+      const registro = porDia.get(chave);
+      registro.questoes += 1;
+      if (q.correct) registro.acertos += 1;
+    }
+  });
+
+  return Array.from(porDia.values());
+}
+
 // ---------- XP E NÍVEL ----------
 
 function computeXpAndLevel(questionAttempts, activityLog, streak) {
@@ -166,6 +205,12 @@ export async function getHistoricoStreak(uid, dias = 84) {
     cursor.setDate(cursor.getDate() + 1);
   }
   return resultado;
+}
+
+/** Série real dos últimos `dias` dias — usada pelo card "Desempenho recente". */
+export async function getDesempenhoRecente(uid, dias = 7) {
+  const [activityLog, questionAttempts] = await Promise.all([fetchActivityLog(uid), fetchQuestionAttempts(uid)]);
+  return computeSeriePeriodo(activityLog, questionAttempts, dias);
 }
 
 export async function getDashboardData(uid) {

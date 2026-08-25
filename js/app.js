@@ -8,6 +8,7 @@ import { seedContentIfNeeded, getModulosResumo } from "./seed-content.js";
 import { seedQuestionsIfNeeded } from "./seed-questions.js";
 import { seedLabsIfNeeded } from "./seed-labs.js";
 import { seedFlashcardsIfNeeded } from "./seed-flashcards.js";
+import { initTopologia } from "./topology.js";
 import {
   GRUPOS,
   GRUPO_LABEL,
@@ -52,7 +53,7 @@ import {
 } from "./finance.js";
 import { generateDailyPlan, markPlanSectionComplete } from "./daily-plan.js";
 import { getDueCards, reviewAndSave, QUALITY } from "./srs-engine.js";
-import { getDashboardData, getHistoricoStreak } from "./dashboard.js";
+import { getDashboardData, getHistoricoStreak, getDesempenhoRecente } from "./dashboard.js";
 import { verificarConquistas, getConquistasDesbloqueadas, CONQUISTAS, definirMeta, progressoMeta } from "./gamification.js";
 import { verificarAusencia, ajustarPlanoParaRetorno } from "./anti-procrastination.js";
 import { gerarRevisaoRapida } from "./quick-review.js";
@@ -130,36 +131,36 @@ function temaPreferido() {
 
 aplicarTema(temaPreferido());
 
-// ===== MENU FLIP (topbar): abre/fecha por toque, não por hover =====
-const menuWrapperEl = document.getElementById("menu-wrapper");
-const menuTriggerEl = document.getElementById("menu-trigger");
-const menuFlipEl = document.getElementById("menu-flip");
+// ===== MENUS DROPDOWN (topbar): config + conta — abrem/fecham por toque, não por hover =====
+document.querySelectorAll(".menu-wrapper").forEach((wrapper) => {
+  const trigger = wrapper.querySelector("button:first-child");
+  const flip = wrapper.querySelector(".menu-flip");
 
-function fecharMenuFlip() {
-  menuWrapperEl.classList.remove("open");
-  menuTriggerEl.setAttribute("aria-expanded", "false");
-  menuFlipEl.setAttribute("aria-hidden", "true");
-}
-
-menuTriggerEl.addEventListener("click", (e) => {
-  e.stopPropagation();
-  const abrindo = !menuWrapperEl.classList.contains("open");
-  menuWrapperEl.classList.toggle("open", abrindo);
-  menuTriggerEl.setAttribute("aria-expanded", String(abrindo));
-  menuFlipEl.setAttribute("aria-hidden", String(!abrindo));
-});
-
-document.addEventListener("click", (e) => {
-  if (menuWrapperEl.classList.contains("open") && !menuWrapperEl.contains(e.target)) {
-    fecharMenuFlip();
+  function fechar() {
+    wrapper.classList.remove("open");
+    trigger.setAttribute("aria-expanded", "false");
+    flip.setAttribute("aria-hidden", "true");
   }
-});
 
-// Fecha o menu depois que qualquer item dentro dele for escolhido
-menuFlipEl.addEventListener("click", (e) => {
-  if (e.target.closest("button")) {
-    setTimeout(fecharMenuFlip, 120);
-  }
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    // Fecha qualquer outro dropdown aberto antes de abrir este
+    document.querySelectorAll(".menu-wrapper.open").forEach((w) => {
+      if (w !== wrapper) w.classList.remove("open");
+    });
+    const abrindo = !wrapper.classList.contains("open");
+    wrapper.classList.toggle("open", abrindo);
+    trigger.setAttribute("aria-expanded", String(abrindo));
+    flip.setAttribute("aria-hidden", String(!abrindo));
+  });
+
+  document.addEventListener("click", (e) => {
+    if (wrapper.classList.contains("open") && !wrapper.contains(e.target)) fechar();
+  });
+
+  flip.addEventListener("click", (e) => {
+    if (e.target.closest("button")) setTimeout(fechar, 120);
+  });
 });
 
 document.getElementById("btn-theme-toggle").addEventListener("click", () => {
@@ -167,6 +168,44 @@ document.getElementById("btn-theme-toggle").addEventListener("click", () => {
   const novo = atual === "dark" ? "light" : "dark";
   localStorage.setItem(THEME_KEY, novo);
   aplicarTema(novo);
+});
+
+// ===== CONFIGURAÇÕES: abas (Preferências / Aparência / Segurança e MFA / Conta) =====
+function abrirConfigNaAba(aba) {
+  document.getElementById("modal-config").classList.remove("hidden");
+  document.querySelectorAll(".config-tab").forEach((t) => t.classList.toggle("selecionada", t.dataset.tab === aba));
+  document.querySelectorAll(".config-tab-painel").forEach((p) => p.classList.toggle("hidden", p.id !== `config-tab-${aba}`));
+  if (aba === "seguranca") carregarMFA();
+}
+document.querySelectorAll(".config-tab").forEach((btn) => {
+  btn.addEventListener("click", () => abrirConfigNaAba(btn.dataset.tab));
+});
+document.querySelectorAll("[data-abrir-config-tab]").forEach((btn) => {
+  btn.addEventListener("click", () => abrirConfigNaAba(btn.dataset.abrirConfigTab));
+});
+
+// ===== SIDEBAR: colapsar (desktop/tablet) e drawer (celular) =====
+const SIDEBAR_COLAPSADA_KEY = "ccna_sidebar_colapsada";
+if (localStorage.getItem(SIDEBAR_COLAPSADA_KEY) === "1") {
+  document.getElementById("app-shell").classList.add("sidebar-colapsada");
+}
+document.getElementById("btn-sidebar-collapse").addEventListener("click", () => {
+  const shell = document.getElementById("app-shell");
+  const colapsada = shell.classList.toggle("sidebar-colapsada");
+  localStorage.setItem(SIDEBAR_COLAPSADA_KEY, colapsada ? "1" : "0");
+});
+
+function abrirDrawerMobile() {
+  document.getElementById("app-shell").classList.add("drawer-aberto");
+}
+function fecharDrawerMobile() {
+  document.getElementById("app-shell").classList.remove("drawer-aberto");
+}
+document.getElementById("btn-hamburger").addEventListener("click", abrirDrawerMobile);
+document.getElementById("shell-backdrop").addEventListener("click", fecharDrawerMobile);
+
+document.getElementById("select-periodo-desempenho").addEventListener("change", (e) => {
+  renderDesempenhoRecente(Number(e.target.value));
 });
 
 let currentUser = null;
@@ -292,7 +331,9 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
     document.getElementById("login-screen").classList.add("hidden");
-    document.getElementById("app").classList.remove("hidden");
+    document.getElementById("app-shell").classList.remove("hidden");
+    const inicial = (user.email || "?").trim().charAt(0).toUpperCase();
+    document.getElementById("avatar-inicial").textContent = inicial || "?";
 
     // Seeds best-effort — só têm efeito real se as regras liberarem escrita pro seu UID.
     seedContentIfNeeded().catch(() => {});
@@ -308,7 +349,7 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     currentUser = null;
     document.getElementById("login-screen").classList.remove("hidden");
-    document.getElementById("app").classList.add("hidden");
+    document.getElementById("app-shell").classList.add("hidden");
     if (timerInatividade) clearTimeout(timerInatividade);
 
     // Limpa qualquer resíduo da sessão anterior — e-mail, senha, código MFA e
@@ -331,19 +372,16 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
 
 // ---------- NAVEGAÇÃO ----------
 
-document.querySelectorAll(".bottomnav button").forEach((btn) => {
+document.querySelectorAll(".sidebar-item").forEach((btn) => {
   btn.addEventListener("click", () => trocarTela(btn.dataset.tela));
 });
 
 function trocarTela(nome) {
   document.querySelectorAll(".tela").forEach((t) => t.classList.add("hidden"));
   document.getElementById(`tela-${nome}`).classList.remove("hidden");
-  document.querySelectorAll(".bottomnav button").forEach((b) => b.classList.toggle("active", b.dataset.tela === nome));
-
-  // Só a tela Finanças ganha mais largura em telas grandes — as outras
-  // continuam no formato "uma coisa de cada vez", de propósito.
-  // Largura da tela agora é padronizada via CSS (#app) para todas as telas — não precisa mais de classe condicional aqui.
-
+  document.querySelectorAll(".sidebar-item").forEach((b) => b.classList.toggle("active", b.dataset.tela === nome));
+  fecharDrawerMobile();
+  window.scrollTo({ top: 0 });
   if (nome === "flashcards") carregarFlashcards();
   if (nome === "dashboard") {
     carregarDashboard();
@@ -353,12 +391,12 @@ function trocarTela(nome) {
   if (nome === "tarefas") carregarTarefas();
   if (nome === "financas") carregarFinancas();
   if (nome === "livro") carregarLivro();
+  if (nome === "topologia" && !topologiaJaIniciada) {
+    topologiaJaIniciada = true;
+    initTopologia(currentUser.uid);
+  }
 }
-
-document.getElementById("btn-abrir-config").addEventListener("click", () => {
-  document.getElementById("modal-config").classList.remove("hidden");
-  carregarMFA();
-});
+let topologiaJaIniciada = false;
 
 document.getElementById("btn-fechar-config").addEventListener("click", () => {
   document.getElementById("modal-config").classList.add("hidden");
@@ -386,6 +424,133 @@ async function carregarHoje() {
   document.getElementById("hoje-foco-tag").textContent = `Foco: ${planoHoje.focusTopic.nome}`;
   renderRotaHops();
   renderTaskCardAtual();
+
+  const dadosProgresso = await getDashboardData(currentUser.uid).catch(() => null);
+  if (dadosProgresso) {
+    renderContinueDeOndeParou(dadosProgresso);
+    renderProgressoGeralCard(dadosProgresso);
+  }
+  await renderDesempenhoRecente(7);
+}
+
+// ---------- "CONTINUE DE ONDE PAROU" (dados reais do plano de hoje + progresso por domínio) ----------
+
+function renderContinueDeOndeParou(d) {
+  const container = document.getElementById("continue-cards");
+  const dominioFoco = d.progressoPorDominio.find((dom) => dom.dominio === planoHoje.focusTopic.dominio);
+
+  const cards = [];
+
+  cards.push({
+    eyebrow: "TEORIA",
+    icone: "teoria",
+    titulo: planoHoje.focusTopic.nome,
+    status: planoHoje.teoria?.concluido
+      ? "Concluído hoje"
+      : dominioFoco
+      ? `${dominioFoco.progressoPercent}% do domínio concluído`
+      : "Pendente hoje",
+    concluido: !!planoHoje.teoria?.concluido,
+    tela: "hoje",
+  });
+
+  if (planoHoje.lab?.titulo) {
+    cards.push({
+      eyebrow: "LABORATÓRIO",
+      icone: "lab",
+      titulo: planoHoje.lab.titulo,
+      status: planoHoje.lab.concluido ? "Concluído hoje" : "Pendente hoje",
+      concluido: !!planoHoje.lab.concluido,
+      tela: "hoje",
+    });
+  }
+
+  cards.push({
+    eyebrow: "FLASHCARDS",
+    icone: "flashcards",
+    titulo: "Revisão espaçada",
+    status: planoHoje.flashcards?.concluido ? "Concluído hoje" : "Pendente hoje",
+    concluido: !!planoHoje.flashcards?.concluido,
+    tela: "flashcards",
+  });
+
+  cards.push({
+    eyebrow: "QUESTÕES",
+    icone: "questoes",
+    titulo: `${d.totalQuestoesRespondidas} questões respondidas`,
+    status: d.totalQuestoesRespondidas > 0 ? `${Math.round((d.totalAcertos / d.totalQuestoesRespondidas) * 100)}% de acerto no total` : "Ainda sem tentativas",
+    concluido: !!planoHoje.quiz?.concluido,
+    tela: "dashboard",
+  });
+
+  const ICONES = {
+    teoria: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>`,
+    lab: `<circle cx="12" cy="12" r="9"/><path d="M7 12h10M7 9h6M7 15h4"/>`,
+    flashcards: `<rect x="4" y="5" width="14" height="10" rx="2"/><path d="M8 19h14a2 2 0 0 0 2-2V9"/>`,
+    questoes: `<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.7 1.2c0 1.5-2 1.8-2.2 3.3"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/>`,
+  };
+
+  container.innerHTML = cards
+    .map(
+      (c) => `
+      <div class="continue-card">
+        <div class="continue-card-icone ${c.concluido ? "concluido" : ""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONES[c.icone]}</svg></div>
+        <div class="continue-card-eyebrow">${c.eyebrow}</div>
+        <div class="continue-card-titulo">${c.titulo}</div>
+        <div class="continue-card-status ${c.concluido ? "concluido" : ""}">${c.concluido ? "✓ " : ""}${c.status}</div>
+        <button class="btn-secondary continue-card-btn" data-ir-para="${c.tela}">Continuar</button>
+      </div>`
+    )
+    .join("");
+
+  container.querySelectorAll("[data-ir-para]").forEach((btn) =>
+    btn.addEventListener("click", () => trocarTela(btn.dataset.irPara))
+  );
+}
+
+// ---------- PROGRESSO GERAL (card compacto, reaproveita os mesmos dados do dashboard) ----------
+
+function renderProgressoGeralCard(d) {
+  const anel = document.getElementById("progresso-geral-anel");
+  anel.style.setProperty("--percentual", d.progressoGeral);
+  document.getElementById("progresso-geral-percentual").textContent = `${d.progressoGeral}%`;
+  document.getElementById("progresso-geral-modulos").textContent = `${d.assuntosDominados.length} / ${d.totalTopicos}`;
+  document.getElementById("progresso-geral-questoes").textContent = d.totalQuestoesRespondidas;
+  document.getElementById("progresso-geral-streak").textContent = `${d.streakDias} dias`;
+}
+
+// ---------- DESEMPENHO RECENTE (série real de dias, sem estimativa) ----------
+
+async function renderDesempenhoRecente(dias) {
+  const serie = await getDesempenhoRecente(currentUser.uid, dias).catch(() => []);
+  const container = document.getElementById("desempenho-grafico");
+  if (serie.length === 0) {
+    container.innerHTML = `<p class="topo-empty">Ainda sem dados de estudo suficientes pra mostrar um gráfico.</p>`;
+    return;
+  }
+
+  const maxMinutos = Math.max(...serie.map((s) => s.minutos), 1);
+  const largura = 320, altura = 110, larguraBarra = largura / serie.length - 8;
+
+  const barras = serie
+    .map((s, i) => {
+      const alturaBarra = Math.max((s.minutos / maxMinutos) * (altura - 24), s.minutos > 0 ? 4 : 0);
+      const x = i * (largura / serie.length) + 4;
+      const y = altura - 20 - alturaBarra;
+      const label = s.data.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+      return `
+        <rect x="${x}" y="${y}" width="${larguraBarra}" height="${alturaBarra}" rx="3" fill="var(--teal)" opacity="${s.minutos > 0 ? 1 : 0.25}"/>
+        <text x="${x + larguraBarra / 2}" y="${altura - 4}" text-anchor="middle" font-size="9" fill="var(--ink-soft)">${label}</text>
+      `;
+    })
+    .join("");
+
+  container.innerHTML = `<svg viewBox="0 0 ${largura} ${altura}" width="100%" height="${altura}">${barras}</svg>`;
+
+  const totalMinutos = serie.reduce((acc, s) => acc + s.minutos, 0);
+  const totalQuestoes = serie.reduce((acc, s) => acc + s.questoes, 0);
+  document.getElementById("desempenho-resumo").textContent = `${totalMinutos} min estudados · ${totalQuestoes} questões nesse período`;
+}
 }
 
 function proximaSecaoPendente() {
@@ -609,6 +774,7 @@ document.getElementById("flashcard-controls").addEventListener("click", async (e
 async function carregarDashboard() {
   const d = await getDashboardData(currentUser.uid);
   document.getElementById("streak-valor").textContent = d.streakDias;
+  document.getElementById("streak-valor-sidebar").textContent = d.streakDias;
 
   document.getElementById("stat-scroll").innerHTML = `
     <div class="stat-card"><div class="valor">${d.progressoGeral}%</div><div class="label">Progresso geral</div></div>
