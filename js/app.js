@@ -342,7 +342,7 @@ function trocarTela(nome) {
 
   // Só a tela Finanças ganha mais largura em telas grandes — as outras
   // continuam no formato "uma coisa de cada vez", de propósito.
-  document.getElementById("app").classList.toggle("modo-financas-largo", nome === "financas");
+  // Largura da tela agora é padronizada via CSS (#app) para todas as telas — não precisa mais de classe condicional aqui.
 
   if (nome === "flashcards") carregarFlashcards();
   if (nome === "dashboard") {
