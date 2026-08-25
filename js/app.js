@@ -551,7 +551,6 @@ async function renderDesempenhoRecente(dias) {
   const totalQuestoes = serie.reduce((acc, s) => acc + s.questoes, 0);
   document.getElementById("desempenho-resumo").textContent = `${totalMinutos} min estudados · ${totalQuestoes} questões nesse período`;
 }
-}
 
 function proximaSecaoPendente() {
   return SECOES_ORDEM.find((s) => !planoHoje[s]?.concluido);

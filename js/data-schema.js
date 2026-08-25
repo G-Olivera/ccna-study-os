@@ -277,6 +277,41 @@ export async function logActivity(uid, tipo, topicId, duracaoMin) {
   });
 }
 
+// ---------- TOPOLOGIAS DE REDE (editor visual de laboratórios) ----------
+// Coleção: users/{uid}/topologias/{id}
+// Cada documento guarda a estrutura completa (dispositivos + conexões) em JSON,
+// pensada para no futuro alimentar uma integração com EVE-NG/PNETLab/CML.
+
+export async function criarTopologia(uid, dados) {
+  return addDoc(userSub(uid, "topologias"), {
+    ...dados,
+    criadoEm: serverTimestamp(),
+    atualizadoEm: serverTimestamp(),
+  });
+}
+
+export async function atualizarTopologia(uid, id, dados) {
+  const ref = doc(db, "users", uid, "topologias", id);
+  await setDoc(ref, { ...dados, atualizadoEm: serverTimestamp() }, { merge: true });
+}
+
+export async function listarTopologias(uid) {
+  const q = query(userSub(uid, "topologias"), orderBy("atualizadoEm", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function getTopologia(uid, id) {
+  const ref = doc(db, "users", uid, "topologias", id);
+  const snap = await getDoc(ref);
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export async function excluirTopologia(uid, id) {
+  const ref = doc(db, "users", uid, "topologias", id);
+  await deleteDoc(ref);
+}
+
 /*
 NOTA — Se seu projeto usa o SDK "compat" (firebase.firestore()) em vez do modular:
 Troque os imports por:
