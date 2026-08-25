@@ -494,7 +494,7 @@ function renderContinueDeOndeParou(d) {
     .map(
       (c) => `
       <div class="continue-card">
-        <div class="continue-card-icone ${c.concluido ? "concluido" : ""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONES[c.icone]}</svg></div>
+        <div class="continue-card-icone cat-${c.icone}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONES[c.icone]}</svg></div>
         <div class="continue-card-eyebrow">${c.eyebrow}</div>
         <div class="continue-card-titulo">${c.titulo}</div>
         <div class="continue-card-status ${c.concluido ? "concluido" : ""}">${c.concluido ? "✓ " : ""}${c.status}</div>
