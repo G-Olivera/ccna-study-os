@@ -276,9 +276,18 @@
 
     <div class="task-card" style="margin-bottom: 20px;">
       <div class="categoria-tabs" id="categoria-tabs">
-        <button data-cat="trabalho" class="cat-tab selecionada cat-trabalho">Trabalho</button>
-        <button data-cat="estudo" class="cat-tab cat-estudo">Estudo</button>
-        <button data-cat="bemestar" class="cat-tab cat-bemestar">Bem-estar</button>
+        <button data-cat="trabalho" class="cat-tab selecionada cat-trabalho">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Trabalho
+        </button>
+        <button data-cat="estudo" class="cat-tab cat-estudo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Estudo
+        </button>
+        <button data-cat="bemestar" class="cat-tab cat-bemestar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+          Bem-estar
+        </button>
       </div>
       <div style="display:flex; gap:8px; margin-top:14px;">
         <input id="input-nova-tarefa" type="text" placeholder="O que você precisa fazer?" style="flex:1; padding:12px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body);" />
@@ -287,9 +296,27 @@
       <div class="sugestoes-bemestar hidden" id="sugestoes-bemestar"></div>
     </div>
 
-    <div id="lista-tarefas-trabalho" class="grupo-tarefas"></div>
-    <div id="lista-tarefas-estudo" class="grupo-tarefas"></div>
-    <div id="lista-tarefas-bemestar" class="grupo-tarefas"></div>
+    <div class="kpi-grid" id="tarefas-resumo-grid" style="margin-bottom:20px;"></div>
+
+    <div class="filtro-chips" id="tarefas-filtros">
+      <button class="filtro-chip selecionada" data-filtro="todas">Todas</button>
+      <button class="filtro-chip" data-filtro="pendentes">Pendentes</button>
+      <button class="filtro-chip" data-filtro="concluidas">Concluídas</button>
+      <button class="filtro-chip" data-filtro="trabalho">Trabalho</button>
+      <button class="filtro-chip" data-filtro="estudo">Estudo</button>
+      <button class="filtro-chip" data-filtro="bemestar">Bem-estar</button>
+    </div>
+
+    <div class="task-card tarefas-area">
+      <div id="tarefas-vazio" class="tarefas-vazio hidden">
+        <div class="tarefas-vazio-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <h3>Nenhuma tarefa criada ainda</h3>
+        <p>Adicione sua primeira tarefa para começar a organizar o seu dia.</p>
+        <button class="btn-primary" id="btn-primeira-tarefa" style="width:auto; padding:12px 20px;">+ Adicionar primeira tarefa</button>
+      </div>
+      <div id="lista-tarefas-unificada" class="lista-tarefas"></div>
+      <p id="tarefas-filtro-vazio" class="topo-empty hidden" style="text-align:center; padding:24px 0;">Nenhuma tarefa nesse filtro.</p>
+    </div>
   </section>
 
   <!-- TELA: TRILHA -->
