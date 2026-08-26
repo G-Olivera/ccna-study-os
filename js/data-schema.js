@@ -134,6 +134,12 @@ export async function toggleTarefaConcluida(uid, tarefaId, concluida) {
   await updateDoc(ref, { concluida, concluidaEm: concluida ? serverTimestamp() : null });
 }
 
+/** Edita o título de uma tarefa existente. */
+export async function editarTituloTarefa(uid, tarefaId, novoTitulo) {
+  const ref = doc(db, "users", uid, "tarefas", tarefaId);
+  await updateDoc(ref, { titulo: novoTitulo });
+}
+
 /** Remove uma tarefa. */
 export async function deleteTarefa(uid, tarefaId) {
   const ref = doc(db, "users", uid, "tarefas", tarefaId);

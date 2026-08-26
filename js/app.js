@@ -72,7 +72,7 @@ import { logActivity, getAllTopics, getAllUserTopicProgress, getUserTopicProgres
 import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
 import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
-import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
+import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, editarTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
 import { escapeHtml } from "./utils.js";
 import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, removerLivroLocal, removerProgressoLeitura } from "./reader.js";
 import {
@@ -1229,6 +1229,7 @@ document.getElementById("btn-ver-labs").addEventListener("click", async () => {
 // ---------- TAREFAS (trabalho / estudo / bem-estar) ----------
 
 let categoriaSelecionada = "trabalho";
+let tarefasCache = null;
 
 document.getElementById("categoria-tabs").addEventListener("click", (e) => {
   const btn = e.target.closest(".cat-tab");
@@ -1268,49 +1269,139 @@ document.getElementById("input-nova-tarefa").addEventListener("keydown", (e) => 
 });
 
 async function carregarTarefas() {
-  const { agrupadas, totalTarefas, totalConcluidas } = await getTarefasDeHoje(currentUser.uid);
+  const dados = await getTarefasDeHoje(currentUser.uid);
+  tarefasCache = dados;
 
-  document.getElementById("tarefas-resumo").textContent = `${totalConcluidas} de ${totalTarefas} concluídas`;
+  document.getElementById("tarefas-resumo").textContent = `${dados.totalConcluidas} de ${dados.totalTarefas} concluídas`;
 
-  ["trabalho", "estudo", "bemestar"].forEach((cat) => {
-    const container = document.getElementById(`lista-tarefas-${cat}`);
-    const tarefas = agrupadas[cat];
-
-    if (tarefas.length === 0) {
-      container.innerHTML = "";
-      return;
-    }
-
-    container.innerHTML = `
-      <div class="grupo-titulo"><span class="dot dot-${cat}"></span>${CATEGORIA_LABEL[cat]}</div>
-      ${tarefas
-        .map(
-          (t) => `
-        <div class="tarefa-item">
-          <div class="tarefa-checkbox ${t.concluida ? "concluida" : ""}" data-id="${t.id}" data-concluida="${t.concluida}">${t.concluida ? "✓" : ""}</div>
-          <span class="tarefa-titulo ${t.concluida ? "concluida" : ""}">${escapeHtml(t.titulo)}</span>
-          <button class="tarefa-remover" data-remover="${t.id}">✕</button>
-        </div>`
-        )
-        .join("")}
-    `;
-  });
+  renderResumoTarefas(dados);
+  renderListaTarefasFiltrada();
 }
 
-document.querySelectorAll(".grupo-tarefas").forEach((el) => {
-  el.addEventListener("click", async (e) => {
-    const checkbox = e.target.closest(".tarefa-checkbox");
-    const removerBtn = e.target.closest("[data-remover]");
+function renderResumoTarefas(dados) {
+  const pendentes = dados.totalTarefas - dados.totalConcluidas;
 
-    if (checkbox) {
-      const novoEstado = checkbox.dataset.concluida !== "true";
-      await marcarConcluida(currentUser.uid, checkbox.dataset.id, novoEstado);
-      await carregarTarefas();
-    } else if (removerBtn) {
-      await removerTarefa(currentUser.uid, removerBtn.dataset.remover);
+  document.getElementById("tarefas-resumo-grid").innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="kpi-icon saldo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <span class="kpi-label">Total de tarefas</span>
+      </div>
+      <div class="kpi-valor">${dados.totalTarefas}</div>
+      <span class="kpi-variacao neutro">${pendentes} pendente${pendentes === 1 ? "" : "s"}</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="kpi-icon entradas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <span class="kpi-label">Concluídas hoje</span>
+      </div>
+      <div class="kpi-valor">${dados.totalConcluidas}</div>
+      <span class="kpi-variacao neutro">${dados.percentualConcluido}% do total</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="kpi-icon tempo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+        <span class="kpi-label">Tempo estimado</span>
+      </div>
+      <div class="kpi-valor">—</div>
+      <span class="kpi-variacao neutro">Recurso em construção</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="kpi-icon saidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5" fill="currentColor"/></svg></div>
+        <span class="kpi-label">Foco atual</span>
+      </div>
+      <div class="kpi-valor" style="font-size:17px;">Sem foco</div>
+      <span class="kpi-variacao neutro">Selecione um foco (em breve)</span>
+    </div>
+  `;
+}
+
+let filtroTarefaAtual = "todas";
+
+function tarefasFiltradas() {
+  if (!tarefasCache) return [];
+  const todas = tarefasCache.todasTarefas;
+  if (filtroTarefaAtual === "todas") return todas;
+  if (filtroTarefaAtual === "pendentes") return todas.filter((t) => !t.concluida);
+  if (filtroTarefaAtual === "concluidas") return todas.filter((t) => t.concluida);
+  return todas.filter((t) => t.categoria === filtroTarefaAtual);
+}
+
+function renderListaTarefasFiltrada() {
+  const lista = tarefasFiltradas();
+  const container = document.getElementById("lista-tarefas-unificada");
+  const vazioGeral = document.getElementById("tarefas-vazio");
+  const vazioFiltro = document.getElementById("tarefas-filtro-vazio");
+
+  if (tarefasCache.totalTarefas === 0) {
+    vazioGeral.classList.remove("hidden");
+    vazioFiltro.classList.add("hidden");
+    container.innerHTML = "";
+    return;
+  }
+  vazioGeral.classList.add("hidden");
+
+  if (lista.length === 0) {
+    vazioFiltro.classList.remove("hidden");
+    container.innerHTML = "";
+    return;
+  }
+  vazioFiltro.classList.add("hidden");
+
+  container.innerHTML = lista
+    .map(
+      (t) => `
+    <div class="tarefa-item">
+      <div class="tarefa-checkbox ${t.concluida ? "concluida" : ""}" data-id="${t.id}" data-concluida="${t.concluida}">${t.concluida ? "✓" : ""}</div>
+      <div class="tarefa-corpo">
+        <span class="tarefa-titulo ${t.concluida ? "concluida" : ""}">${escapeHtml(t.titulo)}</span>
+        <span class="tarefa-categoria-badge ${t.categoria}">${CATEGORIA_LABEL[t.categoria]}</span>
+      </div>
+      <div class="tarefa-acoes">
+        <button class="tarefa-acao editar" data-editar="${t.id}" data-titulo="${escapeHtml(t.titulo)}" title="Editar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+        </button>
+        <button class="tarefa-acao remover" data-remover="${t.id}" title="Excluir">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>`
+    )
+    .join("");
+}
+
+document.getElementById("tarefas-filtros").addEventListener("click", (e) => {
+  const chip = e.target.closest(".filtro-chip");
+  if (!chip) return;
+  filtroTarefaAtual = chip.dataset.filtro;
+  document.querySelectorAll(".filtro-chip").forEach((c) => c.classList.toggle("selecionada", c === chip));
+  renderListaTarefasFiltrada();
+});
+
+document.getElementById("btn-primeira-tarefa").addEventListener("click", () => {
+  document.getElementById("input-nova-tarefa").focus();
+});
+
+document.getElementById("lista-tarefas-unificada").addEventListener("click", async (e) => {
+  const checkbox = e.target.closest(".tarefa-checkbox");
+  const removerBtn = e.target.closest("[data-remover]");
+  const editarBtn = e.target.closest("[data-editar]");
+
+  if (checkbox) {
+    const novoEstado = checkbox.dataset.concluida !== "true";
+    await marcarConcluida(currentUser.uid, checkbox.dataset.id, novoEstado);
+    await carregarTarefas();
+  } else if (removerBtn) {
+    await removerTarefa(currentUser.uid, removerBtn.dataset.remover);
+    await carregarTarefas();
+  } else if (editarBtn) {
+    const novoTitulo = prompt("Editar tarefa:", editarBtn.dataset.titulo);
+    if (novoTitulo && novoTitulo.trim() && novoTitulo.trim() !== editarBtn.dataset.titulo) {
+      await editarTarefa(currentUser.uid, editarBtn.dataset.editar, novoTitulo);
       await carregarTarefas();
     }
-  });
+  }
 });
 
 // ---------- LEMBRETE DIÁRIO ----------

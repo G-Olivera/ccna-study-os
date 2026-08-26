@@ -3,7 +3,7 @@
 // Princípio TDAH: captura rápida (sem formulário longo), poucos itens visíveis,
 // bem-estar tem sugestões prontas pra reduzir o esforço de decidir o que anotar.
 
-import { createTarefa, getTarefasByDate, toggleTarefaConcluida, deleteTarefa } from "./data-schema.js";
+import { createTarefa, getTarefasByDate, toggleTarefaConcluida, deleteTarefa, editarTituloTarefa } from "./data-schema.js";
 
 export const CATEGORIAS = {
   TRABALHO: "trabalho",
@@ -54,6 +54,7 @@ export async function getTarefasDeHoje(uid) {
 
   return {
     agrupadas,
+    todasTarefas: tarefas,
     totalTarefas,
     totalConcluidas,
     percentualConcluido: totalTarefas ? Math.round((totalConcluidas / totalTarefas) * 100) : 0,
@@ -66,4 +67,9 @@ export async function marcarConcluida(uid, tarefaId, concluida) {
 
 export async function removerTarefa(uid, tarefaId) {
   return deleteTarefa(uid, tarefaId);
+}
+
+export async function editarTarefa(uid, tarefaId, novoTitulo) {
+  if (!novoTitulo?.trim()) return null;
+  return editarTituloTarefa(uid, tarefaId, novoTitulo.trim());
 }
