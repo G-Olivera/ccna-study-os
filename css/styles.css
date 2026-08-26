@@ -104,6 +104,7 @@ button { font-family: var(--font-body); cursor: pointer; }
 .sidebar-item {
   display: flex; align-items: center; gap: 12px; background: none; border: none; border-radius: var(--radius-sm);
   padding: 11px 12px; color: var(--ink-soft); font-size: 14px; font-weight: 600; text-align: left; white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 .sidebar-item svg { width: 19px; height: 19px; flex-shrink: 0; }
 .sidebar-item:hover { background: var(--surface-quiet); }
@@ -124,8 +125,8 @@ button { font-family: var(--font-body); cursor: pointer; }
 }
 #app-shell.sidebar-colapsada .sidebar-brand-text { display: none; }
 #app-shell.sidebar-colapsada .sidebar-item { justify-content: center; padding: 11px; }
-#app-shell.sidebar-colapsada .sidebar-streak { justify-content: center; padding: 8px; }
-#app-shell.sidebar-colapsada .sidebar-streak span:last-child { display: none; }
+#app-shell.sidebar-colapsada .sidebar-streak { justify-content: center; padding: 8px; gap: 0; }
+#app-shell.sidebar-colapsada .sidebar-streak-label { display: none; }
 #app-shell.sidebar-colapsada .sidebar-collapse-btn svg { transform: rotate(180deg); }
 
 @media (min-width: 768px) {
@@ -150,7 +151,7 @@ button { font-family: var(--font-body); cursor: pointer; }
 /* ----- Topbar ----- */
 .topbar-v2 {
   display: flex; align-items: center; gap: 12px; padding: 12px var(--space-4);
-  border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 30;
+  border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 30;
 }
 .hamburger-btn { display: none; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 38px; height: 38px; align-items: center; justify-content: center; color: var(--ink-soft); flex-shrink: 0; }
 .hamburger-btn svg { width: 18px; height: 18px; }
@@ -161,8 +162,11 @@ button { font-family: var(--font-body); cursor: pointer; }
   color: var(--ink-soft);
 }
 .topbar-search svg { width: 16px; height: 16px; flex-shrink: 0; }
-.topbar-search input { flex: 1; background: none; border: none; font-family: var(--font-body); font-size: 13px; color: var(--ink); min-width: 0; }
-.topbar-search input::placeholder { color: var(--ink-soft); }
+.topbar-search input {
+  flex: 1; background: none; border: none; font-family: var(--font-body); font-size: 13px; min-width: 0;
+  color: var(--ink) !important; -webkit-text-fill-color: var(--ink);
+}
+.topbar-search input::placeholder { color: var(--ink-soft); opacity: 1; }
 .topbar-search input:disabled { cursor: not-allowed; }
 
 /* ===== BUSCA GLOBAL: dropdown de resultados ===== */
@@ -218,6 +222,7 @@ button { font-family: var(--font-body); cursor: pointer; }
   display: flex; align-items: center; gap: 10px; width: 100%;
   padding: 11px 12px; background: none; border: none; border-radius: var(--radius-sm);
   color: var(--ink); font-family: var(--font-body); font-size: 14px; font-weight: 500; text-align: left;
+  transition: background-color 0.15s ease;
 }
 .menu-flip-item:hover, .menu-flip-item:active { background: var(--surface-quiet); }
 .menu-flip-item svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--ink-soft); }
@@ -230,13 +235,21 @@ button { font-family: var(--font-body); cursor: pointer; }
 
 /* ===== MODAL DE CONFIGURAÇÕES: abas internas ===== */
 .modal-config-conteudo { width: 440px; }
-.config-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+.config-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
 .config-tab {
-  background: none; border: none; padding: 10px 12px; font-size: 13px; font-weight: 600; color: var(--ink-soft);
-  border-bottom: 2px solid transparent; white-space: nowrap;
+  background: none; border: none; padding: 8px 10px; font-size: 13px; font-weight: 600; color: var(--ink-soft);
+  border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s ease, border-color 0.15s ease;
 }
 .config-tab.selecionada { color: var(--teal); border-bottom-color: var(--teal); }
 .config-tab-painel { font-size: 13px; }
+.config-tab-painel:not(.hidden) { animation: entrarAbaConfig 0.2s ease; }
+@keyframes entrarAbaConfig {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .config-tab-painel:not(.hidden) { animation: none; }
+}
 
 /* ===== RESPONSIVIDADE DO SHELL ===== */
 /* Tablet e desktop compartilham o mesmo botão de colapsar (mesmo controle, sem heurística
