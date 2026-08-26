@@ -408,6 +408,7 @@ button { font-family: var(--font-body); cursor: pointer; }
 .kpi-icon.entradas { background: color-mix(in srgb, var(--sage) 18%, transparent); color: var(--sage); }
 .kpi-icon.saidas { background: color-mix(in srgb, var(--terracotta) 18%, transparent); color: var(--terracotta); }
 .kpi-icon.saldo { background: color-mix(in srgb, var(--teal) 18%, transparent); color: var(--teal); }
+.kpi-icon.tempo { background: color-mix(in srgb, var(--amber) 18%, transparent); color: var(--amber); }
 .kpi-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
 .kpi-valor { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--ink); }
 .kpi-variacao { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--surface-quiet); }
@@ -672,13 +673,31 @@ button:active { transform: scale(0.97); }
 
 /* ===== TAREFAS (trabalho / estudo / bem-estar) ===== */
 .categoria-tabs { display: flex; gap: 6px; }
-.cat-tab { flex: 1; padding: 10px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.cat-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.cat-tab svg { width: 16px; height: 16px; flex-shrink: 0; }
 .cat-tab.selecionada.cat-trabalho { background: var(--teal); border-color: var(--teal); color: white; }
 .cat-tab.selecionada.cat-estudo { background: var(--amber); border-color: var(--amber); color: white; }
 .cat-tab.selecionada.cat-bemestar { background: var(--sage); border-color: var(--sage); color: white; }
 
 .sugestoes-bemestar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .sugestao-chip { font-size: 12px; padding: 6px 12px; border-radius: 999px; background: var(--sage-soft); color: var(--sage); border: 1px solid var(--sage); }
+
+/* ===== FILTROS ===== */
+.filtro-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.filtro-chip { font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--ink-soft); }
+.filtro-chip:hover { border-color: var(--teal); }
+.filtro-chip.selecionada { background: var(--teal); border-color: var(--teal); color: white; }
+
+/* ===== ESTADO VAZIO ===== */
+.tarefas-area { min-height: 280px; display: flex; flex-direction: column; }
+.tarefas-vazio { margin: auto; text-align: center; max-width: 380px; padding: 32px 16px; }
+.tarefas-vazio-icone {
+  width: 92px; height: 92px; margin: 0 auto 18px; border-radius: 50%; border: 2px dashed var(--border);
+  display: flex; align-items: center; justify-content: center; color: var(--ink-soft);
+}
+.tarefas-vazio-icone svg { width: 36px; height: 36px; }
+.tarefas-vazio h3 { font-size: 17px; margin-bottom: 8px; }
+.tarefas-vazio p { color: var(--ink-soft); font-size: 14px; margin-bottom: 20px; }
 
 .grupo-tarefas { margin-bottom: var(--space-5); }
 .grupo-titulo { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
@@ -687,12 +706,22 @@ button:active { transform: scale(0.97); }
 .dot-estudo { background: var(--amber); }
 .dot-bemestar { background: var(--sage); }
 
-.tarefa-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; }
+.tarefa-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; animation: entrarTarefa 0.2s ease; }
+@keyframes entrarTarefa { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 .tarefa-checkbox { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; }
 .tarefa-checkbox.concluida { background: var(--sage); border-color: var(--sage); }
-.tarefa-titulo { flex: 1; font-size: 14px; }
+.tarefa-corpo { flex: 1; min-width: 0; }
+.tarefa-titulo { font-size: 14px; display: block; }
 .tarefa-titulo.concluida { text-decoration: line-through; color: var(--ink-soft); }
-.tarefa-remover { background: none; border: none; color: var(--ink-soft); font-size: 16px; cursor: pointer; padding: 4px; }
+.tarefa-categoria-badge { display: inline-block; margin-top: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.tarefa-categoria-badge.trabalho { background: var(--teal-soft); color: var(--teal); }
+.tarefa-categoria-badge.estudo { background: var(--amber-soft); color: var(--amber); }
+.tarefa-categoria-badge.bemestar { background: var(--sage-soft); color: var(--sage); }
+.tarefa-acoes { display: flex; gap: 2px; flex-shrink: 0; }
+.tarefa-acao { background: none; border: none; color: var(--ink-soft); padding: 6px; border-radius: 6px; display: flex; }
+.tarefa-acao svg { width: 15px; height: 15px; }
+.tarefa-acao:hover { background: var(--surface-quiet); }
+.tarefa-acao.remover:hover { color: var(--terracotta); }
 
 /* ===== CONTEÚDO DA LIÇÃO (dentro da Trilha) ===== */
 .licao-conteudo { background: var(--teal-soft); border-radius: var(--radius-sm); padding: var(--space-4); margin: 0 var(--space-4) var(--space-4); }
