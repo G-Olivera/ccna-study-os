@@ -632,42 +632,138 @@
   <section id="tela-topologia" class="tela hidden">
     <div class="topo-header">
       <div>
-        <h1 style="margin-bottom:2px;">Topologia</h1>
+        <h1 style="margin-bottom:2px;">Topologia <span id="topo-status-salvo" class="topo-status-salvo">● Salvo</span></h1>
         <p id="topo-nome-atual" style="font-size:13px; color:var(--ink-soft);">Sem título</p>
       </div>
-      <span id="topo-status-salvo" class="topo-status-salvo">Salvo ✓</span>
+      <div class="topo-lab-info" id="topo-lab-info"></div>
+      <button class="btn-secondary topo-toolbar-btn" id="topo-btn-info-lab" style="width:auto; margin-top:0;">ℹ Informações do Lab</button>
     </div>
 
     <div class="topo-toolbar">
       <button class="btn-secondary topo-toolbar-btn" id="topo-btn-novo">+ Novo</button>
       <button class="btn-secondary topo-toolbar-btn" id="topo-btn-salvar" style="color:var(--teal); border-color:var(--teal);">Salvar</button>
       <button class="btn-secondary topo-toolbar-btn" id="topo-btn-abrir">Abrir</button>
-      <button class="btn-secondary topo-toolbar-btn" id="topo-btn-renomear">Renomear</button>
-      <button class="btn-secondary topo-toolbar-btn" id="topo-btn-duplicar-lab">Duplicar</button>
-      <button class="btn-secondary topo-toolbar-btn" id="topo-btn-excluir-lab" style="color:var(--terracotta); border-color:var(--terracotta);">Excluir</button>
-      <span class="topo-toolbar-divisor"></span>
       <button class="btn-secondary topo-toolbar-btn" id="topo-btn-templates">Templates CCNA</button>
       <button class="btn-secondary topo-toolbar-btn" id="topo-btn-conectar" title="Ativar modo de conexão: clique em 2 equipamentos">🔗 Conectar</button>
       <button class="btn-secondary topo-toolbar-btn ativo" id="topo-btn-toggle-interfaces" title="Mostrar/ocultar nomes das interfaces">Mostrar interfaces</button>
       <span class="topo-toolbar-divisor"></span>
-      <button class="btn-secondary topo-toolbar-btn" id="topo-btn-exportar-json">Exportar JSON</button>
-      <button class="btn-secondary topo-toolbar-btn" id="topo-btn-exportar-png">Exportar PNG</button>
-      <button class="btn-secondary topo-toolbar-btn" id="topo-btn-exportar-pdf">Exportar PDF</button>
+
+      <div class="menu-wrapper" id="topo-mais-acoes-wrapper">
+        <button class="btn-secondary topo-toolbar-btn" id="topo-mais-acoes-trigger">Mais ações ▾</button>
+        <aside class="menu-flip" id="topo-mais-acoes-flip" role="menu">
+          <button class="menu-flip-item" id="topo-btn-renomear">Renomear</button>
+          <button class="menu-flip-item" id="topo-btn-duplicar-lab">Duplicar</button>
+          <button class="menu-flip-item menu-flip-item-danger" id="topo-btn-excluir-lab">Excluir</button>
+        </aside>
+      </div>
+
+      <div class="menu-wrapper" id="topo-exportar-wrapper">
+        <button class="btn-secondary topo-toolbar-btn" id="topo-exportar-trigger">Exportar ▾</button>
+        <aside class="menu-flip" id="topo-exportar-flip" role="menu">
+          <button class="menu-flip-item" id="topo-btn-exportar-json">Exportar JSON</button>
+          <button class="menu-flip-item" id="topo-btn-exportar-png">Exportar PNG</button>
+          <button class="menu-flip-item" id="topo-btn-exportar-pdf">Exportar PDF</button>
+        </aside>
+      </div>
     </div>
 
     <div class="topo-editor">
-      <aside class="topo-sidebar" id="topo-paleta"></aside>
+      <aside class="topo-sidebar" id="topo-sidebar-biblioteca">
+        <div class="topo-biblioteca-titulo">Biblioteca de equipamentos</div>
+        <input type="text" id="topo-busca-equip" class="topo-busca-equip" placeholder="Buscar equipamento..." />
+        <div id="topo-paleta"></div>
+        <button class="btn-secondary" id="topo-btn-equip-custom" style="width:100%; margin-top:10px; font-size:12px;">+ Adicionar equipamento personalizado</button>
+      </aside>
 
       <div class="topo-canvas-wrapper" id="topo-canvas-wrapper">
-        <svg id="topo-svg-links" class="topo-svg-links"></svg>
-        <div id="topo-canvas" class="topo-canvas"></div>
+        <div class="topo-canvas-controles">
+          <button class="topo-canvas-btn" id="topo-btn-modo-selecionar" title="Selecionar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51z"/></svg>
+          </button>
+          <button class="topo-canvas-btn" id="topo-btn-modo-mao" title="Mover o canvas (pan)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.83L7 15"/></svg>
+          </button>
+          <button class="topo-canvas-btn" id="topo-btn-zoom-mais" title="Aumentar zoom">+</button>
+          <button class="topo-canvas-btn" id="topo-btn-zoom-menos" title="Diminuir zoom">−</button>
+          <button class="topo-canvas-btn" id="topo-btn-zoom-ajustar" title="Ajustar à tela">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+          </button>
+          <span class="topo-zoom-pct" id="topo-zoom-pct">100%</span>
+        </div>
+
+        <div class="topo-canvas-scroll" id="topo-canvas-scroll">
+          <svg id="topo-svg-links" class="topo-svg-links"></svg>
+          <div id="topo-canvas" class="topo-canvas"></div>
+        </div>
+
+        <div class="topo-minimapa" id="topo-minimapa">
+          <svg id="topo-minimapa-svg" viewBox="0 0 145 90"></svg>
+        </div>
       </div>
 
-      <aside class="topo-propriedades" id="topo-propriedades">
-        <p class="topo-empty">Selecione um equipamento no canvas para ver e editar suas propriedades.</p>
+      <aside class="topo-propriedades" id="topo-propriedades-wrapper">
+        <div class="topo-propriedades-titulo">Propriedades</div>
+        <div id="topo-propriedades"><p class="topo-empty">Selecione um equipamento no canvas para ver e editar suas propriedades.</p></div>
       </aside>
     </div>
+
+    <div class="topo-cli-painel" id="topo-cli-painel">
+      <div class="topo-cli-menu">
+        <div class="topo-cli-titulo">Configuração / CLI <span id="topo-cli-device-atual"></span></div>
+        <select id="topo-cli-device-select" class="topo-cli-select"></select>
+        <div id="topo-cli-secoes"></div>
+      </div>
+      <div class="topo-cli-conteudo" id="topo-cli-conteudo">
+        <p class="topo-empty">Selecione um equipamento no canvas ou na lista acima.</p>
+      </div>
+    </div>
   </section>
+
+  <!-- MODAL: informações do laboratório -->
+  <div id="topo-modal-info-lab" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:480px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 style="font-size:16px;">Informações do Lab</h2>
+        <button id="topo-modal-info-fechar" class="btn-logout" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <label class="topo-campo"><span>Nome</span><input type="text" id="topo-info-nome" /></label>
+      <label class="topo-campo"><span>Descrição</span><textarea id="topo-info-descricao" rows="2"></textarea></label>
+      <div class="topo-prop-grid">
+        <label class="topo-campo"><span>Tema</span><input type="text" id="topo-info-tema" placeholder="Ex: VLAN" /></label>
+        <label class="topo-campo"><span>Dificuldade</span>
+          <select id="topo-info-dificuldade">
+            <option value="Básico">Básico</option>
+            <option value="Intermediário">Intermediário</option>
+            <option value="Avançado">Avançado</option>
+          </select>
+        </label>
+      </div>
+      <label class="topo-campo"><span>Objetivo</span><textarea id="topo-info-objetivo" rows="2" placeholder="Ex: Configurar VLANs e trunk entre switches"></textarea></label>
+      <label class="topo-campo"><span>Observações</span><textarea id="topo-info-observacoes" rows="2"></textarea></label>
+      <button class="btn-primary" id="topo-info-salvar" style="margin-top:8px;">Salvar informações</button>
+    </div>
+  </div>
+
+  <!-- MODAL: equipamento personalizado -->
+  <div id="topo-modal-equip-custom" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:340px;">
+      <h2 style="font-size:16px; margin-bottom:16px;">Equipamento personalizado</h2>
+      <label class="topo-campo"><span>Nome do equipamento</span><input type="text" id="topo-custom-nome" placeholder="Ex: WLC, IP Phone…" /></label>
+      <label class="topo-campo"><span>Ícone base</span>
+        <select id="topo-custom-icone-base">
+          <option value="router">Genérico (rede)</option>
+          <option value="pc">Genérico (endpoint)</option>
+          <option value="server">Genérico (infraestrutura)</option>
+        </select>
+      </label>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="btn-secondary" id="topo-custom-cancelar" style="margin-top:0;">Cancelar</button>
+        <button class="btn-primary" id="topo-custom-confirmar" style="margin-top:0;">Adicionar à biblioteca</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: abrir laboratório salvo -->
   <div id="topo-modal-lista" class="modal-overlay hidden">
@@ -702,6 +798,17 @@
       <h2 id="topo-conexao-titulo" style="font-size:16px; margin-bottom:16px;">Conectar</h2>
       <label class="topo-campo"><span id="topo-conexao-origem-nome">Origem</span><input type="text" id="topo-conexao-origem-if" placeholder="ex: G0/0" /></label>
       <label class="topo-campo"><span id="topo-conexao-destino-nome">Destino</span><input type="text" id="topo-conexao-destino-if" placeholder="ex: G0/1" /></label>
+      <label class="topo-campo"><span>Tipo de interface</span>
+        <select id="topo-conexao-tipo">
+          <option value="Ethernet">Ethernet</option>
+          <option value="FastEthernet">FastEthernet</option>
+          <option value="GigabitEthernet" selected>GigabitEthernet</option>
+          <option value="Serial">Serial</option>
+          <option value="Fiber">Fiber</option>
+          <option value="Wireless">Wireless</option>
+          <option value="Console">Console</option>
+        </select>
+      </label>
       <div style="display:flex; gap:8px; margin-top:12px;">
         <button class="btn-secondary" id="topo-conexao-cancelar" style="margin-top:0;">Cancelar</button>
         <button class="btn-primary" id="topo-conexao-confirmar" style="margin-top:0;">Conectar</button>
