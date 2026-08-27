@@ -150,6 +150,7 @@ let origemConexaoId = null;
 let arrastando = null;
 let contadorId = 1;
 let abaPropriedadeAtual = "geral";
+let mostrarAbasPropriedades = false;
 let zoomAtual = 1;
 let modoMao = false;
 let panArrastando = null;
@@ -236,40 +237,25 @@ function todosOsTipos() {
 
 function montarPaleta() {
   const tipos = todosOsTipos();
-  const grupos = { ...GRUPOS_EQUIPAMENTO, Personalizados: equipamentosCustom.map((c) => c.tipo) };
+  const todosOsTiposLista = [...Object.values(GRUPOS_EQUIPAMENTO).flat(), ...equipamentosCustom.map((c) => c.tipo)];
 
-  el.paleta.innerHTML = Object.entries(grupos)
-    .filter(([, lista]) => lista.length > 0)
-    .map(
-      ([nomeGrupo, lista]) => `
-      <div class="topo-grupo-equip" data-grupo="${nomeGrupo}">
-        <div class="topo-grupo-titulo" data-toggle-grupo="${nomeGrupo}">
-          <span>${nomeGrupo}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="topo-grupo-itens">
-          ${lista
-            .map((tipo) => {
-              const def = tipos[tipo];
-              return `
-              <button class="topo-paleta-item" data-tipo="${tipo}" data-nome-busca="${def.label.toLowerCase()}" title="Arraste para o canvas">
-                <span class="topo-icone" style="color:${def.cor};"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${def.icone}</svg></span>
-                <span>${def.label}</span>
-              </button>`;
-            })
-            .join("")}
-        </div>
-      </div>`
-    )
-    .join("");
+  el.paleta.innerHTML = `
+    <div class="topo-grupo-itens">
+      ${todosOsTiposLista
+        .map((tipo) => {
+          const def = tipos[tipo];
+          return `
+          <button class="topo-paleta-item" data-tipo="${tipo}" data-nome-busca="${def.label.toLowerCase()}" title="Arraste para o canvas">
+            <span class="topo-icone" style="color:${def.cor};"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${def.icone}</svg></span>
+            <span>${def.label}</span>
+          </button>`;
+        })
+        .join("")}
+    </div>
+  `;
 
   el.paleta.querySelectorAll(".topo-paleta-item").forEach((btn) => {
     btn.addEventListener("pointerdown", (e) => iniciarArrasteDaPaleta(e, btn.dataset.tipo));
-  });
-  el.paleta.querySelectorAll("[data-toggle-grupo]").forEach((cabecalho) => {
-    cabecalho.addEventListener("click", () => {
-      cabecalho.closest(".topo-grupo-equip").classList.toggle("recolhido");
-    });
   });
 }
 
@@ -279,10 +265,6 @@ function ligarEventosBiblioteca() {
     el.paleta.querySelectorAll(".topo-paleta-item").forEach((item) => {
       item.classList.toggle("oculto-busca", termo.length > 0 && !item.dataset.nomeBusca.includes(termo));
     });
-    // Se estiver buscando, abre todos os grupos pra não esconder resultado atrás de um grupo recolhido.
-    if (termo.length > 0) {
-      el.paleta.querySelectorAll(".topo-grupo-equip").forEach((g) => g.classList.remove("recolhido"));
-    }
   });
 
   document.getElementById("topo-btn-equip-custom").addEventListener("click", () => {
@@ -402,6 +384,7 @@ function excluirDispositivo(id) {
 function selecionarDispositivo(id) {
   dispositivoSelecionadoId = id;
   abaPropriedadeAtual = "geral";
+  mostrarAbasPropriedades = false;
   renderPropriedades();
   renderDispositivos();
 }
@@ -433,6 +416,22 @@ function ligarEventosZoomPan() {
   document.getElementById("topo-btn-modo-selecionar").addEventListener("click", () => alternarModoMao(false));
   document.getElementById("topo-btn-modo-mao").addEventListener("click", () => alternarModoMao(true));
   atualizarBotoesModo();
+
+  document.getElementById("topo-btn-toggle-minimapa").addEventListener("click", () => {
+    const minimapa = document.getElementById("topo-minimapa");
+    const abrindo = minimapa.classList.contains("hidden");
+    minimapa.classList.toggle("hidden", !abrindo);
+    document.getElementById("topo-btn-toggle-minimapa").classList.toggle("ativo", abrindo);
+    if (abrindo) renderMinimapa();
+  });
+
+  document.getElementById("topo-btn-toggle-cli").addEventListener("click", () => {
+    const painel = document.getElementById("topo-cli-painel");
+    const abrindo = painel.classList.contains("hidden");
+    painel.classList.toggle("hidden", !abrindo);
+    document.getElementById("topo-cli-toggle-seta").style.transform = abrindo ? "rotate(180deg)" : "rotate(0deg)";
+    if (abrindo) renderCliConteudo();
+  });
 
   el.canvasScroll.addEventListener("pointerdown", (e) => {
     if (!modoMao) return;
@@ -482,6 +481,7 @@ function ajustarZoomATela() {
 // ---------- MINIMAPA (visual, proporcional às posições reais) ----------
 
 function renderMinimapa() {
+  if (document.getElementById("topo-minimapa").classList.contains("hidden")) return;
   const largura = 145, altura = 90;
   if (topologia.dispositivos.length === 0) {
     el.minimapaSvg.innerHTML = "";
@@ -727,11 +727,22 @@ function renderPropriedades() {
   const rotulos = { geral: "Geral", interfaces: "Interfaces", configuracao: "Configuração", anotacoes: "Anotações" };
 
   el.propriedades.innerHTML = `
-    <div class="topo-prop-tabs">
-      ${abas.map((a) => `<button class="topo-prop-tab ${a === abaPropriedadeAtual ? "selecionada" : ""}" data-aba="${a}">${rotulos[a]}</button>`).join("")}
-    </div>
+    ${
+      mostrarAbasPropriedades
+        ? `<div class="topo-prop-tabs">
+            ${abas.map((a) => `<button class="topo-prop-tab ${a === abaPropriedadeAtual ? "selecionada" : ""}" data-aba="${a}">${rotulos[a]}</button>`).join("")}
+          </div>`
+        : `<button class="btn-secondary" id="topo-prop-mostrar-mais" style="width:100%; font-size:12px; margin-bottom:12px;">Mostrar mais opções (Interfaces, Configuração, Anotações) ▾</button>`
+    }
     <div id="topo-prop-conteudo-aba"></div>
   `;
+
+  if (!mostrarAbasPropriedades) {
+    document.getElementById("topo-prop-mostrar-mais").addEventListener("click", () => {
+      mostrarAbasPropriedades = true;
+      renderPropriedades();
+    });
+  }
 
   el.propriedades.querySelectorAll("[data-aba]").forEach((btn) =>
     btn.addEventListener("click", () => {
