@@ -356,27 +356,65 @@
 
   <!-- TELA: FLASHCARDS -->
   <section id="tela-flashcards" class="tela hidden">
-    <h1 style="margin-bottom: 12px;">Revisão</h1>
-    <div class="quick-review-tabs" id="quick-review-tabs">
-      <button data-min="0" class="qr-tab selecionada">Tudo</button>
-      <button data-min="5" class="qr-tab">5 min</button>
-      <button data-min="10" class="qr-tab">10 min</button>
-      <button data-min="15" class="qr-tab">15 min</button>
-      <button data-min="30" class="qr-tab">30 min</button>
-    </div>
-    <div id="flashcard-vazio" class="task-card hidden">
-      <p>Nenhum card pendente agora. 🎉</p>
-    </div>
-    <div id="flashcard-wrapper" class="hidden">
-      <div class="flashcard" id="flashcard-face">
-        <span id="flashcard-texto"></span>
+    <h1 style="margin-bottom: 2px;">Revisão</h1>
+    <p style="color:var(--ink-soft); margin-bottom:16px;">Responda e acompanhe seu progresso</p>
+
+    <div class="revisao-toolbar">
+      <div class="quick-review-tabs" id="quick-review-tabs">
+        <button data-min="0" class="qr-tab selecionada">Tudo</button>
+        <button data-min="5" class="qr-tab">5 min</button>
+        <button data-min="10" class="qr-tab">10 min</button>
+        <button data-min="15" class="qr-tab">15 min</button>
+        <button data-min="30" class="qr-tab">30 min</button>
       </div>
-      <p style="text-align:center; font-size:13px; margin-top:10px;">Toque no card para ver a resposta</p>
+      <button class="btn-secondary" id="btn-embaralhar" style="width:auto; margin-top:0;">⤨ Embaralhar</button>
+    </div>
+
+    <div id="flashcard-vazio" class="task-card hidden" style="text-align:center; padding:40px 20px;">
+      <p id="flashcard-vazio-texto">Nenhum card pendente agora. 🎉</p>
+    </div>
+
+    <div id="flashcard-wrapper" class="hidden">
+      <div class="revisao-progresso-linha">
+        <div class="revisao-progresso-track"><div class="revisao-progresso-fill" id="revisao-progresso-fill"></div></div>
+        <span class="revisao-progresso-contador"><strong id="revisao-contador-atual">0</strong> / <span id="revisao-contador-total">0</span> cards</span>
+      </div>
+
+      <div class="flashcard-scene">
+        <div class="flashcard" id="flashcard-face">
+          <button class="flashcard-favorito" id="flashcard-favorito" title="Favoritar">☆</button>
+
+          <div class="flashcard-rosto flashcard-frente">
+            <div class="flashcard-tema" id="flashcard-tema-frente"></div>
+            <div class="flashcard-pergunta" id="flashcard-pergunta"></div>
+            <div class="flashcard-dica-virar">Clique ou pressione Espaço para virar o card</div>
+          </div>
+
+          <div class="flashcard-rosto flashcard-verso">
+            <div class="flashcard-tema" id="flashcard-tema-verso"></div>
+            <div class="flashcard-resposta-titulo">Resposta</div>
+            <div class="flashcard-resposta" id="flashcard-resposta"></div>
+            <div class="flashcard-dica-virar">Escolha abaixo como foi sua resposta</div>
+          </div>
+        </div>
+      </div>
+
       <div class="flashcard-controls hidden" id="flashcard-controls">
-        <button class="btn-again" data-q="0">Errei</button>
-        <button class="btn-hard" data-q="1">Difícil</button>
-        <button class="btn-good" data-q="2">Bom</button>
-        <button class="btn-easy" data-q="3">Fácil</button>
+        <button class="rating-btn rating-errei" data-q="0">☹ Errei</button>
+        <button class="rating-btn rating-dificil" data-q="1">◉ Difícil</button>
+        <button class="rating-btn rating-acertei" data-q="2">✓ Acertei</button>
+        <button class="rating-btn rating-facil" data-q="3">★ Fácil</button>
+      </div>
+
+      <div class="revisao-navegacao">
+        <button class="btn-secondary" id="btn-card-anterior" style="margin-top:0;">← Anterior</button>
+        <span id="revisao-nav-contador">0 / 0</span>
+        <button class="btn-secondary" id="btn-card-proximo" style="margin-top:0;">Próximo →</button>
+      </div>
+
+      <div class="revisao-dica-rodape">
+        <span>💡 Dica: revise com frequência para fixar melhor o conteúdo.</span>
+        <span class="revisao-atalhos">Atalhos: ← → navegar | Espaço virar card</span>
       </div>
     </div>
   </section>
@@ -635,15 +673,22 @@
         <h1 style="margin-bottom:2px;">Topologia <span id="topo-status-salvo" class="topo-status-salvo">● Salvo</span></h1>
         <p id="topo-nome-atual" style="font-size:13px; color:var(--ink-soft);">Sem título</p>
       </div>
-      <div class="topo-lab-info" id="topo-lab-info"></div>
       <button class="btn-secondary topo-toolbar-btn" id="topo-btn-info-lab" style="width:auto; margin-top:0;">ℹ Informações do Lab</button>
+      <div class="topo-lab-info hidden" id="topo-lab-info"></div>
     </div>
 
     <div class="topo-toolbar">
       <button class="btn-secondary topo-toolbar-btn" id="topo-btn-novo">+ Novo</button>
       <button class="btn-secondary topo-toolbar-btn" id="topo-btn-salvar" style="color:var(--teal); border-color:var(--teal);">Salvar</button>
-      <button class="btn-secondary topo-toolbar-btn" id="topo-btn-abrir">Abrir</button>
-      <button class="btn-secondary topo-toolbar-btn" id="topo-btn-templates">Templates CCNA</button>
+
+      <div class="menu-wrapper" id="topo-arquivo-wrapper">
+        <button class="btn-secondary topo-toolbar-btn" id="topo-arquivo-trigger">Arquivo ▾</button>
+        <aside class="menu-flip" id="topo-arquivo-flip" role="menu">
+          <button class="menu-flip-item" id="topo-btn-abrir">Abrir laboratório</button>
+          <button class="menu-flip-item" id="topo-btn-templates">Templates CCNA</button>
+        </aside>
+      </div>
+
       <button class="btn-secondary topo-toolbar-btn" id="topo-btn-conectar" title="Ativar modo de conexão: clique em 2 equipamentos">🔗 Conectar</button>
       <button class="btn-secondary topo-toolbar-btn ativo" id="topo-btn-toggle-interfaces" title="Mostrar/ocultar nomes das interfaces">Mostrar interfaces</button>
       <span class="topo-toolbar-divisor"></span>
@@ -689,6 +734,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
           </button>
           <span class="topo-zoom-pct" id="topo-zoom-pct">100%</span>
+          <span class="topo-toolbar-divisor" style="height:20px;"></span>
+          <button class="topo-canvas-btn" id="topo-btn-toggle-minimapa" title="Mostrar/ocultar minimapa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          </button>
         </div>
 
         <div class="topo-canvas-scroll" id="topo-canvas-scroll">
@@ -696,7 +745,7 @@
           <div id="topo-canvas" class="topo-canvas"></div>
         </div>
 
-        <div class="topo-minimapa" id="topo-minimapa">
+        <div class="topo-minimapa hidden" id="topo-minimapa">
           <svg id="topo-minimapa-svg" viewBox="0 0 145 90"></svg>
         </div>
       </div>
@@ -707,7 +756,11 @@
       </aside>
     </div>
 
-    <div class="topo-cli-painel" id="topo-cli-painel">
+    <button class="btn-secondary" id="topo-btn-toggle-cli" style="width:100%; margin-top:14px; text-align:left; display:flex; align-items:center; justify-content:space-between;">
+      <span>🖥 Configuração / CLI <span style="font-weight:400; color:var(--ink-soft); font-size:12px;">(terminal, interfaces, comandos sugeridos…)</span></span>
+      <svg id="topo-cli-toggle-seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="topo-cli-painel hidden" id="topo-cli-painel">
       <div class="topo-cli-menu">
         <div class="topo-cli-titulo">Configuração / CLI <span id="topo-cli-device-atual"></span></div>
         <select id="topo-cli-device-select" class="topo-cli-select"></select>
