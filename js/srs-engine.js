@@ -169,3 +169,11 @@ async function updateTopicMastery(uid, topicId, quality) {
     lastReviewed: new Date().toISOString(),
   });
 }
+
+// ---------- FAVORITOS (mesmo padrão usado nos favoritos do Livro) ----------
+
+export async function toggleFavoritoFlashcard(uid, cardId, favoritoAtual) {
+  const ref = doc(db, "users", uid, "srsCards", cardId);
+  await setDoc(ref, { favorito: !favoritoAtual }, { merge: true });
+  return !favoritoAtual;
+}

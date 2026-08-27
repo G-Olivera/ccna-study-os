@@ -53,7 +53,7 @@ import {
   baixarCSV,
 } from "./finance.js";
 import { generateDailyPlan, markPlanSectionComplete } from "./daily-plan.js";
-import { getDueCards, reviewAndSave, QUALITY } from "./srs-engine.js";
+import { getDueCards, reviewAndSave, toggleFavoritoFlashcard, QUALITY } from "./srs-engine.js";
 import { getDashboardData, getHistoricoStreak, getDesempenhoRecente } from "./dashboard.js";
 import { verificarConquistas, getConquistasDesbloqueadas, CONQUISTAS, definirMeta, progressoMeta } from "./gamification.js";
 import { verificarAusencia, ajustarPlanoParaRetorno } from "./anti-procrastination.js";
@@ -342,9 +342,10 @@ document.getElementById("input-busca-global").addEventListener("keydown", (e) =>
 
 let currentUser = null;
 let planoHoje = null;
-let filaCards = [];
+let sessaoCards = [];
+let indiceCardAtual = 0;
 let duracaoRevisaoSelecionada = 0; // 0 = sem limite de tempo ("Tudo")
-let cardAtual = null;
+let mapaCategoriaFlashcard = null; // topicId -> categoria (pro rótulo "tema" do card)
 let simuladoAtivo = null;
 let respostasSimulado = {};
 
@@ -846,15 +847,28 @@ async function inicializarCronometroUI() {
 // ---------- FLASHCARDS ----------
 
 async function carregarFlashcards() {
-  if (duracaoRevisaoSelecionada > 0) {
-    const sessao = await gerarRevisaoRapida(currentUser.uid, duracaoRevisaoSelecionada);
-    filaCards = [...sessao.flashcards];
-  } else {
-    const { novos, revisoes } = await getDueCards(currentUser.uid);
-    filaCards = [...revisoes, ...novos];
+  if (!mapaCategoriaFlashcard) {
+    mapaCategoriaFlashcard = {};
+    try {
+      const snap = await getDocs(collection(db, "content", "flashcards", "items"));
+      snap.docs.forEach((d) => (mapaCategoriaFlashcard[d.id] = d.data().categoria || ""));
+    } catch {
+      // Sem categoria disponível — o card só não mostra o rótulo de tema, sem quebrar nada.
+    }
   }
 
-  if (filaCards.length === 0) {
+  if (duracaoRevisaoSelecionada > 0) {
+    const sessao = await gerarRevisaoRapida(currentUser.uid, duracaoRevisaoSelecionada);
+    sessaoCards = [...sessao.flashcards];
+  } else {
+    const { novos, revisoes } = await getDueCards(currentUser.uid);
+    sessaoCards = [...revisoes, ...novos];
+  }
+  sessaoCards.forEach((c) => (c.categoria = mapaCategoriaFlashcard[c.id] || ""));
+  indiceCardAtual = 0;
+
+  if (sessaoCards.length === 0) {
+    document.getElementById("flashcard-vazio-texto").textContent = "Nenhum card pendente agora. 🎉";
     document.getElementById("flashcard-vazio").classList.remove("hidden");
     document.getElementById("flashcard-wrapper").classList.add("hidden");
     return;
@@ -862,7 +876,7 @@ async function carregarFlashcards() {
 
   document.getElementById("flashcard-vazio").classList.add("hidden");
   document.getElementById("flashcard-wrapper").classList.remove("hidden");
-  proximoCard();
+  renderCardAtual();
 }
 
 document.getElementById("quick-review-tabs").addEventListener("click", (e) => {
@@ -873,32 +887,106 @@ document.getElementById("quick-review-tabs").addEventListener("click", (e) => {
   carregarFlashcards();
 });
 
-function proximoCard() {
-  if (filaCards.length === 0) {
-    carregarFlashcards();
-    return;
+document.getElementById("btn-embaralhar").addEventListener("click", () => {
+  for (let i = sessaoCards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [sessaoCards[i], sessaoCards[j]] = [sessaoCards[j], sessaoCards[i]];
   }
-  cardAtual = filaCards.shift();
-  document.getElementById("flashcard-texto").textContent = cardAtual.front;
-  document.getElementById("flashcard-face").dataset.revelado = "false";
-  document.getElementById("flashcard-controls").classList.add("hidden");
+  indiceCardAtual = 0;
+  renderCardAtual();
+});
+
+function cardAtual() {
+  return sessaoCards[indiceCardAtual];
 }
 
-document.getElementById("flashcard-face").addEventListener("click", () => {
-  const face = document.getElementById("flashcard-face");
-  if (face.dataset.revelado === "false") {
-    document.getElementById("flashcard-texto").textContent = cardAtual.back;
-    face.dataset.revelado = "true";
-    document.getElementById("flashcard-controls").classList.remove("hidden");
+function renderCardAtual() {
+  const card = cardAtual();
+  if (!card) {
+    document.getElementById("flashcard-vazio-texto").textContent = "Sessão concluída! 🎉 Bom trabalho.";
+    document.getElementById("flashcard-vazio").classList.remove("hidden");
+    document.getElementById("flashcard-wrapper").classList.add("hidden");
+    return;
   }
+
+  const tema = card.categoria || "Revisão";
+  document.getElementById("flashcard-tema-frente").textContent = tema;
+  document.getElementById("flashcard-tema-verso").textContent = tema;
+  document.getElementById("flashcard-pergunta").textContent = card.front;
+  document.getElementById("flashcard-resposta").textContent = card.back;
+  document.getElementById("flashcard-face").classList.remove("virado");
+  document.getElementById("flashcard-controls").classList.add("hidden");
+
+  const favBtn = document.getElementById("flashcard-favorito");
+  favBtn.classList.toggle("ativo", !!card.favorito);
+  favBtn.textContent = card.favorito ? "★" : "☆";
+
+  const total = sessaoCards.length;
+  const atual = indiceCardAtual + 1;
+  document.getElementById("revisao-contador-atual").textContent = atual;
+  document.getElementById("revisao-contador-total").textContent = total;
+  document.getElementById("revisao-progresso-fill").style.width = `${(atual / total) * 100}%`;
+  document.getElementById("revisao-nav-contador").textContent = `${atual} / ${total}`;
+}
+
+function virarCard() {
+  const face = document.getElementById("flashcard-face");
+  const virando = !face.classList.contains("virado");
+  face.classList.toggle("virado", virando);
+  document.getElementById("flashcard-controls").classList.toggle("hidden", !virando);
+}
+
+document.getElementById("flashcard-face").addEventListener("click", (e) => {
+  if (e.target.closest(".flashcard-favorito")) return;
+  virarCard();
+});
+
+document.getElementById("flashcard-favorito").addEventListener("click", async (e) => {
+  e.stopPropagation();
+  const card = cardAtual();
+  if (!card) return;
+  const novo = await toggleFavoritoFlashcard(currentUser.uid, card.id, !!card.favorito);
+  card.favorito = novo;
+  const favBtn = document.getElementById("flashcard-favorito");
+  favBtn.classList.toggle("ativo", novo);
+  favBtn.textContent = novo ? "★" : "☆";
 });
 
 document.getElementById("flashcard-controls").addEventListener("click", async (e) => {
   if (!e.target.dataset.q) return;
   const qualidade = Number(e.target.dataset.q);
-  await reviewAndSave(currentUser.uid, cardAtual.id, qualidade);
-  await logActivity(currentUser.uid, "flashcard", cardAtual.topicId, 0.5);
-  proximoCard();
+  const card = cardAtual();
+  await reviewAndSave(currentUser.uid, card.id, qualidade);
+  await logActivity(currentUser.uid, "flashcard", card.topicId, 0.5);
+  indiceCardAtual += 1;
+  renderCardAtual();
+});
+
+document.getElementById("btn-card-anterior").addEventListener("click", () => {
+  if (indiceCardAtual > 0) {
+    indiceCardAtual -= 1;
+    renderCardAtual();
+  }
+});
+document.getElementById("btn-card-proximo").addEventListener("click", () => {
+  if (indiceCardAtual < sessaoCards.length - 1) {
+    indiceCardAtual += 1;
+    renderCardAtual();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (document.getElementById("tela-flashcards").classList.contains("hidden")) return;
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) return;
+
+  if (e.code === "Space") {
+    e.preventDefault();
+    virarCard();
+  } else if (e.key === "ArrowRight") {
+    document.getElementById("btn-card-proximo").click();
+  } else if (e.key === "ArrowLeft") {
+    document.getElementById("btn-card-anterior").click();
+  }
 });
 
 // ---------- DASHBOARD ----------
