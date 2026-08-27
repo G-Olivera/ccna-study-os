@@ -421,56 +421,121 @@
 
   <!-- TELA: DASHBOARD -->
   <section id="tela-dashboard" class="tela hidden">
-    <h1 style="margin-bottom: 20px;">Seu progresso</h1>
-    <div class="stat-scroll" id="stat-scroll"></div>
-
-    <h3 style="margin-bottom:12px; font-size:15px;">Sequência de estudo</h3>
-    <div class="streak-calendar-wrapper">
-      <div class="streak-calendar" id="streak-calendar"></div>
-    </div>
-    <div class="streak-legenda">
-      <span>Menos</span>
-      <span class="streak-dia nivel-0"></span>
-      <span class="streak-dia nivel-1"></span>
-      <span class="streak-dia nivel-2"></span>
-      <span class="streak-dia nivel-3"></span>
-      <span class="streak-dia nivel-4"></span>
-      <span>Mais</span>
+    <div class="progresso-header">
+      <div>
+        <h1 style="margin-bottom:2px;">Seu progresso</h1>
+        <p style="color:var(--ink-soft);">Acompanhe sua evolução nos estudos para o CCNA</p>
+      </div>
+      <button class="btn-secondary" id="btn-exportar-relatorio" style="width:auto; margin-top:0;">⇩ Exportar relatório</button>
     </div>
 
-    <h3 style="margin-bottom:12px; font-size:15px;">Por domínio</h3>
-    <div id="domain-bars"></div>
-    <h3 style="margin:20px 0 8px; font-size:15px;">Assuntos críticos</h3>
-    <div id="topicos-criticos"></div>
-    <h3 style="margin:20px 0 8px; font-size:15px;">Dominados</h3>
-    <div id="topicos-dominados"></div>
+    <div class="kpi-grid" id="progresso-stats" style="margin:20px 0;"></div>
 
-    <h3 style="margin:20px 0 8px; font-size:15px;">Conquistas</h3>
-    <div id="lista-conquistas" class="conquistas-grid"></div>
+    <div class="progresso-grid-2col">
+      <div class="task-card" style="margin-bottom:0;">
+        <div class="progresso-card-header">
+          <h3 style="font-size:15px;">Sequência de estudo</h3>
+          <span class="progresso-card-meta">Últimos 30 dias</span>
+        </div>
+        <div class="streak-calendar-wrapper">
+          <div class="streak-calendar" id="streak-calendar"></div>
+        </div>
+        <div class="streak-legenda">
+          <span>Menos</span>
+          <span class="streak-dia nivel-0"></span>
+          <span class="streak-dia nivel-1"></span>
+          <span class="streak-dia nivel-2"></span>
+          <span class="streak-dia nivel-3"></span>
+          <span class="streak-dia nivel-4"></span>
+          <span>Mais</span>
+        </div>
+      </div>
 
-    <h3 style="margin:20px 0 8px; font-size:15px;">Meta semanal</h3>
-    <div class="task-card" id="meta-card">
-      <div id="meta-progresso-texto" style="margin-bottom:10px; font-size:14px; color:var(--ink-soft);"></div>
-      <div class="track" style="height:10px; margin-bottom:14px;"><div class="fill" id="meta-progresso-fill" style="height:100%; background:var(--sage); border-radius:5px; width:0%;"></div></div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input id="input-meta-minutos" type="number" min="10" step="10" placeholder="Minutos/semana" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
-        <button class="btn-primary" id="btn-definir-meta" style="width:auto; padding:10px 16px;">Definir</button>
+      <div class="task-card" style="margin-bottom:0;">
+        <div class="progresso-card-header">
+          <h3 style="font-size:15px;">Domínio por domínio</h3>
+          <span class="progresso-card-meta" id="dominio-media"></span>
+        </div>
+        <div id="domain-bars"></div>
+        <div class="progresso-acao-central">
+          <button class="btn-secondary" id="btn-ver-detalhes-dominio" style="width:auto; margin-top:0;">Ver detalhes por domínio</button>
+        </div>
+        <div id="detalhes-dominio-painel" class="hidden" style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
+          <h4 style="font-size:13px; margin-bottom:8px; color:var(--terracotta);">⚠ Assuntos para revisar</h4>
+          <div id="topicos-criticos" style="margin-bottom:16px;"></div>
+          <h4 style="font-size:13px; margin-bottom:8px; color:var(--sage);">✓ Dominados</h4>
+          <div id="topicos-dominados"></div>
+        </div>
       </div>
     </div>
 
-    <h3 style="margin:20px 0 8px; font-size:15px;">Lembrete diário</h3>
-    <div class="task-card" id="lembrete-card">
-      <p style="font-size:13px; margin-bottom:14px;">Funciona enquanto o app estiver aberto (mesmo minimizado) — não acorda o celular com tudo fechado, isso exigiria um servidor de push.</p>
+    <div class="progresso-grid-2col-b">
+      <div class="task-card" style="margin-bottom:0;">
+        <h3 style="font-size:15px; margin-bottom:14px;">Conquistas</h3>
+        <div id="lista-conquistas" class="conquistas-cards-grid"></div>
+        <div class="progresso-acao-central">
+          <button class="btn-secondary" id="btn-ver-todas-conquistas" style="width:auto; margin-top:0;">Ver todas as conquistas</button>
+        </div>
+      </div>
+
+      <div class="task-card" style="margin-bottom:0;">
+        <h3 style="font-size:15px; margin-bottom:14px;">Meta semanal</h3>
+        <div id="meta-progresso-texto" style="margin-bottom:10px; font-size:13px; color:var(--ink-soft);"></div>
+        <div class="track" style="height:8px; margin-bottom:12px;"><div class="fill" id="meta-progresso-fill" style="height:100%; background:var(--sage); border-radius:5px; width:0%;"></div></div>
+        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:16px;">
+          <span id="meta-numeros-atual"></span>
+          <strong id="meta-numeros-percentual"></strong>
+        </div>
+        <button class="btn-secondary" id="btn-editar-meta" style="width:100%;">Editar meta</button>
+
+        <div style="border-top:1px solid var(--border); margin-top:20px; padding-top:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:13px; font-weight:600;">🔔 Lembrete diário</div>
+              <div id="lembrete-resumo" style="font-size:12px; color:var(--ink-soft); margin-top:2px;"></div>
+            </div>
+            <button class="btn-secondary" id="btn-editar-lembrete" style="width:auto; margin-top:0; padding:8px 14px; font-size:12px;">Editar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="task-card" style="margin-top:20px;">
+      <p style="font-size:13px; margin:0;">💡 Dica: consistência é mais importante que intensidade. Estude um pouco todos os dias!</p>
+    </div>
+  </section>
+
+  <!-- MODAL: editar meta semanal -->
+  <div id="modal-editar-meta" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:360px;">
+      <h2 style="font-size:16px; margin-bottom:16px;">Editar meta semanal</h2>
+      <p style="font-size:13px; color:var(--ink-soft); margin-bottom:12px;">Defina quantos minutos deseja estudar por semana.</p>
+      <label class="topo-campo"><span>Minutos por semana</span><input id="input-meta-minutos" type="number" min="10" step="10" placeholder="Ex: 300" /></label>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="btn-secondary" id="btn-cancelar-meta" style="margin-top:0;">Cancelar</button>
+        <button class="btn-primary" id="btn-definir-meta" style="margin-top:0;">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: editar lembrete diário -->
+  <div id="modal-editar-lembrete" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:380px;">
+      <h2 style="font-size:16px; margin-bottom:12px;">Lembrete diário</h2>
+      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Funciona enquanto o app estiver aberto (mesmo minimizado) — não acorda o celular com tudo fechado, isso exigiria um servidor de push.</p>
       <div id="lembrete-status" style="margin-bottom:12px; font-size:13px; color:var(--ink-soft);"></div>
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:16px;">
         <input id="input-lembrete-horario" type="time" value="19:00" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
         <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
           <input type="checkbox" id="checkbox-lembrete-ativo" /> Ativo
         </label>
       </div>
-      <button class="btn-primary" id="btn-salvar-lembrete">Salvar lembrete</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-secondary" id="btn-fechar-lembrete-modal" style="margin-top:0;">Fechar</button>
+        <button class="btn-primary" id="btn-salvar-lembrete" style="margin-top:0;">Salvar lembrete</button>
+      </div>
     </div>
-  </section>
+  </div>
 
   <!-- TELA: TUTOR IA -->
   <section id="tela-tutor" class="tela hidden">
