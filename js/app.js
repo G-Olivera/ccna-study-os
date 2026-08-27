@@ -991,24 +991,69 @@ document.addEventListener("keydown", (e) => {
 
 // ---------- DASHBOARD ----------
 
+const ICONES_DOMINIO = {
+  "Network Fundamentals": `<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/>`,
+  "Network Access": `<rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 17v3M12 17v3M18 17v3"/>`,
+  "IP Connectivity": `<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8.1 7.1 15.9 7.1M7.4 8.1 11 16M16.6 8.1 13 16"/>`,
+  "IP Services": `<rect x="4" y="3" width="16" height="6" rx="1"/><rect x="4" y="12" width="16" height="6" rx="1"/><circle cx="7.5" cy="6" r=".8" fill="currentColor"/><circle cx="7.5" cy="15" r=".8" fill="currentColor"/>`,
+  "Security Fundamentals": `<path d="M12 2 4 5v6c0 5.5 3.4 9.7 8 11 4.6-1.3 8-5.5 8-11V5l-8-3z"/>`,
+  "Automation and Programmability": `<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>`,
+};
+
 async function carregarDashboard() {
   const d = await getDashboardData(currentUser.uid);
   document.getElementById("streak-valor").textContent = d.streakDias;
   document.getElementById("streak-valor-sidebar").textContent = d.streakDias;
 
-  document.getElementById("stat-scroll").innerHTML = `
-    <div class="stat-card"><div class="valor">${d.progressoGeral}%</div><div class="label">Progresso geral</div></div>
-    <div class="stat-card"><div class="valor">${d.prontidaoExame}%</div><div class="label">Prontidão pro exame</div></div>
-    <div class="stat-card"><div class="valor">${d.horasEstudadas}h</div><div class="label">Horas estudadas</div></div>
-    <div class="stat-card"><div class="valor">Nv ${d.nivel}</div><div class="label">${d.xp} XP</div></div>
+  document.getElementById("progresso-stats").innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="progresso-anel" style="width:44px; height:44px; --percentual:${d.progressoGeral};"><span style="font-size:11px;">${d.progressoGeral}%</span></div>
+        <span class="kpi-label">Progresso geral</span>
+      </div>
+      <div class="kpi-valor">${d.progressoGeral}%</div>
+      <span class="kpi-variacao neutro">Continue assim!</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="kpi-icon entradas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.7 1.2c0 1.5-2 1.8-2.2 3.3"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg></div>
+        <span class="kpi-label">Prontidão pro exame</span>
+      </div>
+      <div class="kpi-valor">${d.prontidaoExame}%</div>
+      <span class="kpi-variacao neutro">${d.prontidaoExame >= 70 ? "Quase lá!" : "Em desenvolvimento"}</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="kpi-icon tempo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+        <span class="kpi-label">Horas estudadas</span>
+      </div>
+      <div class="kpi-valor">${d.horasEstudadas}h</div>
+      <span class="kpi-variacao neutro">No total</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-top">
+        <div class="kpi-icon saidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></div>
+        <span class="kpi-label">Nível atual</span>
+      </div>
+      <div class="kpi-valor">Nível ${d.nivel}</div>
+      <span class="kpi-variacao neutro">${d.xp} XP</span>
+    </div>
   `;
 
+  const mediaDominios = d.progressoPorDominio.length
+    ? Math.round(d.progressoPorDominio.reduce((acc, dom) => acc + dom.progressoPercent, 0) / d.progressoPorDominio.length)
+    : 0;
+  document.getElementById("dominio-media").textContent = `Média: ${mediaDominios}%`;
+
   document.getElementById("domain-bars").innerHTML = d.progressoPorDominio
-    .map((dom) => `
-      <div class="domain-bar">
-        <div class="head"><span>${dom.dominio}</span><span>${dom.progressoPercent}%</span></div>
-        <div class="track"><div class="fill" style="width:${dom.progressoPercent}%"></div></div>
-      </div>`)
+    .map(
+      (dom) => `
+      <div class="domain-row">
+        <div class="domain-row-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONES_DOMINIO[dom.dominio] || ""}</svg></div>
+        <div><div class="domain-row-nome">${dom.dominio}</div><div class="domain-row-track"><div class="domain-row-fill" style="width:${dom.progressoPercent}%"></div></div></div>
+        <div class="domain-row-percent">${dom.progressoPercent}%</div>
+      </div>`
+    )
     .join("");
 
   document.getElementById("topicos-criticos").innerHTML =
@@ -1021,26 +1066,89 @@ async function carregarDashboard() {
   const desbloqueadas = await getConquistasDesbloqueadas(currentUser.uid).catch(() => []);
   const idsDesbloqueadas = new Set(desbloqueadas.map((c) => c.id));
 
-  document.getElementById("lista-conquistas").innerHTML = CONQUISTAS.map(
-    (c) => `<span class="conquista-badge ${idsDesbloqueadas.has(c.id) ? "desbloqueada" : ""}" title="${c.desc}">${idsDesbloqueadas.has(c.id) ? "🏆" : "🔒"} ${c.nome}</span>`
-  ).join("");
+  const renderConquistas = (lista) =>
+    lista
+      .map((c) => {
+        const ok = idsDesbloqueadas.has(c.id);
+        return `<div class="conquista-card ${ok ? "desbloqueada" : ""}" title="${c.desc}">
+          <div class="conquista-card-icone">${ok ? "🏆" : "🔒"}</div>
+          <div class="conquista-card-nome">${c.nome}</div>
+          <div class="conquista-card-status">${ok ? "Concluída" : "Bloqueada"}</div>
+        </div>`;
+      })
+      .join("");
+
+  let mostrandoTodasConquistas = false;
+  document.getElementById("lista-conquistas").innerHTML = renderConquistas(CONQUISTAS.slice(0, 7));
+  document.getElementById("btn-ver-todas-conquistas").onclick = () => {
+    mostrandoTodasConquistas = !mostrandoTodasConquistas;
+    document.getElementById("lista-conquistas").innerHTML = renderConquistas(mostrandoTodasConquistas ? CONQUISTAS : CONQUISTAS.slice(0, 7));
+    document.getElementById("btn-ver-todas-conquistas").textContent = mostrandoTodasConquistas ? "Ver menos" : "Ver todas as conquistas";
+  };
 
   if (novasConquistas && novasConquistas.length > 0) {
     celebrarConquistas(novasConquistas);
   }
 
   const meta = await progressoMeta(currentUser.uid, "semanal", d).catch(() => null);
+  atualizarUiMeta(meta);
+
+  atualizarResumoLembrete();
+  await renderCalendarioStreak();
+}
+
+function formatarMinutosParaHoras(minutos) {
+  const horas = Math.floor(minutos / 60);
+  const resto = minutos % 60;
+  if (horas === 0) return `${resto}min`;
+  if (resto === 0) return `${horas}h`;
+  return `${horas}h${resto}min`;
+}
+
+function atualizarUiMeta(meta) {
   if (meta) {
-    document.getElementById("meta-progresso-texto").textContent = `${meta.minutosAtuais} / ${meta.minutosAlvo} min esta semana`;
+    document.getElementById("meta-progresso-texto").textContent = `Estude pelo menos ${formatarMinutosParaHoras(meta.minutosAlvo)} esta semana`;
     document.getElementById("meta-progresso-fill").style.width = `${meta.percentualConcluido}%`;
+    document.getElementById("meta-numeros-atual").textContent = `${formatarMinutosParaHoras(meta.minutosAtuais)} / ${formatarMinutosParaHoras(meta.minutosAlvo)}`;
+    document.getElementById("meta-numeros-percentual").textContent = `${meta.percentualConcluido}%`;
     document.getElementById("input-meta-minutos").value = meta.minutosAlvo;
   } else {
     document.getElementById("meta-progresso-texto").textContent = "Nenhuma meta definida ainda.";
     document.getElementById("meta-progresso-fill").style.width = "0%";
+    document.getElementById("meta-numeros-atual").textContent = "—";
+    document.getElementById("meta-numeros-percentual").textContent = "";
   }
-
-  await renderCalendarioStreak();
 }
+
+function atualizarResumoLembrete() {
+  const horario = getHorarioLembrete();
+  const ativo = isLembreteAtivo();
+  document.getElementById("lembrete-resumo").textContent = `${horario} · ${ativo ? "Ativo" : "Inativo"}`;
+}
+
+document.getElementById("btn-ver-detalhes-dominio").addEventListener("click", () => {
+  document.getElementById("detalhes-dominio-painel").classList.toggle("hidden");
+});
+
+document.getElementById("btn-exportar-relatorio").addEventListener("click", () => {
+  mostrarToast("Exportação de relatório ainda não existe — fica preparado pra uma próxima versão.", "info");
+});
+
+// Modal: editar meta semanal
+document.getElementById("btn-editar-meta").addEventListener("click", () => {
+  document.getElementById("modal-editar-meta").classList.remove("hidden");
+});
+document.getElementById("btn-cancelar-meta").addEventListener("click", () => {
+  document.getElementById("modal-editar-meta").classList.add("hidden");
+});
+
+// Modal: editar lembrete
+document.getElementById("btn-editar-lembrete").addEventListener("click", () => {
+  document.getElementById("modal-editar-lembrete").classList.remove("hidden");
+});
+document.getElementById("btn-fechar-lembrete-modal").addEventListener("click", () => {
+  document.getElementById("modal-editar-lembrete").classList.add("hidden");
+});
 
 // ---------- CELEBRAÇÃO DE CONQUISTA (confete + toast) ----------
 
@@ -1098,6 +1206,7 @@ document.getElementById("btn-definir-meta").addEventListener("click", async () =
   const minutos = Number(document.getElementById("input-meta-minutos").value);
   if (!minutos) return;
   await definirMeta(currentUser.uid, "semanal", { minutosAlvo: minutos });
+  document.getElementById("modal-editar-meta").classList.add("hidden");
   await carregarDashboard();
 });
 
@@ -1511,6 +1620,7 @@ function inicializarLembreteUI() {
   document.getElementById("input-lembrete-horario").value = getHorarioLembrete();
   document.getElementById("checkbox-lembrete-ativo").checked = isLembreteAtivo();
   renderStatusLembrete();
+  atualizarResumoLembrete();
 }
 
 document.getElementById("btn-salvar-lembrete").addEventListener("click", async () => {
@@ -1525,7 +1635,9 @@ document.getElementById("btn-salvar-lembrete").addEventListener("click", async (
   }
 
   renderStatusLembrete();
+  atualizarResumoLembrete();
   iniciarVerificacaoLembrete();
+  document.getElementById("modal-editar-lembrete").classList.add("hidden");
 });
 
 // ---------- FINANÇAS ----------
