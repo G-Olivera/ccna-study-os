@@ -390,9 +390,17 @@ document.getElementById("login-senha").addEventListener("input", (e) => {
   document.getElementById("forca-senha-label").textContent = nivel.label;
 });
 
+document.getElementById("btn-mostrar-senha").addEventListener("click", () => {
+  const campo = document.getElementById("login-senha");
+  const btn = document.getElementById("btn-mostrar-senha");
+  const mostrando = campo.type === "text";
+  campo.type = mostrando ? "password" : "text";
+  btn.setAttribute("aria-label", mostrando ? "Mostrar senha" : "Ocultar senha");
+});
+
 let resolverMFAAtivo = null;
 
-document.getElementById("btn-login").addEventListener("click", async () => {
+async function tentarLogin() {
   const email = document.getElementById("login-email").value;
   const senha = document.getElementById("login-senha").value;
   document.getElementById("login-erro").textContent = "";
@@ -404,34 +412,72 @@ document.getElementById("btn-login").addEventListener("click", async () => {
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("mfa-screen").classList.remove("hidden");
       document.getElementById("mfa-erro").textContent = "";
-      document.getElementById("input-mfa-login-codigo").value = "";
-      document.getElementById("input-mfa-login-codigo").focus();
+      limparCaixasMFA();
+      document.querySelectorAll(".mfa-code-box")[0].focus();
     } else {
       document.getElementById("login-erro").textContent = "E-mail ou senha inválidos.";
     }
   }
+}
+
+document.getElementById("login-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  tentarLogin();
 });
 
-// Só aceita números no código MFA, limitado a 6 dígitos.
-document.getElementById("input-mfa-login-codigo").addEventListener("input", (e) => {
-  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+// ===== MFA: 6 caixas individuais (auto-avança, backspace volta, setas navegam, aceita colar) =====
+const caixasMFA = Array.from(document.querySelectorAll(".mfa-code-box"));
+
+function codigoMFA() {
+  return caixasMFA.map((c) => c.value).join("");
+}
+function limparCaixasMFA() {
+  caixasMFA.forEach((c) => (c.value = ""));
+}
+
+caixasMFA.forEach((caixa, i) => {
+  caixa.addEventListener("input", () => {
+    caixa.value = caixa.value.replace(/\D/g, "").slice(0, 1);
+    if (caixa.value && i < caixasMFA.length - 1) caixasMFA[i + 1].focus();
+    document.getElementById("mfa-erro").textContent = "";
+  });
+  caixa.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" && !caixa.value && i > 0) caixasMFA[i - 1].focus();
+    else if (e.key === "ArrowLeft") caixasMFA[Math.max(0, i - 1)].focus();
+    else if (e.key === "ArrowRight") caixasMFA[Math.min(caixasMFA.length - 1, i + 1)].focus();
+  });
+  caixa.addEventListener("paste", (e) => {
+    e.preventDefault();
+    const texto = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!texto) return;
+    texto.split("").forEach((digito, idx) => {
+      if (caixasMFA[idx]) caixasMFA[idx].value = digito;
+    });
+    caixasMFA[Math.min(texto.length, caixasMFA.length) - 1]?.focus();
+    document.getElementById("mfa-erro").textContent = "";
+  });
 });
 
-document.getElementById("btn-confirmar-mfa-login").addEventListener("click", async () => {
-  const codigo = document.getElementById("input-mfa-login-codigo").value;
-  if (!codigo || !resolverMFAAtivo) return;
+async function tentarConfirmarMFA() {
+  const codigo = codigoMFA();
+  if (codigo.length !== 6 || !resolverMFAAtivo) return;
   try {
     await confirmarLoginMFA(resolverMFAAtivo, codigo);
     // Limpa o código assim que valida — não deixa resquício no campo, nem no navegador.
-    document.getElementById("input-mfa-login-codigo").value = "";
+    limparCaixasMFA();
     document.getElementById("mfa-screen").classList.add("hidden");
     resolverMFAAtivo = null;
     // onAuthStateChanged cuida de mostrar o app a partir daqui.
   } catch (e) {
     document.getElementById("mfa-erro").textContent = "Código inválido ou expirado. Tente de novo.";
-    document.getElementById("input-mfa-login-codigo").value = "";
-    document.getElementById("input-mfa-login-codigo").focus();
+    limparCaixasMFA();
+    caixasMFA[0].focus();
   }
+}
+
+document.getElementById("mfa-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  tentarConfirmarMFA();
 });
 
 document.getElementById("btn-voltar-login").addEventListener("click", () => {
@@ -439,7 +485,7 @@ document.getElementById("btn-voltar-login").addEventListener("click", () => {
   resolverMFAAtivo = null;
   document.getElementById("mfa-screen").classList.add("hidden");
   document.getElementById("login-screen").classList.remove("hidden");
-  document.getElementById("input-mfa-login-codigo").value = "";
+  limparCaixasMFA();
   document.getElementById("mfa-erro").textContent = "";
   document.getElementById("login-email").value = "";
   document.getElementById("login-senha").value = "";
@@ -494,7 +540,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("forca-senha-wrapper").classList.add("hidden");
     document.getElementById("mfa-screen").classList.add("hidden");
     document.getElementById("mfa-erro").textContent = "";
-    document.getElementById("input-mfa-login-codigo").value = "";
+    limparCaixasMFA();
     resolverMFAAtivo = null;
   }
 });
