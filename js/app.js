@@ -575,8 +575,13 @@ function trocarTela(nome) {
     topologiaJaIniciada = true;
     initTopologia(currentUser.uid);
   }
+  if (nome === "tutor" && !tutorJaIniciado) {
+    tutorJaIniciado = true;
+    iniciarConversaTutor();
+  }
 }
 let topologiaJaIniciada = false;
+let tutorJaIniciado = false;
 
 document.getElementById("btn-fechar-config").addEventListener("click", () => {
   document.getElementById("modal-config").classList.add("hidden");
@@ -1258,26 +1263,157 @@ document.getElementById("btn-definir-meta").addEventListener("click", async () =
 
 // ---------- TUTOR IA ----------
 
+const CONTEXTOS_TUTOR = [
+  "Geral", "Modelo TCP/IP", "Modelo OSI", "VLAN", "Trunk", "STP", "OSPF",
+  "IPv4", "IPv6", "Subnetting", "DHCP", "NAT", "ACL", "Wireless",
+];
+
 let modoTutorSelecionado = "iniciante";
+let contextoTutorSelecionado = null; // null = Geral / nenhum contexto específico
 
 document.getElementById("tutor-modos").addEventListener("click", (e) => {
-  if (!e.target.dataset.modo) return;
-  modoTutorSelecionado = e.target.dataset.modo;
-  document.querySelectorAll("#tutor-modos button").forEach((b) => b.classList.toggle("selecionado", b === e.target));
+  const btn = e.target.closest("button");
+  if (!btn || !btn.dataset.modo) return;
+  modoTutorSelecionado = btn.dataset.modo;
+  document.querySelectorAll("#tutor-modos button").forEach((b) => b.classList.toggle("selecionado", b === btn));
 });
 
-document.getElementById("tutor-enviar").addEventListener("click", async () => {
-  const pergunta = document.getElementById("tutor-pergunta").value.trim();
-  if (!pergunta) return;
-  const resposta = document.getElementById("tutor-resposta");
-  resposta.classList.remove("hidden");
-  resposta.textContent = "Pensando…";
+function horaAtual() {
+  return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function adicionarMensagemTutor(role, texto) {
+  const container = document.getElementById("tutor-mensagens");
+  const linha = document.createElement("div");
+  linha.className = `tutor-msg-linha ${role}`;
+  const ehAssistente = role === "assistant";
+  const inicialAvatar = ehAssistente ? "IA" : (currentUser?.email || "?").charAt(0).toUpperCase();
+
+  linha.innerHTML = `
+    <div class="tutor-msg">
+      <div class="tutor-msg-avatar">${inicialAvatar}</div>
+      <div>
+        <div class="tutor-msg-corpo">
+          <div class="tutor-msg-header">
+            <span class="tutor-msg-autor">${ehAssistente ? "Tutor CCNA" : "Você"}</span>
+            <span class="tutor-msg-hora">${horaAtual()}</span>
+          </div>
+          <div class="tutor-msg-texto"></div>
+        </div>
+      </div>
+    </div>`;
+
+  linha.querySelector(".tutor-msg-texto").textContent = texto;
+  container.appendChild(linha);
+  rolarMensagensTutor();
+  return linha;
+}
+
+function rolarMensagensTutor() {
+  const container = document.getElementById("tutor-mensagens");
+  requestAnimationFrame(() => (container.scrollTop = container.scrollHeight));
+}
+
+const ACOES_RAPIDAS_TUTOR = ["Explique OSPF", "VLAN e Trunk", "Subnetting", "Criar questão", "Criar laboratório"];
+
+function adicionarAcoesRapidasTutor() {
+  const container = document.getElementById("tutor-mensagens");
+  const bloco = document.createElement("div");
+  bloco.className = "tutor-quick-actions";
+  bloco.innerHTML = ACOES_RAPIDAS_TUTOR.map((a) => `<button class="tutor-quick-action">${a}</button>`).join("");
+  bloco.querySelectorAll("button").forEach((btn) => btn.addEventListener("click", () => enviarPerguntaTutor(btn.textContent)));
+  container.appendChild(bloco);
+}
+
+function iniciarConversaTutor() {
+  document.getElementById("tutor-mensagens").innerHTML = "";
+  adicionarMensagemTutor(
+    "assistant",
+    "Olá! Sou seu assistente de estudos para CCNA.\n\nPosso explicar conceitos, ajudar com configurações, criar questões ou sugerir laboratórios práticos.\n\nO que você gostaria de estudar hoje?"
+  );
+  adicionarAcoesRapidasTutor();
+}
+
+let tutorRespondendo = false;
+
+async function enviarPerguntaTutor(textoForcado = null) {
+  if (tutorRespondendo) return;
+  const campo = document.getElementById("tutor-pergunta");
+  const texto = (textoForcado ?? campo.value).trim();
+  if (!texto) return;
+
+  campo.value = "";
+  redimensionarTextareaTutor();
+  adicionarMensagemTutor("user", texto);
+
+  tutorRespondendo = true;
+  document.getElementById("tutor-enviar").disabled = true;
+  document.getElementById("tutor-pensando").classList.remove("hidden");
+  rolarMensagensTutor();
+
   try {
-    const texto = await perguntarLivre(pergunta);
-    resposta.textContent = texto;
+    const resposta = await perguntarLivre(texto, modoTutorSelecionado, contextoTutorSelecionado);
+    const linha = adicionarMensagemTutor("assistant", resposta);
+    const acoes = document.createElement("div");
+    acoes.className = "tutor-msg-acoes";
+    acoes.innerHTML = `<button class="tutor-msg-acao" data-acao="elaborar">Explicar melhor</button>`;
+    linha.querySelector(".tutor-msg-corpo").appendChild(acoes);
+    acoes.querySelector("[data-acao=elaborar]").addEventListener("click", () => enviarPerguntaTutor(`Pode explicar melhor / com mais detalhes: ${texto}`));
   } catch (e) {
-    resposta.textContent = "Não consegui responder agora. Verifique se o Firebase AI Logic está ativado no Console (Serviços de IA > AI Logic).";
+    console.error("Tutor IA:", e);
+    const linha = adicionarMensagemTutor("assistant", "Não foi possível obter uma resposta agora. Tente novamente.");
+    const acoes = document.createElement("div");
+    acoes.className = "tutor-msg-acoes";
+    acoes.innerHTML = `<button class="tutor-msg-acao" data-acao="repetir">Tentar novamente</button>`;
+    linha.querySelector(".tutor-msg-corpo").appendChild(acoes);
+    acoes.querySelector("[data-acao=repetir]").addEventListener("click", () => enviarPerguntaTutor(texto));
+  } finally {
+    tutorRespondendo = false;
+    document.getElementById("tutor-enviar").disabled = false;
+    document.getElementById("tutor-pensando").classList.add("hidden");
   }
+}
+
+document.getElementById("tutor-enviar").addEventListener("click", () => enviarPerguntaTutor());
+
+document.getElementById("tutor-pergunta").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    enviarPerguntaTutor();
+  }
+});
+
+function redimensionarTextareaTutor() {
+  const campo = document.getElementById("tutor-pergunta");
+  campo.style.height = "auto";
+  campo.style.height = `${Math.min(campo.scrollHeight, 130)}px`;
+}
+document.getElementById("tutor-pergunta").addEventListener("input", redimensionarTextareaTutor);
+
+document.getElementById("btn-nova-conversa").addEventListener("click", () => {
+  // Cada pergunta ao Tutor já é independente hoje (sem histórico de conversas
+  // persistido) — "Nova conversa" só reseta a área visível, preservando modo/contexto.
+  iniciarConversaTutor();
+  document.getElementById("tutor-pergunta").focus();
+});
+
+// Modal de contexto
+document.getElementById("btn-alterar-contexto").addEventListener("click", () => {
+  const opcoesEl = document.getElementById("tutor-contexto-opcoes");
+  opcoesEl.innerHTML = CONTEXTOS_TUTOR.map(
+    (c) => `<button class="tutor-contexto-opcao ${(c === "Geral" ? null : c) === contextoTutorSelecionado ? "selecionada" : ""}" data-contexto="${c}">${c}</button>`
+  ).join("");
+  opcoesEl.querySelectorAll("button").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      contextoTutorSelecionado = btn.dataset.contexto === "Geral" ? null : btn.dataset.contexto;
+      document.getElementById("tutor-contexto-nome").textContent = btn.dataset.contexto;
+      document.getElementById("modal-contexto-tutor").classList.add("hidden");
+    })
+  );
+  document.getElementById("modal-contexto-tutor").classList.remove("hidden");
+});
+document.getElementById("btn-fechar-contexto-tutor").addEventListener("click", () => {
+  document.getElementById("modal-contexto-tutor").classList.add("hidden");
 });
 
 // ---------- TRILHA (módulos/lições + cronograma) ----------

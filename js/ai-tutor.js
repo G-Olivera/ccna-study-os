@@ -50,10 +50,19 @@ export async function explicarTopico(nomeTopico, modo = MODOS_EXPLICACAO.INICIAN
   return result.response.text();
 }
 
-/** Pergunta livre pro tutor, com RAG buscando contexto relevante na sua própria Trilha. */
-export async function perguntarLivre(pergunta) {
-  const contextoRAG = await montarContextoRAG(pergunta);
-  const prompt = contextoRAG ? `${contextoRAG}\n\nPergunta do usuário: ${pergunta}` : pergunta;
+/** Pergunta livre pro tutor, com RAG buscando contexto relevante na sua própria Trilha.
+ * `modo` e `contexto` agora influenciam de verdade o prompt (antes só existiam pra explicarTopico). */
+export async function perguntarLivre(pergunta, modo = MODOS_EXPLICACAO.INICIANTE, contexto = null) {
+  const instrucao = INSTRUCAO_POR_MODO[modo] || INSTRUCAO_POR_MODO.iniciante;
+  const consultaRAG = contexto ? `${contexto} ${pergunta}` : pergunta;
+  const contextoRAG = await montarContextoRAG(consultaRAG);
+
+  const partes = [instrucao];
+  if (contexto) partes.push(`Contexto desta conversa: ${contexto}.`);
+  if (contextoRAG) partes.push(contextoRAG);
+  partes.push(`Pergunta do usuário: ${pergunta}`);
+
+  const prompt = partes.join("\n\n");
   const result = await model.generateContent(prompt);
   return result.response.text();
 }
