@@ -501,10 +501,61 @@ button { font-family: var(--font-body); cursor: pointer; }
 .topic-chip.dominado { background: var(--sage-soft); border-color: var(--sage); color: var(--sage); }
 
 /* ===== TUTOR IA ===== */
+/* ===== TUTOR IA (chat) ===== */
+.tutor-cabecalho { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
 .tutor-modos { display: flex; gap: var(--space-2); overflow-x: auto; margin-bottom: var(--space-4); }
-.tutor-modos button { flex-shrink: 0; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 13px; }
+.tutor-modos button { display: flex; align-items: center; gap: 7px; flex-shrink: 0; padding: 9px 15px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.tutor-modos button svg { width: 15px; height: 15px; flex-shrink: 0; }
 .tutor-modos button.selecionado { background: var(--teal); color: white; border-color: var(--teal); }
-.tutor-resposta { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-5); font-size: 15px; line-height: 1.6; white-space: pre-wrap; }
+
+.tutor-contexto-card { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); margin-bottom: 16px; }
+.tutor-contexto-titulo { font-size: 14px; font-weight: 600; }
+.tutor-contexto-titulo span { color: var(--teal); }
+.tutor-contexto-desc { font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+.tutor-contexto-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 320px; overflow-y: auto; }
+.tutor-contexto-opcao { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-quiet); font-size: 13px; color: var(--ink); text-align: left; }
+.tutor-contexto-opcao:hover, .tutor-contexto-opcao.selecionada { border-color: var(--teal); color: var(--teal); }
+
+.tutor-chat-card { display: flex; flex-direction: column; height: 560px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.tutor-mensagens { flex: 1; overflow-y: auto; padding: 20px; scroll-behavior: smooth; }
+.tutor-msg-linha { display: flex; margin-bottom: 18px; }
+.tutor-msg-linha.user { justify-content: flex-end; }
+.tutor-msg { max-width: 85%; display: flex; gap: 10px; align-items: flex-start; }
+.tutor-msg-linha.user .tutor-msg { flex-direction: row-reverse; }
+.tutor-msg-avatar { width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; background: var(--teal); }
+.tutor-msg-linha.user .tutor-msg-avatar { background: var(--ink-soft); }
+.tutor-msg-corpo { padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-quiet); }
+.tutor-msg-linha.user .tutor-msg-corpo { background: var(--teal-soft); }
+.tutor-msg-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 11px; }
+.tutor-msg-autor { font-weight: 700; }
+.tutor-msg-hora { color: var(--ink-soft); }
+.tutor-msg-texto { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+
+.tutor-quick-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 18px 44px; }
+.tutor-quick-action { padding: 7px 13px; border-radius: 999px; border: 1px solid var(--teal); background: none; color: var(--teal); font-size: 12px; font-weight: 600; }
+.tutor-msg-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tutor-msg-acao { padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--ink-soft); font-size: 11px; }
+
+.tutor-pensando { padding: 0 20px 14px 20px; color: var(--ink-soft); font-size: 13px; }
+
+.tutor-composer-wrap { padding: 12px 16px 16px; border-top: 1px solid var(--border); }
+.tutor-composer { display: flex; align-items: flex-end; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-quiet); }
+.tutor-composer textarea {
+  flex: 1; min-height: 44px; max-height: 130px; resize: none; border: none; background: none;
+  color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.5; padding: 8px; outline: none;
+}
+.tutor-composer textarea::placeholder { color: var(--ink-soft); }
+.tutor-send-btn { width: 42px; height: 42px; flex-shrink: 0; border-radius: var(--radius-sm); border: none; background: var(--teal); color: white; display: flex; align-items: center; justify-content: center; }
+.tutor-send-btn svg { width: 18px; height: 18px; }
+.tutor-send-btn:disabled { opacity: 0.5; }
+
+.tutor-privacidade { text-align: center; color: var(--ink-soft); font-size: 12px; margin-top: 12px; }
+
+@media (max-width: 600px) {
+  .tutor-chat-card { height: calc(100vh - 420px); min-height: 420px; }
+  .tutor-quick-actions { margin-left: 0; }
+  .tutor-contexto-opcoes { grid-template-columns: 1fr; }
+}
 
 /* ===== LOGIN ===== */
 /* ===== AUTENTICAÇÃO (login + MFA) ===== */
