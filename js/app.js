@@ -74,7 +74,7 @@ import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
 import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, editarTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
 import { escapeHtml } from "./utils.js";
-import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, removerLivroLocal, removerProgressoLeitura } from "./reader.js";
+import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, editarLivroLocal, removerLivroLocal, removerProgressoLeitura } from "./reader.js";
 import {
   iniciarCronometro,
   pausarCronometro,
@@ -217,7 +217,7 @@ document.addEventListener("click", (e) => {
   const fechar = e.target.closest("[data-fechar-modal]");
   if (fechar) document.getElementById(fechar.dataset.fecharModal).classList.add("hidden");
 });
-document.querySelectorAll("#modal-meta-mensal, #modal-metas-categoria, #modal-gastos-recorrentes, #modal-cartoes").forEach((modal) => {
+document.querySelectorAll(".modal-overlay").forEach((modal) => {
   modal.addEventListener("click", (e) => {
     if (e.target === modal) modal.classList.add("hidden");
   });
@@ -374,6 +374,12 @@ document.addEventListener("click", (e) => {
 
 document.getElementById("input-busca-global").addEventListener("keydown", (e) => {
   if (e.key === "Escape") fecharResultadosBusca();
+});
+
+// Escape fecha qualquer modal aberto no app (não só o de busca).
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  document.querySelectorAll(".modal-overlay:not(.hidden)").forEach((m) => m.classList.add("hidden"));
 });
 
 let currentUser = null;
@@ -2627,6 +2633,9 @@ let progressoLivrosCache = {};
 let todosLivrosCache = [];
 let filtroTextoLivro = "";
 let filtroCategoriaLivro = "";
+let filtroStatusLivro = "todos";
+let visualizacaoLivro = "grid";
+let menuLivroAberto = null;
 
 function corTextoContraste(hex) {
   const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
@@ -2643,85 +2652,228 @@ function iniciaisTitulo(titulo) {
 }
 
 function popularFiltroCategorias() {
-  const select = document.getElementById("select-categoria-livro");
   const categorias = [...new Set(todosLivrosCache.map((l) => l.categoria).filter(Boolean))];
-  select.innerHTML = `<option value="">Todas categorias</option>` + categorias.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  document.getElementById("select-categoria-livro").innerHTML =
+    `<option value="">Todas categorias</option>` + categorias.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  document.getElementById("lista-categorias-livro-datalist").innerHTML = categorias.map((c) => `<option value="${escapeHtml(c)}">`).join("");
 }
 
-function renderBiblioteca() {
-  const grid = document.getElementById("grid-livros");
-  const vazioEl = document.getElementById("livro-vazio");
+function progressoDoLivro(livroId) {
+  const p = progressoLivrosCache[livroId];
+  const percent = p?.totalPaginas ? Math.round((p.paginaAtual / p.totalPaginas) * 100) : 0;
+  return { progresso: p, percent, favorito: p?.favorito || false };
+}
 
-  if (todosLivrosCache.length === 0) {
-    vazioEl.classList.remove("hidden");
-    grid.innerHTML = "";
+function statusDoLivro(livroId) {
+  const { progresso, percent, favorito } = progressoDoLivro(livroId);
+  if (favorito) return "favorito"; // não exclusivo dos outros, tratado à parte no filtro
+  if (!progresso) return "naoIniciado";
+  if (percent >= 100) return "concluido";
+  if (percent > 0) return "leitura";
+  return "naoIniciado";
+}
+
+function livroCasaComFiltros(livro) {
+  const bateTexto = !filtroTextoLivro || livro.titulo.toLowerCase().includes(filtroTextoLivro.toLowerCase());
+  const bateCategoria = !filtroCategoriaLivro || livro.categoria === filtroCategoriaLivro;
+  const { percent, favorito } = progressoDoLivro(livro.id);
+  let bateStatus = true;
+  if (filtroStatusLivro === "leitura") bateStatus = percent > 0 && percent < 100;
+  else if (filtroStatusLivro === "concluido") bateStatus = percent >= 100;
+  else if (filtroStatusLivro === "favorito") bateStatus = favorito;
+  return bateTexto && bateCategoria && bateStatus;
+}
+
+function menuLivroHtml(livro, progresso, favorito) {
+  return `
+    <div class="livro-menu-wrapper" style="position:relative;">
+      <button class="livro-menu-btn" data-menu-livro="${livro.id}" aria-label="Mais ações">⋮</button>
+      <div class="livro-dropdown-menu hidden" data-menu-conteudo="${livro.id}">
+        <button data-abrir-livro="${livro.id}">Abrir</button>
+        <button data-favoritar-livro="${livro.id}" data-favorito-atual="${favorito}">${favorito ? "Remover dos favoritos" : "Favoritar"}</button>
+        ${
+          livro.origem === "local"
+            ? `<button data-editar-livro="${livro.id}">Editar</button><button data-remover-livro-menu="${livro.id}" style="color:var(--terracotta);">Remover</button>`
+            : ""
+        }
+      </div>
+    </div>`;
+}
+
+function renderContinueLendo() {
+  const secao = document.getElementById("livro-continue-secao");
+  const emLeitura = todosLivrosCache
+    .map((l) => ({ livro: l, ...progressoDoLivro(l.id) }))
+    .filter((x) => x.percent > 0 && x.percent < 100)
+    .sort((a, b) => new Date(b.progresso.atualizadaEm || 0) - new Date(a.progresso.atualizadaEm || 0))
+    .slice(0, 2);
+
+  if (emLeitura.length === 0) {
+    secao.classList.add("hidden");
     return;
   }
-  vazioEl.classList.add("hidden");
+  secao.classList.remove("hidden");
 
-  const filtrados = todosLivrosCache.filter((l) => {
-    const bateTexto = !filtroTextoLivro || l.titulo.toLowerCase().includes(filtroTextoLivro.toLowerCase());
-    const bateCategoria = !filtroCategoriaLivro || l.categoria === filtroCategoriaLivro;
-    return bateTexto && bateCategoria;
-  });
-
-  grid.innerHTML = filtrados
-    .map((livro) => {
-      const progresso = progressoLivrosCache[livro.id];
-      const percent = progresso?.totalPaginas ? Math.round((progresso.paginaAtual / progresso.totalPaginas) * 100) : 0;
-      const favorito = progresso?.favorito || false;
+  document.getElementById("livro-continue-grid").innerHTML = emLeitura
+    .map(({ livro, progresso, percent }) => {
       const corTexto = corTextoContraste(livro.corCapa);
-
       return `
-      <div class="livro-card">
-        <div class="livro-capa" style="background:${livro.corCapa}; color:${corTexto};">
-          ${iniciaisTitulo(livro.titulo)}
-          <button class="btn-favorito" data-favorito="${livro.id}" data-favorito-atual="${favorito}" aria-label="${favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}">${favorito ? "★" : "☆"}</button>
-          ${livro.origem === "local" ? `<span class="livro-tag-local">Neste aparelho</span>` : ""}
+      <div class="livro-continue-card">
+        <div class="livro-capa" style="background:${livro.corCapa}; color:${corTexto}; aspect-ratio:auto; height:100%; border-radius:8px;">
+          <span class="livro-capa-iniciais" style="font-size:16px;">${iniciaisTitulo(livro.titulo)}</span>
         </div>
-        <div class="livro-info">
-          <div class="livro-titulo">${escapeHtml(livro.titulo)}</div>
-          <div class="livro-meta">${escapeHtml(livro.volume || "")}${livro.volume && livro.autor ? " · " : ""}${escapeHtml(livro.autor || "")}</div>
-          ${
-            progresso
-              ? `<div class="livro-progresso-track"><div class="livro-progresso-fill" style="width:${percent}%"></div></div>
-                 <div class="livro-progresso-texto">Pág. ${progresso.paginaAtual} de ${progresso.totalPaginas || "?"} (${percent}%)</div>`
-              : `<div class="livro-progresso-texto">Ainda não iniciado</div>`
-          }
-          <button class="btn-primary" data-abrir-livro="${livro.id}">Abrir livro</button>
-          ${livro.origem === "local" ? `<button class="btn-secondary" data-remover-livro="${livro.id}" style="margin-top:6px; color:var(--terracotta); border-color:var(--terracotta);">Remover</button>` : ""}
+        <div class="livro-continue-info">
+          <div class="livro-continue-titulo">${escapeHtml(livro.titulo)}</div>
+          <div class="livro-continue-meta">${escapeHtml(livro.categoria || "")}</div>
+          <div class="livro-continue-progresso-label">${percent}% concluído</div>
+          <div class="livro-progresso-track"><div class="livro-progresso-fill" style="width:${percent}%"></div></div>
+          <div class="livro-continue-footer">
+            <span>Página ${progresso.paginaAtual} de ${progresso.totalPaginas}</span>
+            <button class="btn-secondary" data-abrir-livro="${livro.id}" style="width:auto; margin-top:0; padding:7px 12px; font-size:12px;">📖 Continuar lendo</button>
+          </div>
         </div>
       </div>`;
     })
     .join("");
 }
 
+function renderBiblioteca() {
+  const grid = document.getElementById("grid-livros");
+  const lista = document.getElementById("lista-livros");
+  const vazioEl = document.getElementById("livro-vazio");
+  const semResultadoEl = document.getElementById("livro-sem-resultado");
+
+  if (todosLivrosCache.length === 0) {
+    vazioEl.classList.remove("hidden");
+    semResultadoEl.classList.add("hidden");
+    grid.innerHTML = "";
+    lista.innerHTML = "";
+    document.getElementById("livro-continue-secao").classList.add("hidden");
+    return;
+  }
+  vazioEl.classList.add("hidden");
+
+  const filtrados = todosLivrosCache.filter(livroCasaComFiltros);
+
+  if (filtrados.length === 0) {
+    semResultadoEl.classList.remove("hidden");
+    grid.innerHTML = "";
+    lista.innerHTML = "";
+    return;
+  }
+  semResultadoEl.classList.add("hidden");
+
+  grid.classList.toggle("hidden", visualizacaoLivro !== "grid");
+  lista.classList.toggle("hidden", visualizacaoLivro !== "lista");
+
+  if (visualizacaoLivro === "grid") {
+    grid.innerHTML = filtrados
+      .map((livro) => {
+        const { progresso, percent, favorito } = progressoDoLivro(livro.id);
+        const corTexto = corTextoContraste(livro.corCapa);
+        return `
+        <div class="livro-card">
+          <div class="livro-capa" style="background:${livro.corCapa}; color:${corTexto};">
+            <span class="livro-capa-iniciais">${iniciaisTitulo(livro.titulo)}</span>
+            ${livro.origem === "local" ? `<span class="livro-tag-local">Neste aparelho</span>` : ""}
+          </div>
+          <div class="livro-info">
+            <div class="livro-titulo">${escapeHtml(livro.titulo)}</div>
+            <div class="livro-meta">${escapeHtml(livro.categoria || "")}${livro.autor ? ` · ${escapeHtml(livro.autor)}` : ""}</div>
+            ${
+              progresso
+                ? `<div class="livro-progresso-track"><div class="livro-progresso-fill" style="width:${percent}%"></div></div>
+                   <div class="livro-progresso-texto">Pág. ${progresso.paginaAtual} de ${progresso.totalPaginas || "?"} (${percent}%)</div>`
+                : `<div class="livro-progresso-texto">Ainda não iniciado</div>`
+            }
+            <div class="livro-card-acoes">
+              <button class="btn-primary" data-abrir-livro="${livro.id}">Abrir livro</button>
+              ${menuLivroHtml(livro, progresso, favorito)}
+            </div>
+          </div>
+        </div>`;
+      })
+      .join("");
+  } else {
+    lista.innerHTML = filtrados
+      .map((livro) => {
+        const { progresso, percent, favorito } = progressoDoLivro(livro.id);
+        const ultima = progresso?.atualizadaEm ? formatarDataRelativa(progresso.atualizadaEm) : "—";
+        return `
+        <div class="lista-livros-linha">
+          <div class="lista-livros-capa-mini" style="background:${livro.corCapa};">${iniciaisTitulo(livro.titulo)}</div>
+          <div>
+            <div class="livro-titulo" style="margin-bottom:0;">${escapeHtml(livro.titulo)} ${favorito ? "★" : ""}</div>
+            <div class="livro-meta" style="margin-bottom:0;">${escapeHtml(livro.autor || "")}</div>
+          </div>
+          <div class="col-categoria">${escapeHtml(livro.categoria || "")}</div>
+          <div>${progresso ? `${percent}% · pág. ${progresso.paginaAtual}/${progresso.totalPaginas}` : "Não iniciado"}</div>
+          <div class="col-ultima">${ultima}</div>
+          <div style="display:flex; justify-content:flex-end;">${menuLivroHtml(livro, progresso, favorito)}</div>
+        </div>`;
+      })
+      .join("");
+  }
+}
+
+function formatarDataRelativa(iso) {
+  const dias = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (dias <= 0) return "Hoje";
+  if (dias === 1) return "Ontem";
+  return `Há ${dias} dias`;
+}
+
 async function carregarLivro() {
   todosLivrosCache = await listarTodosLivros().catch(() => []);
   progressoLivrosCache = await listarProgressoLeituras(currentUser.uid).catch(() => ({}));
   popularFiltroCategorias();
+  renderContinueLendo();
   renderBiblioteca();
   document.getElementById("livro-biblioteca-view").classList.remove("hidden");
   document.getElementById("livro-leitura-view").classList.add("hidden");
 }
 
-document.getElementById("btn-adicionar-livro").addEventListener("click", () => {
-  document.getElementById("input-arquivo-livro").click();
-});
+// ----- Modal: adicionar livro -----
+function abrirModalAdicionarLivro() {
+  document.getElementById("input-arquivo-livro").value = "";
+  document.getElementById("input-livro-titulo").value = "";
+  document.getElementById("input-livro-autor").value = "";
+  document.getElementById("input-livro-categoria").value = "";
+  document.getElementById("livro-add-status").textContent = "";
+  document.getElementById("modal-adicionar-livro").classList.remove("hidden");
+}
+document.getElementById("btn-adicionar-livro").addEventListener("click", abrirModalAdicionarLivro);
+document.getElementById("btn-adicionar-primeiro-livro").addEventListener("click", abrirModalAdicionarLivro);
 
-document.getElementById("input-arquivo-livro").addEventListener("change", async (e) => {
-  const arquivo = e.target.files[0];
-  if (!arquivo) return;
+document.getElementById("btn-confirmar-adicionar-livro").addEventListener("click", async () => {
+  const arquivo = document.getElementById("input-arquivo-livro").files[0];
   const statusEl = document.getElementById("livro-add-status");
+  if (!arquivo) {
+    statusEl.textContent = "Escolha um arquivo PDF primeiro.";
+    return;
+  }
   statusEl.textContent = "Salvando no aparelho…";
   try {
-    await adicionarLivroLocal(arquivo);
-    statusEl.textContent = "Livro adicionado! (salvo só neste aparelho)";
+    await adicionarLivroLocal(arquivo, {
+      titulo: document.getElementById("input-livro-titulo").value,
+      autor: document.getElementById("input-livro-autor").value,
+      categoria: document.getElementById("input-livro-categoria").value,
+    });
+    document.getElementById("modal-adicionar-livro").classList.add("hidden");
     await carregarLivro();
   } catch (err) {
     statusEl.textContent = "Não consegui salvar esse arquivo. Confirme que é um PDF.";
   }
-  e.target.value = "";
+});
+
+document.getElementById("btn-limpar-filtros-livro").addEventListener("click", () => {
+  filtroTextoLivro = "";
+  filtroCategoriaLivro = "";
+  filtroStatusLivro = "todos";
+  document.getElementById("input-busca-livro").value = "";
+  document.getElementById("select-categoria-livro").value = "";
+  document.querySelectorAll("#livro-status-tabs .filtro-chip").forEach((b) => b.classList.toggle("selecionada", b.dataset.status === "todos"));
+  renderBiblioteca();
 });
 
 document.getElementById("input-busca-livro").addEventListener("input", (e) => {
@@ -2734,23 +2886,95 @@ document.getElementById("select-categoria-livro").addEventListener("change", (e)
   renderBiblioteca();
 });
 
-document.getElementById("grid-livros").addEventListener("click", async (e) => {
-  const btnFavorito = e.target.closest("[data-favorito]");
-  const btnAbrir = e.target.closest("[data-abrir-livro]");
-  const btnRemover = e.target.closest("[data-remover-livro]");
+document.getElementById("livro-status-tabs").addEventListener("click", (e) => {
+  const btn = e.target.closest(".filtro-chip");
+  if (!btn) return;
+  filtroStatusLivro = btn.dataset.status;
+  document.querySelectorAll("#livro-status-tabs .filtro-chip").forEach((b) => b.classList.toggle("selecionada", b === btn));
+  renderBiblioteca();
+});
 
-  if (btnFavorito) {
-    const atual = btnFavorito.dataset.favoritoAtual === "true";
-    const novo = await toggleFavorito(currentUser.uid, btnFavorito.dataset.favorito, atual);
-    progressoLivrosCache[btnFavorito.dataset.favorito] = { ...(progressoLivrosCache[btnFavorito.dataset.favorito] || {}), favorito: novo };
-    renderBiblioteca();
-  } else if (btnAbrir) {
+document.getElementById("btn-view-grid").addEventListener("click", () => {
+  visualizacaoLivro = "grid";
+  document.getElementById("btn-view-grid").classList.add("selecionado");
+  document.getElementById("btn-view-lista").classList.remove("selecionado");
+  renderBiblioteca();
+});
+document.getElementById("btn-view-lista").addEventListener("click", () => {
+  visualizacaoLivro = "lista";
+  document.getElementById("btn-view-lista").classList.add("selecionado");
+  document.getElementById("btn-view-grid").classList.remove("selecionado");
+  renderBiblioteca();
+});
+
+// ----- Menu ⋮ por livro + ações (delegado, funciona pra grid e lista) -----
+function fecharTodosMenusLivro() {
+  document.querySelectorAll(".livro-dropdown-menu").forEach((m) => m.classList.add("hidden"));
+  menuLivroAberto = null;
+}
+
+document.addEventListener("click", async (e) => {
+  const menuBtn = e.target.closest("[data-menu-livro]");
+  if (menuBtn) {
+    e.stopPropagation();
+    const id = menuBtn.dataset.menuLivro;
+    const abrindo = menuLivroAberto !== id;
+    fecharTodosMenusLivro();
+    if (abrindo) {
+      document.querySelector(`.livro-dropdown-menu[data-menu-conteudo="${id}"]`).classList.remove("hidden");
+      menuLivroAberto = id;
+    }
+    return;
+  }
+  if (!e.target.closest(".livro-dropdown-menu")) fecharTodosMenusLivro();
+
+  const btnAbrir = e.target.closest("[data-abrir-livro]");
+  const btnFavoritar = e.target.closest("[data-favoritar-livro]");
+  const btnEditar = e.target.closest("[data-editar-livro]");
+  const btnRemover = e.target.closest("[data-remover-livro-menu]");
+
+  if (btnAbrir) {
+    fecharTodosMenusLivro();
     await abrirLeitorDoLivro(btnAbrir.dataset.abrirLivro);
+  } else if (btnFavoritar) {
+    fecharTodosMenusLivro();
+    const atual = btnFavoritar.dataset.favoritoAtual === "true";
+    const novo = await toggleFavorito(currentUser.uid, btnFavoritar.dataset.favoritarLivro, atual);
+    progressoLivrosCache[btnFavoritar.dataset.favoritarLivro] = { ...(progressoLivrosCache[btnFavoritar.dataset.favoritarLivro] || {}), favorito: novo };
+    renderContinueLendo();
+    renderBiblioteca();
+  } else if (btnEditar) {
+    fecharTodosMenusLivro();
+    abrirModalEditarLivro(btnEditar.dataset.editarLivro);
   } else if (btnRemover) {
-    await removerLivroLocal(btnRemover.dataset.removerLivro);
-    await removerProgressoLeitura(currentUser.uid, btnRemover.dataset.removerLivro).catch(() => {});
+    fecharTodosMenusLivro();
+    if (!confirm("Remover este livro da sua biblioteca? O arquivo salvo neste aparelho será apagado.")) return;
+    await removerLivroLocal(btnRemover.dataset.removerLivroMenu);
+    await removerProgressoLeitura(currentUser.uid, btnRemover.dataset.removerLivroMenu).catch(() => {});
     await carregarLivro();
   }
+});
+
+// ----- Modal: editar livro local -----
+function abrirModalEditarLivro(livroId) {
+  const livro = todosLivrosCache.find((l) => l.id === livroId);
+  if (!livro) return;
+  document.getElementById("input-editar-livro-titulo").value = livro.titulo;
+  document.getElementById("input-editar-livro-autor").value = livro.autor || "";
+  document.getElementById("input-editar-livro-categoria").value = livro.categoria || "";
+  document.getElementById("modal-editar-livro").dataset.livroId = livroId;
+  document.getElementById("modal-editar-livro").classList.remove("hidden");
+}
+
+document.getElementById("btn-salvar-edicao-livro").addEventListener("click", async () => {
+  const livroId = document.getElementById("modal-editar-livro").dataset.livroId;
+  await editarLivroLocal(livroId, {
+    titulo: document.getElementById("input-editar-livro-titulo").value.trim() || "Sem título",
+    autor: document.getElementById("input-editar-livro-autor").value.trim(),
+    categoria: document.getElementById("input-editar-livro-categoria").value.trim() || "Meus livros",
+  });
+  document.getElementById("modal-editar-livro").classList.add("hidden");
+  await carregarLivro();
 });
 
 document.getElementById("btn-voltar-biblioteca").addEventListener("click", () => {

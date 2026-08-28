@@ -64,17 +64,17 @@ function abrirBancoLocal() {
 }
 
 /** Salva um PDF escolhido pelo usuário direto no navegador (IndexedDB). */
-export async function adicionarLivroLocal(arquivo) {
+export async function adicionarLivroLocal(arquivo, metadados = {}) {
   const bancoDb = await abrirBancoLocal();
   const dadosArquivo = await arquivo.arrayBuffer();
 
-  const titulo = arquivo.name.replace(/\.pdf$/i, "").replace(/[_-]/g, " ");
+  const tituloPadrao = arquivo.name.replace(/\.pdf$/i, "").replace(/[_-]/g, " ");
   const livro = {
     id: `local-${Date.now()}`,
-    titulo,
+    titulo: metadados.titulo?.trim() || tituloPadrao,
     volume: "",
-    autor: "",
-    categoria: "Meus livros",
+    autor: metadados.autor?.trim() || "",
+    categoria: metadados.categoria?.trim() || "Meus livros",
     corCapa: CORES_CAPA[Math.floor(Math.random() * CORES_CAPA.length)],
     dadosArquivo,
     criadoEm: new Date().toISOString(),
@@ -84,6 +84,23 @@ export async function adicionarLivroLocal(arquivo) {
     const tx = bancoDb.transaction(STORE_NOME, "readwrite");
     tx.objectStore(STORE_NOME).add(livro);
     tx.oncomplete = () => resolve(livro);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Edita título/autor/categoria de um livro local já salvo (não mexe no PDF em si). */
+export async function editarLivroLocal(id, dados) {
+  const bancoDb = await abrirBancoLocal();
+  return new Promise((resolve, reject) => {
+    const tx = bancoDb.transaction(STORE_NOME, "readwrite");
+    const store = tx.objectStore(STORE_NOME);
+    const req = store.get(id);
+    req.onsuccess = () => {
+      const atual = req.result;
+      if (!atual) return reject(new Error("Livro não encontrado."));
+      store.put({ ...atual, ...dados });
+    };
+    tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
 }
