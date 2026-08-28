@@ -209,6 +209,42 @@ document.getElementById("select-periodo-desempenho").addEventListener("change", 
   renderDesempenhoRecente(Number(e.target.value));
 });
 
+// ===== FINANÇAS: modais genéricos (data-abrir-modal / data-fechar-modal) =====
+document.addEventListener("click", (e) => {
+  const abrir = e.target.closest("[data-abrir-modal]");
+  if (abrir) document.getElementById(abrir.dataset.abrirModal).classList.remove("hidden");
+
+  const fechar = e.target.closest("[data-fechar-modal]");
+  if (fechar) document.getElementById(fechar.dataset.fecharModal).classList.add("hidden");
+});
+document.querySelectorAll("#modal-meta-mensal, #modal-metas-categoria, #modal-gastos-recorrentes, #modal-cartoes").forEach((modal) => {
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.classList.add("hidden");
+  });
+});
+
+// ===== FINANÇAS: abas Gastos (por categoria / por grupo) =====
+document.getElementById("financas-tab-categoria").addEventListener("click", () => {
+  document.getElementById("financas-tab-categoria").classList.add("selecionada");
+  document.getElementById("financas-tab-grupo").classList.remove("selecionada");
+  document.getElementById("financas-painel-categoria").classList.remove("hidden");
+  document.getElementById("financas-painel-grupo").classList.add("hidden");
+});
+document.getElementById("financas-tab-grupo").addEventListener("click", () => {
+  document.getElementById("financas-tab-grupo").classList.add("selecionada");
+  document.getElementById("financas-tab-categoria").classList.remove("selecionada");
+  document.getElementById("financas-painel-grupo").classList.remove("hidden");
+  document.getElementById("financas-painel-categoria").classList.add("hidden");
+});
+
+// ===== FINANÇAS: mostrar formulário de novo gasto fixo / novo cartão só quando pedido =====
+document.getElementById("btn-mostrar-form-gastofixo").addEventListener("click", () => {
+  document.getElementById("form-gastofixo-wrapper").classList.toggle("hidden");
+});
+document.getElementById("btn-mostrar-form-cartao").addEventListener("click", () => {
+  document.getElementById("form-cartao-wrapper").classList.toggle("hidden");
+});
+
 // ===== BUSCA GLOBAL (topbar) =====
 const ICONES_BUSCA = {
   topico: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>`,
@@ -2004,6 +2040,7 @@ document.getElementById("lista-proximos-vencimentos").addEventListener("click", 
 // ---- Cartões e fatura (Fase 6) ----
 
 async function renderCartoesCompleto() {
+  document.getElementById("financas-cartoes-resumo-lateral").textContent = `${cartoesFinancasCache.length} cadastrado${cartoesFinancasCache.length === 1 ? "" : "s"}`;
   const CORES_BANCO = {
     Nubank: "#820AD1", "Itaú": "#EC7000", Bradesco: "#CC092F", Santander: "#EC0000",
     "Banco do Brasil": "#F8D30F", Caixa: "#0033A0", Inter: "#FF7A00", "C6 Bank": "#242424",
@@ -2169,9 +2206,11 @@ async function carregarFinancas() {
     document.getElementById("financas-meta-fill").style.width = `${valoresOcultos ? 0 : resumoFinancasCache.percentualDaMeta}%`;
     document.getElementById("financas-meta-fill").style.background = resumoFinancasCache.percentualDaMeta >= 90 ? "var(--terracotta)" : "var(--sage)";
     document.getElementById("input-meta-financas").value = resumoFinancasCache.metaGasto;
+    document.getElementById("financas-meta-resumo-lateral").textContent = `${formatarValorInteiro(resumoFinancasCache.totalSaidas)} de ${formatarValorInteiro(resumoFinancasCache.metaGasto)} (${resumoFinancasCache.percentualDaMeta}%)`;
   } else {
     document.getElementById("financas-meta-texto").textContent = "Nenhuma meta definida ainda.";
     document.getElementById("financas-meta-fill").style.width = "0%";
+    document.getElementById("financas-meta-resumo-lateral").textContent = "Nenhuma meta definida.";
   }
 
   popularFiltrosFinancas();
@@ -2196,6 +2235,7 @@ async function carregarFinancas() {
       </div>`
       )
       .join("") || `<p style="font-size:13px; color:var(--ink-soft);">Nenhum gasto fixo cadastrado.</p>`;
+  document.getElementById("financas-recorrentes-resumo-lateral").textContent = `${gastosFixos.length} cadastrado${gastosFixos.length === 1 ? "" : "s"}`;
 
   await renderCartoesCompleto();
 }
