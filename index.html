@@ -653,143 +653,218 @@
 
   <!-- TELA: FINANÇAS -->
   <section id="tela-financas" class="tela hidden">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-      <h1>Finanças</h1>
-      <button id="btn-toggle-valores" class="btn-logout" title="Ocultar/mostrar valores" aria-label="Ocultar ou mostrar valores">
-        <svg id="icon-olho-aberto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        <svg id="icon-olho-fechado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-      </button>
-    </div>
-
-    <!-- Seletor de período -->
-    <div class="periodo-seletor">
-      <button id="btn-periodo-anterior" class="periodo-nav-btn">‹</button>
-      <span id="periodo-label">Carregando…</span>
-      <button id="btn-periodo-proximo" class="periodo-nav-btn">›</button>
-    </div>
-
-    <p style="margin-bottom: 16px;" id="financas-resumo-texto">Carregando…</p>
-
-    <div class="kpi-grid" id="financas-stats"></div>
-
-    <button class="btn-primary" id="btn-nova-transacao" style="margin: 16px 0;">+ Nova transação</button>
-
-    <div class="financas-grid-desktop">
+    <div class="financas-header">
       <div>
-        <h3 style="margin-bottom:12px; font-size:15px;">Resumo financeiro</h3>
-        <div class="task-card" id="financas-resumo-automatico" style="margin-bottom:20px;"></div>
+        <h1 style="margin-bottom:2px;">Finanças</h1>
+        <p style="color:var(--ink-soft); font-size:13px;" id="financas-resumo-texto">Carregando…</p>
+      </div>
+      <div class="financas-header-acoes">
+        <div class="periodo-seletor" style="margin-bottom:0;">
+          <button id="btn-periodo-anterior" class="periodo-nav-btn">‹</button>
+          <span id="periodo-label">Carregando…</span>
+          <button id="btn-periodo-proximo" class="periodo-nav-btn">›</button>
+        </div>
+        <button id="btn-toggle-valores" class="btn-logout" title="Ocultar/mostrar valores" aria-label="Ocultar ou mostrar valores">
+          <svg id="icon-olho-aberto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="icon-olho-fechado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
 
-        <h3 style="margin-bottom:12px; font-size:15px;">Gasto por categoria</h3>
-        <div class="task-card" style="margin-bottom:20px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
-          <div id="financas-donut-categoria"></div>
-          <div id="financas-donut-legenda" style="flex:1; min-width:140px;"></div>
+        <div class="menu-wrapper" id="financas-gerenciar-wrapper">
+          <button class="btn-secondary" id="financas-gerenciar-trigger" style="width:auto; margin-top:0;">Gerenciar ▾</button>
+          <aside class="menu-flip" id="financas-gerenciar-flip" role="menu">
+            <button class="menu-flip-item" data-abrir-modal="modal-meta-mensal">Meta mensal</button>
+            <button class="menu-flip-item" data-abrir-modal="modal-metas-categoria">Metas por categoria</button>
+            <button class="menu-flip-item" data-abrir-modal="modal-gastos-recorrentes">Gastos recorrentes</button>
+            <button class="menu-flip-item" data-abrir-modal="modal-cartoes">Cartões de crédito</button>
+          </aside>
+        </div>
+
+        <button class="btn-primary" id="btn-nova-transacao" style="width:auto; margin-top:0;">+ Nova transação</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="financas-stats" style="margin-bottom:20px;"></div>
+
+    <div class="financas-charts-row">
+      <div class="task-card" style="margin-bottom:0;">
+        <h3 style="margin-bottom:12px; font-size:15px;">Resumo financeiro</h3>
+        <div id="financas-resumo-automatico"></div>
+      </div>
+
+      <div class="task-card" style="margin-bottom:0;">
+        <h3 style="margin-bottom:12px; font-size:15px;">Evolução mensal</h3>
+        <div id="financas-evolucao-comparacao" style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;"></div>
+        <div id="financas-evolucao-grafico"></div>
+        <div style="display:flex; gap:16px; margin-top:8px; font-size:11px; color:var(--ink-soft);">
+          <span>🟢 Entradas</span>
+          <span>🟠 Saídas</span>
         </div>
       </div>
 
-      <div>
-        <h3 style="margin-bottom:12px; font-size:15px;">Evolução mensal</h3>
-        <div class="task-card" style="margin-bottom:20px;">
-          <div id="financas-evolucao-comparacao" style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;"></div>
-          <div id="financas-evolucao-grafico"></div>
-          <div style="display:flex; gap:16px; margin-top:8px; font-size:11px; color:var(--ink-soft);">
-            <span>🟢 Entradas</span>
-            <span>🟠 Saídas</span>
+      <div class="task-card" style="margin-bottom:0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="font-size:15px;">Gastos</h3>
+          <div class="filtro-chips" style="margin-bottom:0;">
+            <button class="filtro-chip selecionada" id="financas-tab-categoria" data-tab-gasto="categoria">Por categoria</button>
+            <button class="filtro-chip" id="financas-tab-grupo" data-tab-gasto="grupo">Por grupo</button>
           </div>
         </div>
-
-        <h3 style="margin-bottom:12px; font-size:15px;">Gasto por grupo</h3>
-        <div class="task-card" style="margin-bottom:20px;">
+        <div id="financas-painel-categoria" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+          <div id="financas-donut-categoria"></div>
+          <div id="financas-donut-legenda" style="flex:1; min-width:140px;"></div>
+        </div>
+        <div id="financas-painel-grupo" class="hidden">
           <div id="financas-grupos-bars"></div>
         </div>
       </div>
     </div>
 
-    <h3 style="margin-bottom:12px; font-size:15px;">Meta de gasto do mês</h3>
-    <div class="task-card" style="margin-bottom:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div class="kpi-icon saldo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-          <div id="financas-meta-texto" style="font-size:14px; font-weight:600;"></div>
+    <div class="financas-corpo-grid">
+      <div class="task-card" style="margin-bottom:0;">
+        <h3 style="margin-bottom:12px; font-size:15px;">Transações</h3>
+        <input id="input-busca-transacao" type="text" placeholder="Buscar por descrição…" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:8px; font-family:var(--font-body);" />
+        <div class="financas-filtros-row">
+          <select id="filtro-grupo"><option value="">Todos os grupos</option></select>
+          <select id="filtro-categoria"><option value="">Todas categorias</option></select>
+          <select id="filtro-tipo">
+            <option value="">Todos os tipos</option>
+            <option value="entrada">Só entradas</option>
+            <option value="saida">Só saídas</option>
+          </select>
+          <select id="filtro-forma-pagamento"><option value="">Todas formas</option></select>
         </div>
-        <span id="financas-meta-alerta" class="alerta-badge"></span>
+        <button class="btn-secondary" id="btn-exportar-csv" style="margin-top:8px;">⬇ Exportar CSV</button>
+        <div id="lista-transacoes" style="margin-top:12px;"></div>
       </div>
-      <div class="track" style="height:10px; margin-bottom:14px;"><div class="fill" id="financas-meta-fill" style="height:100%; background:var(--sage); border-radius:5px; width:0%;"></div></div>
+
+      <aside class="financas-lateral">
+        <div class="manage-card">
+          <div>
+            <strong style="display:block; margin-bottom:4px; font-size:13px;">Meta mensal</strong>
+            <span id="financas-meta-resumo-lateral" style="font-size:12px; color:var(--ink-soft);">Carregando…</span>
+          </div>
+          <button class="btn-secondary manage-card-btn" data-abrir-modal="modal-meta-mensal">Definir</button>
+        </div>
+        <div class="manage-card">
+          <div>
+            <strong style="display:block; margin-bottom:4px; font-size:13px;">Gastos recorrentes</strong>
+            <span id="financas-recorrentes-resumo-lateral" style="font-size:12px; color:var(--ink-soft);">Carregando…</span>
+          </div>
+          <button class="btn-secondary manage-card-btn" data-abrir-modal="modal-gastos-recorrentes">Gerenciar</button>
+        </div>
+        <div class="manage-card">
+          <div>
+            <strong style="display:block; margin-bottom:4px; font-size:13px;">Cartões de crédito</strong>
+            <span id="financas-cartoes-resumo-lateral" style="font-size:12px; color:var(--ink-soft);">Carregando…</span>
+          </div>
+          <button class="btn-secondary manage-card-btn" data-abrir-modal="modal-cartoes">Gerenciar</button>
+        </div>
+
+        <div class="task-card" style="margin-bottom:0;">
+          <h4 style="font-size:13px; margin-bottom:10px;">Próximos vencimentos</h4>
+          <div id="lista-proximos-vencimentos"></div>
+        </div>
+      </aside>
+    </div>
+
+    <div id="fatura-view" class="hidden" style="margin-top:20px;">
+      <button class="btn-secondary" id="btn-fechar-fatura">← Voltar</button>
+      <div id="fatura-conteudo" style="margin-top:12px;"></div>
+    </div>
+  </section>
+
+  <!-- MODAL: meta mensal -->
+  <div id="modal-meta-mensal" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:380px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 style="font-size:16px;">Meta de gasto do mês</h2>
+        <button class="btn-logout" data-fechar-modal="modal-meta-mensal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <div class="kpi-icon saldo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+        <div id="financas-meta-texto" style="font-size:14px; font-weight:600;"></div>
+      </div>
+      <span id="financas-meta-alerta" class="alerta-badge"></span>
+      <div class="track" style="height:10px; margin:10px 0 14px;"><div class="fill" id="financas-meta-fill" style="height:100%; background:var(--sage); border-radius:5px; width:0%;"></div></div>
       <div style="display:flex; gap:8px;">
         <input id="input-meta-financas" type="number" placeholder="Limite de gasto (R$)" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
         <button class="btn-primary" id="btn-definir-meta-financas" style="width:auto; padding:10px 16px;">Definir</button>
       </div>
     </div>
+  </div>
 
-    <h3 style="margin-bottom:12px; font-size:15px;">Metas por categoria</h3>
-    <div id="lista-metas-categoria" style="margin-bottom:20px;"></div>
-
-    <h3 style="margin-bottom:12px; font-size:15px;">Transações</h3>
-    <input id="input-busca-transacao" type="text" placeholder="Buscar por descrição…" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:8px; font-family:var(--font-body);" />
-    <div class="financas-filtros-row">
-      <select id="filtro-grupo"><option value="">Todos os grupos</option></select>
-      <select id="filtro-categoria"><option value="">Todas categorias</option></select>
-      <select id="filtro-tipo">
-        <option value="">Todos os tipos</option>
-        <option value="entrada">Só entradas</option>
-        <option value="saida">Só saídas</option>
-      </select>
-      <select id="filtro-forma-pagamento"><option value="">Todas formas</option></select>
-    </div>
-    <button class="btn-secondary" id="btn-exportar-csv" style="margin-top:8px;">⬇ Exportar CSV</button>
-    <div id="lista-transacoes" style="margin-top:12px;"></div>
-
-    <h3 style="margin:20px 0 12px; font-size:15px;">Próximos vencimentos</h3>
-    <div id="lista-proximos-vencimentos" style="margin-bottom:20px;"></div>
-
-    <h3 style="margin:20px 0 12px; font-size:15px;">Gastos fixos e recorrentes</h3>
-    <div class="task-card" style="margin-bottom:20px;">
-      <input id="input-gastofixo-desc" type="text" placeholder="Descrição" class="campo-input" style="margin-top:0;" />
-      <select id="select-gastofixo-grupo" class="campo-input"></select>
-      <select id="select-gastofixo-categoria" class="campo-input"></select>
-      <div style="display:flex; gap:8px; margin-top:12px;">
-        <input id="input-gastofixo-dia" type="number" min="1" max="31" placeholder="Dia venc." style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
-        <input id="input-gastofixo-valor" type="number" step="0.01" placeholder="Valor" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+  <!-- MODAL: metas por categoria -->
+  <div id="modal-metas-categoria" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:420px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 style="font-size:16px;">Metas por categoria</h2>
+        <button class="btn-logout" data-fechar-modal="modal-metas-categoria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      <select id="select-gastofixo-recorrencia" class="campo-input">
-        <option value="mensal">Mensal</option>
-        <option value="semanal">Semanal</option>
-        <option value="anual">Anual</option>
-        <option value="personalizada">Personalizada</option>
-      </select>
-      <button class="btn-primary" id="btn-add-gastofixo" style="margin-top:10px;">Adicionar gasto recorrente</button>
+      <div id="lista-metas-categoria" style="margin-bottom:16px;"></div>
     </div>
-    <div id="lista-gastos-fixos"></div>
+  </div>
 
-    <h3 style="margin:20px 0 12px; font-size:15px;">Cartões de crédito</h3>
-    <div class="task-card" style="margin-bottom:20px;">
-      <select id="select-cartao-banco" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body); margin-bottom:8px;">
-        <option value="Nubank">Nubank</option>
-        <option value="Itaú">Itaú</option>
-        <option value="Bradesco">Bradesco</option>
-        <option value="Santander">Santander</option>
-        <option value="Banco do Brasil">Banco do Brasil</option>
-        <option value="Caixa">Caixa</option>
-        <option value="Inter">Inter</option>
-        <option value="C6 Bank">C6 Bank</option>
-        <option value="PicPay">PicPay</option>
-        <option value="XP">XP</option>
-        <option value="Outro">Outro banco</option>
-      </select>
-      <input id="input-cartao-banco-outro" type="text" placeholder="Nome do banco" class="hidden" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:8px;" />
-      <div style="display:flex; gap:8px; margin-bottom:8px;">
-        <input id="input-cartao-fechamento" type="number" min="1" max="31" placeholder="Fecha dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
-        <input id="input-cartao-vencimento" type="number" min="1" max="31" placeholder="Vence dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+  <!-- MODAL: gastos fixos e recorrentes -->
+  <div id="modal-gastos-recorrentes" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:440px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 style="font-size:16px;">Gastos fixos e recorrentes</h2>
+        <button class="btn-logout" data-fechar-modal="modal-gastos-recorrentes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      <input id="input-cartao-limite" type="number" step="0.01" placeholder="Limite total (opcional)" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border);" />
-      <button class="btn-primary" id="btn-add-cartao" style="margin-top:10px;">Adicionar cartão</button>
+      <div id="lista-gastos-fixos" style="margin-bottom:16px;"></div>
+      <button class="btn-secondary" id="btn-mostrar-form-gastofixo" style="width:100%;">+ Novo gasto recorrente</button>
+      <div id="form-gastofixo-wrapper" class="hidden" style="margin-top:12px;">
+        <input id="input-gastofixo-desc" type="text" placeholder="Descrição" class="campo-input" style="margin-top:0;" />
+        <select id="select-gastofixo-grupo" class="campo-input"></select>
+        <select id="select-gastofixo-categoria" class="campo-input"></select>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <input id="input-gastofixo-dia" type="number" min="1" max="31" placeholder="Dia venc." style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+          <input id="input-gastofixo-valor" type="number" step="0.01" placeholder="Valor" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+        </div>
+        <select id="select-gastofixo-recorrencia" class="campo-input">
+          <option value="mensal">Mensal</option>
+          <option value="semanal">Semanal</option>
+          <option value="anual">Anual</option>
+          <option value="personalizada">Personalizada</option>
+        </select>
+        <button class="btn-primary" id="btn-add-gastofixo" style="margin-top:10px;">Adicionar gasto recorrente</button>
+      </div>
     </div>
-    <div id="lista-cartoes"></div>
+  </div>
 
-    <div id="fatura-view" class="hidden">
-      <button class="btn-secondary" id="btn-fechar-fatura">← Voltar</button>
-      <div id="fatura-conteudo" style="margin-top:12px;"></div>
+  <!-- MODAL: cartões de crédito -->
+  <div id="modal-cartoes" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:440px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 style="font-size:16px;">Cartões de crédito</h2>
+        <button class="btn-logout" data-fechar-modal="modal-cartoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div id="lista-cartoes" style="margin-bottom:16px;"></div>
+      <button class="btn-secondary" id="btn-mostrar-form-cartao" style="width:100%;">+ Novo cartão</button>
+      <div id="form-cartao-wrapper" class="hidden" style="margin-top:12px;">
+        <select id="select-cartao-banco" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body); margin-bottom:8px;">
+          <option value="Nubank">Nubank</option>
+          <option value="Itaú">Itaú</option>
+          <option value="Bradesco">Bradesco</option>
+          <option value="Santander">Santander</option>
+          <option value="Banco do Brasil">Banco do Brasil</option>
+          <option value="Caixa">Caixa</option>
+          <option value="Inter">Inter</option>
+          <option value="C6 Bank">C6 Bank</option>
+          <option value="PicPay">PicPay</option>
+          <option value="XP">XP</option>
+          <option value="Outro">Outro banco</option>
+        </select>
+        <input id="input-cartao-banco-outro" type="text" placeholder="Nome do banco" class="hidden" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:8px;" />
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <input id="input-cartao-fechamento" type="number" min="1" max="31" placeholder="Fecha dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+          <input id="input-cartao-vencimento" type="number" min="1" max="31" placeholder="Vence dia" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+        </div>
+        <input id="input-cartao-limite" type="number" step="0.01" placeholder="Limite total (opcional)" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border);" />
+        <button class="btn-primary" id="btn-add-cartao" style="margin-top:10px;">Adicionar cartão</button>
+      </div>
     </div>
-  </section>
+  </div>
 
   <!-- TELA: LIVRO -->
   <section id="tela-livro" class="tela hidden">
