@@ -870,25 +870,54 @@
   <section id="tela-livro" class="tela hidden">
     <!-- VISÃO: BIBLIOTECA -->
     <div id="livro-biblioteca-view">
-      <h1 style="margin-bottom: 4px;">Biblioteca</h1>
-      <p style="margin-bottom: 16px; font-size:13px; color:var(--ink-soft);">Seus livros de estudo, com progresso de leitura salvo automaticamente.</p>
-
-      <input type="file" id="input-arquivo-livro" accept="application/pdf" class="hidden" />
-      <button class="btn-primary" id="btn-adicionar-livro" style="margin-bottom:16px;">+ Adicionar livro (PDF)</button>
-      <p id="livro-add-status" style="font-size:12px; color:var(--ink-soft); margin-bottom:12px;"></p>
-
-      <div style="display:flex; gap:8px; margin-bottom:16px;">
-        <input id="input-busca-livro" type="text" placeholder="Buscar por nome…" style="flex:2; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body);" />
-        <select id="select-categoria-livro" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:var(--font-body);">
-          <option value="">Todas categorias</option>
-        </select>
+      <div class="livro-header">
+        <div>
+          <h1 style="margin-bottom:2px;">Biblioteca</h1>
+          <p style="font-size:13px; color:var(--ink-soft);">Seus livros e materiais de estudo em um só lugar.</p>
+        </div>
+        <button class="btn-primary" id="btn-adicionar-livro" style="width:auto; margin-top:0;">+ Adicionar livro (PDF)</button>
       </div>
 
-      <div id="livro-vazio" class="task-card hidden">
-        <p>Nenhum livro adicionado ainda. Toque em "Adicionar livro" acima, ou suba um PDF na pasta <code>/livros</code> do repositório e cadastre ele em <code>js/reader.js</code>.</p>
+      <div class="livro-toolbar">
+        <input id="input-busca-livro" type="text" placeholder="Buscar livros..." />
+        <select id="select-categoria-livro">
+          <option value="">Todas categorias</option>
+        </select>
+        <div class="filtro-chips" id="livro-status-tabs" style="margin-bottom:0;">
+          <button class="filtro-chip selecionada" data-status="todos">Todos</button>
+          <button class="filtro-chip" data-status="leitura">Em leitura</button>
+          <button class="filtro-chip" data-status="concluido">Concluídos</button>
+          <button class="filtro-chip" data-status="favorito">Favoritos</button>
+        </div>
+      </div>
+
+      <div id="livro-continue-secao">
+        <h3 style="margin-bottom:12px; font-size:15px;">Continue lendo</h3>
+        <div id="livro-continue-grid" class="livro-continue-grid"></div>
+      </div>
+
+      <div class="livro-secao-header">
+        <h3 style="font-size:15px;">Todos os livros</h3>
+        <div class="livro-view-toggle">
+          <button class="livro-view-btn selecionado" id="btn-view-grid" title="Visualização em grade" aria-label="Visualização em grade">▦</button>
+          <button class="livro-view-btn" id="btn-view-lista" title="Visualização em lista" aria-label="Visualização em lista">☰</button>
+        </div>
+      </div>
+
+      <div id="livro-vazio" class="task-card hidden" style="text-align:center; padding:32px 20px;">
+        <p style="font-weight:700; margin-bottom:6px;">Sua biblioteca está vazia</p>
+        <p style="color:var(--ink-soft); font-size:13px; margin-bottom:16px;">Adicione livros e materiais em PDF para começar a acompanhar sua leitura e seus estudos.</p>
+        <button class="btn-primary" id="btn-adicionar-primeiro-livro" style="width:auto;">+ Adicionar primeiro livro</button>
+      </div>
+
+      <div id="livro-sem-resultado" class="task-card hidden" style="text-align:center; padding:32px 20px;">
+        <p style="font-weight:700; margin-bottom:6px;">Nenhum livro encontrado</p>
+        <p style="color:var(--ink-soft); font-size:13px; margin-bottom:16px;">Tente alterar os filtros ou buscar outro título.</p>
+        <button class="btn-secondary" id="btn-limpar-filtros-livro" style="width:auto;">Limpar filtros</button>
       </div>
 
       <div id="grid-livros" class="grid-livros"></div>
+      <div id="lista-livros" class="lista-livros hidden"></div>
     </div>
 
     <!-- VISÃO: LEITURA (abre ao clicar num livro) -->
@@ -906,6 +935,40 @@
       </div>
     </div>
   </section>
+
+  <!-- MODAL: adicionar livro -->
+  <div id="modal-adicionar-livro" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:420px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <h2 style="font-size:16px;">Adicionar livro</h2>
+        <button class="btn-logout" data-fechar-modal="modal-adicionar-livro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">O PDF fica salvo só neste aparelho (IndexedDB do navegador) — não é enviado a nenhum servidor.</p>
+      <label class="topo-campo"><span>Arquivo PDF</span><input type="file" id="input-arquivo-livro" accept="application/pdf" /></label>
+      <label class="topo-campo"><span>Título</span><input type="text" id="input-livro-titulo" placeholder="Deixe em branco para usar o nome do arquivo" /></label>
+      <label class="topo-campo"><span>Autor (opcional)</span><input type="text" id="input-livro-autor" /></label>
+      <label class="topo-campo"><span>Categoria</span>
+        <input type="text" id="input-livro-categoria" placeholder="Ex: Redes, Segurança, Meus livros" list="lista-categorias-livro-datalist" />
+        <datalist id="lista-categorias-livro-datalist"></datalist>
+      </label>
+      <p id="livro-add-status" style="font-size:12px; color:var(--ink-soft); margin: 8px 0;"></p>
+      <button class="btn-primary" id="btn-confirmar-adicionar-livro" style="width:100%; margin-top:6px;">Adicionar livro</button>
+    </div>
+  </div>
+
+  <!-- MODAL: editar livro local (renomear/categoria) -->
+  <div id="modal-editar-livro" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:380px;">
+      <h2 style="font-size:16px; margin-bottom:14px;">Editar livro</h2>
+      <label class="topo-campo"><span>Título</span><input type="text" id="input-editar-livro-titulo" /></label>
+      <label class="topo-campo"><span>Autor</span><input type="text" id="input-editar-livro-autor" /></label>
+      <label class="topo-campo"><span>Categoria</span><input type="text" id="input-editar-livro-categoria" /></label>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="btn-secondary" data-fechar-modal="modal-editar-livro" style="margin-top:0;">Cancelar</button>
+        <button class="btn-primary" id="btn-salvar-edicao-livro" style="margin-top:0;">Salvar</button>
+      </div>
+    </div>
+  </div>
 
   <section id="tela-topologia" class="tela hidden">
     <div class="topo-header">
