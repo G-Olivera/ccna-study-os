@@ -653,7 +653,10 @@ button { font-family: var(--font-body); cursor: pointer; }
 .livro-controles button { flex: 1; }
 
 /* ===== BIBLIOTECA DE LIVROS ===== */
-.grid-livros { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.grid-livros { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
+@media (min-width: 700px) { .grid-livros { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .grid-livros { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1300px) { .grid-livros { grid-template-columns: repeat(5, 1fr); } }
 .livro-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
 .livro-capa {
   aspect-ratio: 3 / 4; display: flex; align-items: center; justify-content: center;
@@ -681,6 +684,41 @@ button { font-family: var(--font-body); cursor: pointer; }
 .livro-progresso-fill { height: 100%; background: var(--sage); border-radius: 3px; }
 .livro-progresso-texto { font-size: 10px; color: var(--ink-soft); margin-bottom: 8px; }
 .livro-card .btn-primary { margin-top: auto; padding: 8px; font-size: 12px; }
+.livro-card-acoes { display: flex; gap: 6px; margin-top: 6px; }
+.livro-card-acoes .btn-primary { margin-top: 0; flex: 1; }
+.livro-menu-btn { width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink-soft); }
+.livro-dropdown-menu {
+  position: absolute; top: calc(100% + 4px); right: 0; min-width: 170px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); z-index: 30; padding: 4px;
+  display: flex; flex-direction: column;
+}
+.livro-dropdown-menu button { padding: 8px 10px; text-align: left; background: none; border: none; font-size: 12px; border-radius: 6px; color: var(--ink); }
+.livro-dropdown-menu button:hover { background: var(--surface-quiet); }
+
+/* ===== Cabeçalho / toolbar / Continue lendo ===== */
+.livro-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.livro-toolbar { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
+@media (min-width: 900px) { .livro-toolbar { grid-template-columns: 1.2fr 0.8fr 1.6fr; align-items: center; } }
+.livro-toolbar input, .livro-toolbar select { padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-family: var(--font-body); font-size: 13px; }
+
+.livro-continue-grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 24px; }
+@media (min-width: 800px) { .livro-continue-grid { grid-template-columns: 1fr 1fr; } }
+.livro-continue-card { display: grid; grid-template-columns: 84px 1fr; gap: 14px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.livro-continue-info { display: flex; flex-direction: column; min-width: 0; }
+.livro-continue-titulo { font-weight: 700; font-size: 14px; line-height: 1.35; margin-bottom: 4px; }
+.livro-continue-meta { font-size: 12px; color: var(--ink-soft); margin-bottom: 10px; }
+.livro-continue-progresso-label { font-size: 12px; color: var(--teal); font-weight: 600; margin-top: auto; }
+.livro-continue-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--ink-soft); }
+
+.livro-secao-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.livro-view-toggle { display: flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.livro-view-btn { width: 38px; height: 34px; background: var(--surface); border: none; color: var(--ink-soft); font-size: 15px; }
+.livro-view-btn.selecionado { background: var(--teal-soft); color: var(--teal); }
+
+.lista-livros { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+.lista-livros-linha { display: grid; grid-template-columns: 40px 1fr 100px 110px 90px 70px; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: 12px; }
+.lista-livros-capa-mini { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; }
+@media (max-width: 700px) { .lista-livros-linha { grid-template-columns: 40px 1fr 70px; } .lista-livros-linha .col-categoria, .lista-livros-linha .col-ultima { display: none; } }
 
 /* ===== PAINEL DE CONFIGURAÇÕES (dropdown compacto, ancorado na engrenagem) ===== */
 .modal-overlay {
