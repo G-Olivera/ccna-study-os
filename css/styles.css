@@ -733,6 +733,17 @@ button { font-family: var(--font-body); cursor: pointer; }
 /* ===== FILTROS DE TRANSAÇÃO ===== */
 .financas-filtros-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .financas-filtros-row select { padding: 8px; border-radius: 8px; border: 1px solid var(--border); font-family: var(--font-body); font-size: 12px; }
+
+/* ===== FINANÇAS: novo layout ===== */
+.financas-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.financas-header-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.financas-charts-row { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 20px; }
+@media (min-width: 1100px) { .financas-charts-row { grid-template-columns: 0.9fr 1.1fr 1fr; } }
+.financas-corpo-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 1024px) { .financas-corpo-grid { grid-template-columns: 1fr 340px; } }
+.financas-lateral { display: flex; flex-direction: column; gap: 12px; }
+.manage-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.manage-card-btn { width: auto !important; margin-top: 0 !important; padding: 8px 14px; font-size: 12px; white-space: nowrap; }
 .transacao-acoes { display: flex; gap: 4px; }
 .transacao-acao-btn { background: none; border: none; color: var(--ink-soft); padding: 4px 6px; font-size: 13px; border-radius: 6px; }
 .transacao-acao-btn:hover { background: var(--surface-quiet); }
@@ -789,12 +800,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .status-pago, .status-pendente, .status-atrasado, .alerta-badge { font-weight: 700; }
 
 /* ===== RESPONSIVIDADE: GRID DE 2 COLUNAS EM TELA GRANDE ===== */
-/* Por padrão (celular), tudo empilhado em coluna única — já era o comportamento. */
-.financas-grid-desktop { display: block; }
 
-@media (min-width: 1024px) {
-  .financas-grid-desktop { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
-}
 .cartao-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; }
 .cartao-icone { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: var(--font-display); font-weight: 700; font-size: 15px; }
 
