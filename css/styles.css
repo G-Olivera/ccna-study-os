@@ -665,6 +665,9 @@ button { font-family: var(--font-body); cursor: pointer; }
 }
 .livro-capa-iniciais { transition: opacity 0.2s ease; }
 .livro-capa.livro-capa-com-imagem .livro-capa-iniciais { display: none; }
+.livro-capa-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lista-livros-capa-mini.livro-capa-com-imagem { overflow: hidden; padding: 0; }
+.lista-livros-capa-mini .livro-capa-img { border-radius: 6px; }
 .livro-capa.livro-capa-com-imagem .btn-favorito {
   background: rgba(0,0,0,0.45); /* mais opaco por cima de uma foto real, pra manter legível */
 }
