@@ -372,38 +372,111 @@
 
   <!-- TELA: TRILHA -->
   <section id="tela-trilha" class="tela hidden">
-    <h1 style="margin-bottom: 8px;">Trilha CCNA 200-301</h1>
-    <p style="margin-bottom:20px; font-size:13px;">37 módulos · 142 lições</p>
-
-    <div class="task-card" style="margin-bottom:20px;">
-      <div class="eyebrow">CRONOGRAMA</div>
-      <h2 style="font-size:16px;">Planeje seu ritmo</h2>
-      <div id="cronograma-resultado" style="margin:12px 0; font-size:14px; color:var(--ink-soft);"></div>
-      <label style="font-size:13px; display:block; margin-bottom:4px;">Data da prova</label>
-      <input id="input-data-prova" type="date" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:10px;" />
-      <label style="font-size:13px; display:block; margin-bottom:4px;">Horas por semana disponíveis</label>
-      <input id="input-horas-semana" type="number" min="1" max="40" value="5" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:10px;" />
-      <button class="btn-primary" id="btn-salvar-cronograma">Calcular ritmo</button>
+    <div class="trilha-header">
+      <div>
+        <h1 style="margin-bottom:2px;">Mapa de estudos</h1>
+        <p style="color:var(--ink-soft); font-size:13px;">Sua trilha de preparação para o CCNA 200-301.</p>
+      </div>
+      <button class="btn-primary" id="btn-planejar-ritmo" style="width:auto; margin-top:0;">📅 Planejar ritmo de estudos</button>
     </div>
 
-    <div id="lista-modulos"></div>
+    <div class="task-card trilha-resumo-card">
+      <div class="trilha-resumo-principal">
+        <div>
+          <div class="eyebrow">PROGRESSO GERAL</div>
+          <div class="trilha-resumo-percent" id="trilha-percent-geral">0%</div>
+          <div style="font-size:12px; color:var(--ink-soft); margin-top:2px;" id="trilha-desc-geral"></div>
+          <div class="track" style="height:6px; margin-top:10px;"><div class="fill" id="trilha-fill-geral" style="height:100%; background:var(--teal); border-radius:4px; width:0%;"></div></div>
+        </div>
+        <div class="trilha-metrica"><div class="kpi-icon saldo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><strong id="trilha-total-modulos">0</strong><span>módulos</span></div>
+        <div class="trilha-metrica"><div class="kpi-icon entradas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><strong id="trilha-total-licoes">0</strong><span>lições</span></div>
+        <div class="trilha-metrica"><div class="kpi-icon tempo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div><strong id="trilha-horas-restantes">0h</strong><span>de estudo</span></div>
+        <div class="trilha-metrica"><div class="kpi-icon saidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></div><strong id="trilha-ritmo-atual">—</strong><span>/semana</span></div>
+      </div>
 
-    <div class="task-card" style="margin:16px 0;">
-      <div class="eyebrow">SIMULADO</div>
-      <h2 style="font-size:16px;">Simulado completo</h2>
-      <p class="descricao">Questões na proporção oficial de peso de cada domínio, ajustadas ao seu nível atual em cada tópico.</p>
-      <button class="btn-primary" id="btn-iniciar-simulado">Iniciar simulado</button>
+      <div class="trilha-plano" id="trilha-plano-definido">
+        <div class="eyebrow">PLANO ATUAL</div>
+        <div style="font-weight:700; margin-top:8px;" id="trilha-plano-data"></div>
+        <div style="font-size:12px; color:var(--ink-soft); margin-top:6px;" id="trilha-plano-desc"></div>
+        <button class="btn-secondary" id="btn-ajustar-plano" style="width:100%; margin-top:12px;">Ajustar plano</button>
+      </div>
+      <div class="trilha-plano hidden" id="trilha-plano-vazio">
+        <div class="eyebrow">PLANO ATUAL</div>
+        <p style="font-size:12px; color:var(--ink-soft); margin:8px 0 12px;">Você ainda não definiu uma data de prova. Defina pra saber se o ritmo atual é suficiente.</p>
+        <button class="btn-secondary" id="btn-definir-plano-vazio" style="width:100%;">Planejar ritmo</button>
+      </div>
     </div>
-    <div class="task-card" id="area-simulado"></div>
 
-    <div class="task-card" style="margin-top:16px;">
-      <div class="eyebrow">LABS</div>
-      <h2 style="font-size:16px;">Laboratórios práticos</h2>
-      <p class="descricao">Checklists com comandos reais Cisco IOS.</p>
-      <button class="btn-primary" id="btn-ver-labs">Ver laboratórios</button>
+    <div class="trilha-toolbar">
+      <input id="input-busca-trilha" type="text" placeholder="Buscar módulo ou lição..." />
+      <select id="select-dominio-trilha"><option value="">Todos os domínios</option></select>
+      <select id="select-status-trilha">
+        <option value="">Todos os status</option>
+        <option value="naoIniciado">Não iniciado</option>
+        <option value="andamento">Em andamento</option>
+        <option value="concluido">Concluído</option>
+      </select>
+      <div class="livro-view-toggle" id="trilha-view-toggle">
+        <button class="livro-view-btn selecionado" id="btn-trilha-lista" style="width:auto; padding:0 14px; font-size:12px;">☰ Lista</button>
+        <button class="livro-view-btn" id="btn-trilha-timeline" style="width:auto; padding:0 14px; font-size:12px;">◷ Timeline</button>
+      </div>
     </div>
-    <div id="area-labs"></div>
+
+    <div class="trilha-corpo-grid">
+      <div>
+        <div id="lista-modulos"></div>
+        <div id="trilha-timeline" class="trilha-timeline hidden"></div>
+        <div id="trilha-vazio" class="task-card hidden" style="text-align:center; padding:32px 20px;">
+          <p style="font-weight:700; margin-bottom:6px;">Nenhum conteúdo encontrado</p>
+          <p style="color:var(--ink-soft); font-size:13px; margin-bottom:16px;">Tente alterar os filtros ou buscar outro tópico.</p>
+          <button class="btn-secondary" id="btn-limpar-filtros-trilha" style="width:auto;">Limpar filtros</button>
+        </div>
+        <button class="btn-secondary" id="btn-carregar-mais-modulos" style="width:100%; margin-top:8px;">Carregar mais módulos ↓</button>
+      </div>
+
+      <aside class="trilha-lateral">
+        <div class="task-card" id="trilha-continue-card" style="margin-bottom:0;">
+          <div class="eyebrow" style="margin-bottom:10px;">CONTINUE ESTUDANDO</div>
+          <div id="trilha-continue-conteudo"></div>
+        </div>
+
+        <div class="task-card" style="margin-bottom:0;">
+          <div class="eyebrow" style="margin-bottom:10px;">PRÓXIMOS MÓDULOS</div>
+          <div id="trilha-proximos-modulos"></div>
+        </div>
+
+        <div class="task-card" style="margin-bottom:0;">
+          <div class="eyebrow">SIMULADO</div>
+          <h3 style="font-size:15px; margin:6px 0;">Simulado completo</h3>
+          <p class="descricao" style="font-size:12px;">Questões na proporção oficial de peso de cada domínio, ajustadas ao seu nível atual em cada tópico.</p>
+          <button class="btn-primary" id="btn-iniciar-simulado" style="width:100%;">Iniciar simulado</button>
+        </div>
+        <div class="task-card hidden" id="area-simulado" style="margin-bottom:0;"></div>
+
+        <div class="task-card" style="margin-bottom:0;">
+          <div class="eyebrow">LABS</div>
+          <h3 style="font-size:15px; margin:6px 0;">Laboratórios práticos</h3>
+          <p class="descricao" style="font-size:12px;">Checklists com comandos reais Cisco IOS.</p>
+          <button class="btn-primary" id="btn-ver-labs" style="width:100%;">Ver laboratórios</button>
+        </div>
+        <div id="area-labs"></div>
+      </aside>
+    </div>
   </section>
+
+  <!-- MODAL: planejar ritmo de estudos -->
+  <div id="modal-planejar-ritmo" class="modal-overlay hidden">
+    <div class="modal-conteudo" style="width:400px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h2 style="font-size:16px;">Planejar ritmo de estudos</h2>
+        <button class="btn-logout" data-fechar-modal="modal-planejar-ritmo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <label class="topo-campo"><span>Data da prova</span><input id="input-data-prova" type="date" /></label>
+      <label class="topo-campo"><span>Horas por semana disponíveis</span><input id="input-horas-semana" type="number" min="1" max="40" value="5" /></label>
+      <button class="btn-primary" id="btn-salvar-cronograma" style="width:100%; margin-top:6px;">Calcular ritmo</button>
+      <div id="cronograma-resultado" style="margin-top:14px; font-size:13px; color:var(--ink-soft);"></div>
+    </div>
+  </div>
 
   <!-- TELA: FLASHCARDS -->
   <section id="tela-flashcards" class="tela hidden">
