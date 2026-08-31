@@ -47,6 +47,70 @@ async function garantirPdfJsCarregado() {
   return pdfjsLib;
 }
 
+// ---------- CAPA: gerada a partir da 1ª página do próprio PDF (nunca arte de terceiros) ----------
+
+const CHAVE_CAPAS_ESTATICAS = "ccna_capas_estaticas_v1"; // cache local só pros livros hospedados no repo
+
+function getCacheCapasEstaticas() {
+  try {
+    return JSON.parse(localStorage.getItem(CHAVE_CAPAS_ESTATICAS) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+/** Gera uma miniatura da 1ª página do PDF (sempre o conteúdo do próprio usuário, nunca capa de terceiros). */
+export async function gerarCapaAutomatica(livro) {
+  const lib = await garantirPdfJsCarregado();
+  let doc;
+  if (livro.origem === "local") {
+    const completo = await getLivroLocalCompleto(livro.id);
+    if (!completo) return null;
+    doc = await lib.getDocument({ data: completo.dadosArquivo.slice(0) }).promise;
+  } else {
+    doc = await lib.getDocument(livro.arquivo).promise;
+  }
+
+  const pagina = await doc.getPage(1);
+  const viewport = pagina.getViewport({ scale: 0.4 });
+  const canvas = document.createElement("canvas");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext("2d");
+  await pagina.render({ canvasContext: ctx, viewport }).promise;
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+  doc.destroy();
+
+  // Guarda em cache pra não precisar baixar/renderizar o PDF de novo só pra mostrar a capa.
+  if (livro.origem === "local") {
+    await salvarCapaGeradaLocal(livro.id, dataUrl);
+  } else {
+    const cache = getCacheCapasEstaticas();
+    cache[livro.id] = dataUrl;
+    localStorage.setItem(CHAVE_CAPAS_ESTATICAS, JSON.stringify(cache));
+  }
+  return dataUrl;
+}
+
+export function getCapaEstaticaCache(livroId) {
+  return getCacheCapasEstaticas()[livroId] || null;
+}
+
+async function salvarCapaGeradaLocal(id, dataUrl) {
+  const bancoDb = await abrirBancoLocal();
+  return new Promise((resolve, reject) => {
+    const tx = bancoDb.transaction(STORE_NOME, "readwrite");
+    const store = tx.objectStore(STORE_NOME);
+    const req = store.get(id);
+    req.onsuccess = () => {
+      const atual = req.result;
+      if (atual) store.put({ ...atual, capaGerada: dataUrl });
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 // ---------- IndexedDB (livros adicionados direto pelo app) ----------
 
 const DB_NOME = "ccna-study-os-livros";
@@ -76,6 +140,7 @@ export async function adicionarLivroLocal(arquivo, metadados = {}) {
     autor: metadados.autor?.trim() || "",
     categoria: metadados.categoria?.trim() || "Meus livros",
     corCapa: CORES_CAPA[Math.floor(Math.random() * CORES_CAPA.length)],
+    capaCustom: metadados.capaCustom || null,
     dadosArquivo,
     criadoEm: new Date().toISOString(),
   };

@@ -74,7 +74,7 @@ import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
 import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, editarTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
 import { escapeHtml } from "./utils.js";
-import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, editarLivroLocal, removerLivroLocal, removerProgressoLeitura } from "./reader.js";
+import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, editarLivroLocal, removerLivroLocal, removerProgressoLeitura, gerarCapaAutomatica, getCapaEstaticaCache } from "./reader.js";
 import {
   iniciarCronometro,
   pausarCronometro,
@@ -2651,6 +2651,50 @@ function iniciaisTitulo(titulo) {
     .join("") || titulo.slice(0, 2).toUpperCase();
 }
 
+function capaDoLivro(livro) {
+  if (livro.capaCustom) return livro.capaCustom;
+  if (livro.origem === "local" && livro.capaGerada) return livro.capaGerada;
+  if (livro.origem === "estatico") return getCapaEstaticaCache(livro.id);
+  return null;
+}
+
+function htmlCapa(livro, tamanhoFonteIniciais) {
+  const capa = capaDoLivro(livro);
+  return capa
+    ? `<img src="${capa}" alt="" class="livro-capa-img" />`
+    : `<span class="livro-capa-iniciais" style="${tamanhoFonteIniciais ? `font-size:${tamanhoFonteIniciais}px;` : ""}">${iniciaisTitulo(livro.titulo)}</span>`;
+}
+
+// Gera capas automaticamente em segundo plano, um livro por vez (sem travar a
+// tela nem carregar todos os PDFs de uma vez — só os que ainda não têm capa).
+let filaCapasPendentes = [];
+let processandoFilaCapas = false;
+
+function agendarGeracaoCapasPendentes(livros) {
+  filaCapasPendentes = livros.filter((l) => !capaDoLivro(l));
+  if (!processandoFilaCapas) processarFilaCapas();
+}
+
+async function processarFilaCapas() {
+  if (filaCapasPendentes.length === 0) {
+    processandoFilaCapas = false;
+    return;
+  }
+  processandoFilaCapas = true;
+  const livro = filaCapasPendentes.shift();
+  try {
+    const dataUrl = await gerarCapaAutomatica(livro);
+    if (dataUrl) {
+      if (livro.origem === "local") livro.capaGerada = dataUrl;
+      renderContinueLendo();
+      renderBiblioteca();
+    }
+  } catch {
+    // Livro sem PDF acessível agora (ex: local removido, ou rede falhou pro estático) — ignora e segue.
+  }
+  setTimeout(processarFilaCapas, 80);
+}
+
 function popularFiltroCategorias() {
   const categorias = [...new Set(todosLivrosCache.map((l) => l.categoria).filter(Boolean))];
   document.getElementById("select-categoria-livro").innerHTML =
@@ -2719,8 +2763,8 @@ function renderContinueLendo() {
       const corTexto = corTextoContraste(livro.corCapa);
       return `
       <div class="livro-continue-card">
-        <div class="livro-capa" style="background:${livro.corCapa}; color:${corTexto}; aspect-ratio:auto; height:100%; border-radius:8px;">
-          <span class="livro-capa-iniciais" style="font-size:16px;">${iniciaisTitulo(livro.titulo)}</span>
+        <div class="livro-capa ${capaDoLivro(livro) ? "livro-capa-com-imagem" : ""}" style="background:${livro.corCapa}; color:${corTexto}; aspect-ratio:auto; height:100%; border-radius:8px;">
+          ${htmlCapa(livro, 16)}
         </div>
         <div class="livro-continue-info">
           <div class="livro-continue-titulo">${escapeHtml(livro.titulo)}</div>
@@ -2773,8 +2817,8 @@ function renderBiblioteca() {
         const corTexto = corTextoContraste(livro.corCapa);
         return `
         <div class="livro-card">
-          <div class="livro-capa" style="background:${livro.corCapa}; color:${corTexto};">
-            <span class="livro-capa-iniciais">${iniciaisTitulo(livro.titulo)}</span>
+          <div class="livro-capa ${capaDoLivro(livro) ? "livro-capa-com-imagem" : ""}" style="background:${livro.corCapa}; color:${corTexto};">
+            ${htmlCapa(livro)}
             ${livro.origem === "local" ? `<span class="livro-tag-local">Neste aparelho</span>` : ""}
           </div>
           <div class="livro-info">
@@ -2801,7 +2845,7 @@ function renderBiblioteca() {
         const ultima = progresso?.atualizadaEm ? formatarDataRelativa(progresso.atualizadaEm) : "—";
         return `
         <div class="lista-livros-linha">
-          <div class="lista-livros-capa-mini" style="background:${livro.corCapa};">${iniciaisTitulo(livro.titulo)}</div>
+          <div class="lista-livros-capa-mini ${capaDoLivro(livro) ? "livro-capa-com-imagem" : ""}" style="background:${livro.corCapa};">${htmlCapa(livro, 9)}</div>
           <div>
             <div class="livro-titulo" style="margin-bottom:0;">${escapeHtml(livro.titulo)} ${favorito ? "★" : ""}</div>
             <div class="livro-meta" style="margin-bottom:0;">${escapeHtml(livro.autor || "")}</div>
@@ -2829,6 +2873,7 @@ async function carregarLivro() {
   popularFiltroCategorias();
   renderContinueLendo();
   renderBiblioteca();
+  agendarGeracaoCapasPendentes(todosLivrosCache);
   document.getElementById("livro-biblioteca-view").classList.remove("hidden");
   document.getElementById("livro-leitura-view").classList.add("hidden");
 }
@@ -2839,14 +2884,25 @@ function abrirModalAdicionarLivro() {
   document.getElementById("input-livro-titulo").value = "";
   document.getElementById("input-livro-autor").value = "";
   document.getElementById("input-livro-categoria").value = "";
+  document.getElementById("input-livro-capa").value = "";
   document.getElementById("livro-add-status").textContent = "";
   document.getElementById("modal-adicionar-livro").classList.remove("hidden");
 }
 document.getElementById("btn-adicionar-livro").addEventListener("click", abrirModalAdicionarLivro);
 document.getElementById("btn-adicionar-primeiro-livro").addEventListener("click", abrirModalAdicionarLivro);
 
+function lerArquivoComoDataUrl(arquivo) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolve(leitor.result);
+    leitor.onerror = reject;
+    leitor.readAsDataURL(arquivo);
+  });
+}
+
 document.getElementById("btn-confirmar-adicionar-livro").addEventListener("click", async () => {
   const arquivo = document.getElementById("input-arquivo-livro").files[0];
+  const arquivoCapa = document.getElementById("input-livro-capa").files[0];
   const statusEl = document.getElementById("livro-add-status");
   if (!arquivo) {
     statusEl.textContent = "Escolha um arquivo PDF primeiro.";
@@ -2854,10 +2910,12 @@ document.getElementById("btn-confirmar-adicionar-livro").addEventListener("click
   }
   statusEl.textContent = "Salvando no aparelho…";
   try {
+    const capaCustom = arquivoCapa ? await lerArquivoComoDataUrl(arquivoCapa) : null;
     await adicionarLivroLocal(arquivo, {
       titulo: document.getElementById("input-livro-titulo").value,
       autor: document.getElementById("input-livro-autor").value,
       categoria: document.getElementById("input-livro-categoria").value,
+      capaCustom,
     });
     document.getElementById("modal-adicionar-livro").classList.add("hidden");
     await carregarLivro();
@@ -2962,17 +3020,21 @@ function abrirModalEditarLivro(livroId) {
   document.getElementById("input-editar-livro-titulo").value = livro.titulo;
   document.getElementById("input-editar-livro-autor").value = livro.autor || "";
   document.getElementById("input-editar-livro-categoria").value = livro.categoria || "";
+  document.getElementById("input-editar-livro-capa").value = "";
   document.getElementById("modal-editar-livro").dataset.livroId = livroId;
   document.getElementById("modal-editar-livro").classList.remove("hidden");
 }
 
 document.getElementById("btn-salvar-edicao-livro").addEventListener("click", async () => {
   const livroId = document.getElementById("modal-editar-livro").dataset.livroId;
-  await editarLivroLocal(livroId, {
+  const arquivoCapa = document.getElementById("input-editar-livro-capa").files[0];
+  const dados = {
     titulo: document.getElementById("input-editar-livro-titulo").value.trim() || "Sem título",
     autor: document.getElementById("input-editar-livro-autor").value.trim(),
     categoria: document.getElementById("input-editar-livro-categoria").value.trim() || "Meus livros",
-  });
+  };
+  if (arquivoCapa) dados.capaCustom = await lerArquivoComoDataUrl(arquivoCapa);
+  await editarLivroLocal(livroId, dados);
   document.getElementById("modal-editar-livro").classList.add("hidden");
   await carregarLivro();
 });
