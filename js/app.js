@@ -1,7 +1,7 @@
 // app.js
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import { listarFatoresMFA, iniciarCadastroMFA, confirmarCadastroMFA, removerFatorMFA, getResolverMFA, confirmarLoginMFA } from "./mfa.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
 import { seedContentIfNeeded, getModulosResumo } from "./seed-content.js";
@@ -1460,33 +1460,168 @@ document.getElementById("btn-fechar-contexto-tutor").addEventListener("click", (
 
 // ---------- TRILHA (módulos/lições + cronograma) ----------
 
+let modulosCache = [];
+let allTopicsCache = [];
+let progressoMapCache = new Map();
+let filtroTextoTrilha = "";
+let filtroDominioTrilha = "";
+let filtroStatusTrilha = "";
+let visualizacaoTrilha = "lista";
+let modulosVisiveis = 10;
+
+function progressoDoModulo(mod) {
+  const licoes = allTopicsCache.filter((t) => t.modulo === mod.nome).sort((a, b) => a.id.localeCompare(b.id));
+  const dominadas = licoes.filter((t) => (progressoMapCache.get(t.id)?.masteryPercent ?? 0) >= 80).length;
+  const emAndamento = licoes.filter((t) => {
+    const m = progressoMapCache.get(t.id)?.masteryPercent ?? 0;
+    return m > 0 && m < 80;
+  }).length;
+  const percent = licoes.length ? Math.round((dominadas / licoes.length) * 100) : 0;
+  let status = "naoIniciado";
+  if (percent >= 100) status = "concluido";
+  else if (dominadas > 0 || emAndamento > 0) status = "andamento";
+  return { licoes, dominadas, percent, status };
+}
+
+function moduloCasaComFiltros(mod) {
+  const termo = filtroTextoTrilha.toLowerCase();
+  const { licoes, status } = progressoDoModulo(mod);
+  const bateTexto =
+    !termo ||
+    mod.nome.toLowerCase().includes(termo) ||
+    mod.dominio.toLowerCase().includes(termo) ||
+    licoes.some((l) => l.nome.toLowerCase().includes(termo));
+  const bateDominio = !filtroDominioTrilha || mod.dominio === filtroDominioTrilha;
+  const bateStatus = !filtroStatusTrilha || status === filtroStatusTrilha;
+  return bateTexto && bateDominio && bateStatus;
+}
+
+function modulosFiltrados() {
+  return modulosCache.filter(moduloCasaComFiltros);
+}
+
 async function carregarTrilha() {
-  const modulos = getModulosResumo();
+  modulosCache = getModulosResumo();
   const [allTopics, progresso] = await Promise.all([getAllTopics(), getAllUserTopicProgress(currentUser.uid)]);
-  const progressoMap = new Map(progresso.map((p) => [p.id, p]));
+  allTopicsCache = allTopics;
+  progressoMapCache = new Map(progresso.map((p) => [p.id, p]));
 
-  document.getElementById("lista-modulos").innerHTML = modulos
+  popularFiltroDominiosTrilha();
+  renderResumoTrilha();
+  renderModulosTrilha();
+  renderProximosModulos();
+  await renderContinueEstudando();
+
+  const ritmo = await calcularRitmo(currentUser.uid);
+  atualizarPlanoTrilha(ritmo);
+}
+
+function popularFiltroDominiosTrilha() {
+  const dominios = [...new Set(modulosCache.map((m) => m.dominio))];
+  document.getElementById("select-dominio-trilha").innerHTML =
+    `<option value="">Todos os domínios</option>` + dominios.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
+}
+
+function renderResumoTrilha() {
+  const totalLicoes = allTopicsCache.length;
+  const licoesConcluidas = allTopicsCache.filter((t) => (progressoMapCache.get(t.id)?.masteryPercent ?? 0) >= 80).length;
+  const percent = totalLicoes ? Math.round((licoesConcluidas / totalLicoes) * 100) : 0;
+  const licoesRestantes = totalLicoes - licoesConcluidas;
+  const horasRestantes = Math.round(((licoesRestantes * 42) / 60) * 10) / 10; // mesma média usada no planner.js
+
+  document.getElementById("trilha-percent-geral").textContent = `${percent}%`;
+  document.getElementById("trilha-desc-geral").textContent = `${licoesConcluidas} de ${totalLicoes} lições concluídas`;
+  document.getElementById("trilha-fill-geral").style.width = `${percent}%`;
+  document.getElementById("trilha-total-modulos").textContent = modulosCache.length;
+  document.getElementById("trilha-total-licoes").textContent = totalLicoes;
+  document.getElementById("trilha-horas-restantes").textContent = `${horasRestantes}h`;
+}
+
+function atualizarPlanoTrilha(ritmo) {
+  const definido = document.getElementById("trilha-plano-definido");
+  const vazio = document.getElementById("trilha-plano-vazio");
+  if (!ritmo) {
+    definido.classList.add("hidden");
+    vazio.classList.remove("hidden");
+    document.getElementById("trilha-ritmo-atual").textContent = "—";
+    return;
+  }
+  vazio.classList.add("hidden");
+  definido.classList.remove("hidden");
+  const dataFormatada = new Date(`${ritmo.dataProva}T12:00:00`).toLocaleDateString("pt-BR");
+  document.getElementById("trilha-plano-data").textContent = `Até ${dataFormatada}`;
+  document.getElementById("trilha-plano-desc").textContent = `Faltam ~${ritmo.horasRestantesEstimadas}h de estudo`;
+  document.getElementById("trilha-ritmo-atual").textContent = `${ritmo.horasNecessariasPorSemana}h`;
+  renderCronograma(ritmo);
+}
+
+function renderModulosTrilha() {
+  const container = document.getElementById("lista-modulos");
+  const vazioEl = document.getElementById("trilha-vazio");
+  const filtrados = modulosFiltrados();
+
+  const listaVisivel = visualizacaoTrilha === "lista";
+  container.classList.toggle("hidden", !listaVisivel);
+  document.getElementById("trilha-timeline").classList.toggle("hidden", listaVisivel);
+  document.getElementById("btn-carregar-mais-modulos").classList.toggle("hidden", !listaVisivel);
+
+  if (filtrados.length === 0) {
+    vazioEl.classList.remove("hidden");
+    container.innerHTML = "";
+    document.getElementById("trilha-timeline").innerHTML = "";
+    document.getElementById("btn-carregar-mais-modulos").classList.add("hidden");
+    return;
+  }
+  vazioEl.classList.add("hidden");
+
+  if (!listaVisivel) {
+    document.getElementById("trilha-timeline").innerHTML = filtrados
+      .map((mod) => {
+        const { percent, status } = progressoDoModulo(mod);
+        return `
+        <div class="trilha-timeline-item ${status}">
+          <strong>${mod.ordem}. ${escapeHtml(mod.nome)}</strong>
+          <div style="font-size:12px; color:var(--ink-soft); margin-top:4px;">${escapeHtml(mod.dominio)}</div>
+          <div style="margin-top:6px; color:var(--teal); font-size:12px; font-weight:600;">${percent}% concluído</div>
+        </div>`;
+      })
+      .join("");
+    return;
+  }
+
+  const visiveis = filtrados.slice(0, modulosVisiveis);
+  document.getElementById("btn-carregar-mais-modulos").classList.toggle("hidden", modulosVisiveis >= filtrados.length);
+
+  container.innerHTML = visiveis
     .map((mod) => {
-      const licoesDoModulo = allTopics.filter((t) => t.modulo === mod.nome).sort((a, b) => a.id.localeCompare(b.id));
-      const dominadas = licoesDoModulo.filter((t) => (progressoMap.get(t.id)?.masteryPercent ?? 0) >= 80).length;
-      const percent = licoesDoModulo.length ? Math.round((dominadas / licoesDoModulo.length) * 100) : 0;
-
+      const { licoes, percent, status } = progressoDoModulo(mod);
+      const icone = ICONES_DOMINIO[mod.dominio] || ICONES_DOMINIO["Automation and Programmability"];
       return `
-      <div class="modulo-card">
-        <div class="modulo-header" data-modulo="${mod.ordem}">
+      <div class="modulo-card ${status === "concluido" ? "concluido" : ""}">
+        <div class="modulo-header" data-modulo="${mod.ordem}" role="button" tabindex="0" aria-expanded="false">
+          <div class="modulo-numero">${mod.ordem}</div>
+          <div class="modulo-icone-quadro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icone}</svg></div>
           <div>
-            <div class="titulo">${mod.ordem}. ${mod.nome}</div>
-            <div class="meta">${dominadas}/${mod.totalLicoes} lições · ${mod.dominio}</div>
-            <div class="modulo-progress-mini"><div class="fill" style="width:${percent}%"></div></div>
+            <div class="titulo">${escapeHtml(mod.nome)} <span class="modulo-dominio-badge">${escapeHtml(mod.dominio)}</span></div>
+            <div class="meta">${licoes.filter((t) => (progressoMapCache.get(t.id)?.masteryPercent ?? 0) >= 80).length} de ${mod.totalLicoes} lições concluídas</div>
           </div>
-          <div style="font-size:18px;">${percent === 100 ? "✅" : "›"}</div>
+          <div class="modulo-percent-num">${percent}%</div>
+          <div class="modulo-progress-mini-wrap"><div class="track"><div class="fill" style="width:${percent}%"></div></div></div>
+          <div class="modulo-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
         <div class="modulo-licoes" id="licoes-${mod.ordem}">
-          ${licoesDoModulo
-            .map(
-              (t) =>
-                `<span class="licao-chip ${(progressoMap.get(t.id)?.masteryPercent ?? 0) >= 80 ? "dominada" : ""}" data-licao-id="${t.id}" data-licao-nome="${t.nome}">${t.nome}</span>`
-            )
+          ${licoes
+            .map((t) => {
+              const mastery = progressoMapCache.get(t.id)?.masteryPercent ?? 0;
+              const st = mastery >= 80 ? "dominada" : mastery > 0 ? "andamento" : "";
+              const estado = mastery >= 80 ? "Concluída" : mastery > 0 ? "Em andamento" : "Não iniciada";
+              return `
+              <div class="licao-linha ${st}" data-licao-id="${t.id}" data-licao-nome="${escapeHtml(t.nome)}">
+                <div class="licao-status-ponto">${mastery >= 80 ? "✓" : ""}</div>
+                <div>${t.id} &nbsp;${escapeHtml(t.nome)}</div>
+                <div class="licao-estado">${estado}</div>
+              </div>`;
+            })
             .join("")}
         </div>
         <div class="licao-conteudo hidden" id="conteudo-${mod.ordem}"></div>
@@ -1496,23 +1631,127 @@ async function carregarTrilha() {
 
   document.querySelectorAll(".modulo-header").forEach((h) => {
     h.addEventListener("click", () => {
-      document.getElementById(`licoes-${h.dataset.modulo}`).classList.toggle("aberto");
+      const aberto = document.getElementById(`licoes-${h.dataset.modulo}`).classList.toggle("aberto");
+      h.setAttribute("aria-expanded", aberto ? "true" : "false");
+    });
+    h.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") h.click();
     });
   });
 
   document.querySelectorAll(".modulo-licoes").forEach((el) => {
     el.addEventListener("click", async (e) => {
-      const chip = e.target.closest(".licao-chip");
-      if (!chip) return;
+      const linha = e.target.closest(".licao-linha");
+      if (!linha) return;
       const moduloOrdem = el.id.replace("licoes-", "");
-      await abrirConteudoLicao(chip.dataset.licaoId, chip.dataset.licaoNome, moduloOrdem);
+      await abrirConteudoLicao(linha.dataset.licaoId, linha.dataset.licaoNome, moduloOrdem);
     });
   });
-
-  // Cronograma
-  const ritmo = await calcularRitmo(currentUser.uid);
-  renderCronograma(ritmo);
 }
+
+function renderProximosModulos() {
+  const proximos = modulosCache.filter((m) => progressoDoModulo(m).status !== "concluido").slice(0, 3);
+  document.getElementById("trilha-proximos-modulos").innerHTML =
+    proximos
+      .map((mod) => {
+        const { dominadas } = progressoDoModulo(mod);
+        return `
+      <div class="trilha-proximo-modulo">
+        <div class="trilha-proximo-numero">${mod.ordem}</div>
+        <div>
+          <div style="font-size:12px; font-weight:600;">${escapeHtml(mod.nome)}</div>
+          <div style="font-size:10px; color:var(--ink-soft); margin-top:2px;">${dominadas}/${mod.totalLicoes} lições</div>
+        </div>
+      </div>`;
+      })
+      .join("") || `<p style="font-size:12px; color:var(--ink-soft);">Você concluiu todos os módulos! 🎉</p>`;
+}
+
+async function renderContinueEstudando() {
+  const container = document.getElementById("trilha-continue-conteudo");
+  try {
+    const snap = await getDocs(query(collection(db, "users", currentUser.uid, "activityLog"), orderBy("timestamp", "desc"), limit(25)));
+    const ultimaLicao = snap.docs.map((d) => d.data()).find((a) => a.tipo === "leitura_licao" && a.topicId);
+    if (!ultimaLicao) throw new Error("sem histórico");
+
+    const topico = allTopicsCache.find((t) => t.id === ultimaLicao.topicId);
+    const modulo = modulosCache.find((m) => m.nome === topico?.modulo);
+    if (!topico || !modulo) throw new Error("tópico não encontrado");
+
+    const { percent } = progressoDoModulo(modulo);
+    container.innerHTML = `
+      <div class="trilha-continue-item">
+        <div class="trilha-continue-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONES_DOMINIO[modulo.dominio] || ""}</svg></div>
+        <div>
+          <strong style="font-size:13px;">${escapeHtml(modulo.nome)}</strong>
+          <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">${topico.id} ${escapeHtml(topico.nome)}</div>
+        </div>
+      </div>
+      <div class="track" style="height:6px; margin-bottom:12px;"><div class="fill" style="height:100%; background:var(--teal); border-radius:4px; width:${percent}%;"></div></div>
+      <button class="btn-secondary" id="btn-continuar-trilha" style="width:100%;">Revisar módulo</button>
+    `;
+    document.getElementById("btn-continuar-trilha").addEventListener("click", () => {
+      document.getElementById(`licoes-${modulo.ordem}`)?.classList.add("aberto");
+      document.querySelector(`.modulo-header[data-modulo="${modulo.ordem}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  } catch {
+    container.innerHTML = `<p style="font-size:12px; color:var(--ink-soft);">Ainda sem histórico de leitura. Abra uma lição pra começar.</p>`;
+  }
+}
+
+// Filtros / busca / view toggle / carregar mais
+document.getElementById("input-busca-trilha").addEventListener("input", (e) => {
+  filtroTextoTrilha = e.target.value;
+  modulosVisiveis = 10;
+  renderModulosTrilha();
+});
+document.getElementById("select-dominio-trilha").addEventListener("change", (e) => {
+  filtroDominioTrilha = e.target.value;
+  modulosVisiveis = 10;
+  renderModulosTrilha();
+});
+document.getElementById("select-status-trilha").addEventListener("change", (e) => {
+  filtroStatusTrilha = e.target.value;
+  modulosVisiveis = 10;
+  renderModulosTrilha();
+});
+document.getElementById("btn-limpar-filtros-trilha").addEventListener("click", () => {
+  filtroTextoTrilha = "";
+  filtroDominioTrilha = "";
+  filtroStatusTrilha = "";
+  document.getElementById("input-busca-trilha").value = "";
+  document.getElementById("select-dominio-trilha").value = "";
+  document.getElementById("select-status-trilha").value = "";
+  modulosVisiveis = 10;
+  renderModulosTrilha();
+});
+document.getElementById("btn-carregar-mais-modulos").addEventListener("click", () => {
+  modulosVisiveis += 10;
+  renderModulosTrilha();
+});
+document.getElementById("btn-trilha-lista").addEventListener("click", () => {
+  visualizacaoTrilha = "lista";
+  document.getElementById("btn-trilha-lista").classList.add("selecionado");
+  document.getElementById("btn-trilha-timeline").classList.remove("selecionado");
+  renderModulosTrilha();
+});
+document.getElementById("btn-trilha-timeline").addEventListener("click", () => {
+  visualizacaoTrilha = "timeline";
+  document.getElementById("btn-trilha-timeline").classList.add("selecionado");
+  document.getElementById("btn-trilha-lista").classList.remove("selecionado");
+  renderModulosTrilha();
+});
+
+// Modal: planejar ritmo
+document.getElementById("btn-planejar-ritmo").addEventListener("click", () => {
+  document.getElementById("modal-planejar-ritmo").classList.remove("hidden");
+});
+document.getElementById("btn-ajustar-plano").addEventListener("click", () => {
+  document.getElementById("modal-planejar-ritmo").classList.remove("hidden");
+});
+document.getElementById("btn-definir-plano-vazio").addEventListener("click", () => {
+  document.getElementById("modal-planejar-ritmo").classList.remove("hidden");
+});
 
 // Abre (ou fecha) o painel de conteúdo de uma lição, gerando a explicação via Tutor IA.
 async function abrirConteudoLicao(licaoId, licaoNome, moduloOrdem) {
@@ -1571,12 +1810,14 @@ document.getElementById("btn-salvar-cronograma").addEventListener("click", async
   if (!dataProva || !horasPorSemana) return;
   const ritmo = await definirCronograma(currentUser.uid, dataProva, horasPorSemana);
   renderCronograma(ritmo);
+  atualizarPlanoTrilha(ritmo);
 });
 
 // ---------- SIMULADO + LABS (dentro da Trilha) ----------
 
 document.getElementById("btn-iniciar-simulado").addEventListener("click", async () => {
   const container = document.getElementById("area-simulado");
+  container.classList.remove("hidden");
   container.innerHTML = "<p>Gerando simulado…</p>";
   simuladoAtivo = await gerarSimulado(currentUser.uid, 40);
   respostasSimulado = {};
