@@ -648,6 +648,8 @@ button { font-family: var(--font-body); cursor: pointer; }
 .trilha-corpo-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
 @media (min-width: 1024px) { .trilha-corpo-grid { grid-template-columns: 1fr 320px; } }
 .trilha-lateral { display: flex; flex-direction: column; gap: 12px; }
+.trilha-recursos-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; }
+@media (min-width: 700px) { .trilha-recursos-grid { grid-template-columns: 1fr 1fr; } }
 
 .trilha-timeline { position: relative; padding-left: 22px; }
 .trilha-timeline::before { content: ""; position: absolute; top: 6px; bottom: 6px; left: 7px; width: 2px; background: var(--border); }
