@@ -2930,8 +2930,8 @@ async function processarFilaCapas() {
       renderContinueLendo();
       renderBiblioteca();
     }
-  } catch {
-    // Livro sem PDF acessível agora (ex: local removido, ou rede falhou pro estático) — ignora e segue.
+  } catch (erro) {
+    console.error("[Biblioteca] Falha ao gerar capa automática pro livro:", livro.titulo, erro);
   }
   setTimeout(processarFilaCapas, 80);
 }
