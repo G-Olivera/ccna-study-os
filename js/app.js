@@ -1,5 +1,5 @@
 // app.js
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import { listarFatoresMFA, iniciarCadastroMFA, confirmarCadastroMFA, removerFatorMFA, getResolverMFA, confirmarLoginMFA } from "./mfa.js";
 import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
@@ -164,20 +164,141 @@ document.querySelectorAll(".menu-wrapper").forEach((wrapper) => {
   });
 });
 
-document.getElementById("btn-theme-toggle").addEventListener("click", () => {
-  const atual = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-  const novo = atual === "dark" ? "light" : "dark";
-  localStorage.setItem(THEME_KEY, novo);
-  aplicarTema(novo);
+// (o alternar de tema agora acontece pelas 3 opções em Configurações > Aparência, mais abaixo)
+
+
+// ===== CONFIGURAÇÕES: abas (Preferências / Aparência / Segurança e MFA) =====
+// As 3 seções ficam visíveis juntas (em coluna, no celular; em 3 colunas, em telas grandes).
+// As abas aqui só rolam a tela até a seção certa — não escondem as outras.
+function abrirConfigNaAba(aba, origem = null) {
+  const modal = document.getElementById("modal-config");
+  if (modal.classList.contains("hidden")) elementoQueAbriuConfig = origem || document.activeElement;
+  modal.classList.remove("hidden");
+  document.querySelectorAll(".config-tab").forEach((t) => {
+    const selecionada = t.dataset.tab === aba;
+    t.classList.toggle("selecionada", selecionada);
+    t.setAttribute("aria-selected", String(selecionada));
+  });
+  document.getElementById(`config-tab-${aba}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  carregarMFA();
+  popularContaConfig();
+}
+
+// ===== DENSIDADE DA INTERFACE =====
+function popularContaConfig() {
+  if (!currentUser) return;
+  document.getElementById("config-conta-avatar").textContent = (currentUser.email || "?").charAt(0).toUpperCase();
+  document.getElementById("config-conta-email").textContent = currentUser.email || "—";
+}
+
+const DENSIDADE_KEY = "ccna-study-os-densidade";
+
+function aplicarDensidade(densidade) {
+  document.documentElement.setAttribute("data-densidade", densidade);
+  document.querySelectorAll(".densidade-opcao").forEach((b) => b.classList.toggle("selecionada", b.dataset.densidade === densidade));
+}
+document.querySelectorAll(".densidade-opcao").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    localStorage.setItem(DENSIDADE_KEY, btn.dataset.densidade);
+    aplicarDensidade(btn.dataset.densidade);
+  });
+});
+aplicarDensidade(localStorage.getItem(DENSIDADE_KEY) || "confortavel");
+
+// ===== SEGURANÇA: redefinir senha (ação real via Firebase Auth, não fake) =====
+document.getElementById("btn-gerenciar-seguranca").addEventListener("click", async () => {
+  const btn = document.getElementById("btn-gerenciar-seguranca");
+  if (!currentUser?.email) return;
+  btn.disabled = true;
+  btn.textContent = "Enviando…";
+  try {
+    await sendPasswordResetEmail(auth, currentUser.email);
+    mostrarToast(`Link enviado pra ${currentUser.email}. Confira sua caixa de entrada.`, "sucesso");
+  } catch (e) {
+    mostrarToast("Não consegui enviar o link agora. Tente de novo em instantes.", "erro");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Redefinir senha";
+  }
 });
 
-// ===== CONFIGURAÇÕES: abas (Preferências / Aparência / Segurança e MFA / Conta) =====
-function abrirConfigNaAba(aba) {
-  document.getElementById("modal-config").classList.remove("hidden");
-  document.querySelectorAll(".config-tab").forEach((t) => t.classList.toggle("selecionada", t.dataset.tab === aba));
-  document.querySelectorAll(".config-tab-painel").forEach((p) => p.classList.toggle("hidden", p.id !== `config-tab-${aba}`));
-  if (aba === "seguranca") carregarMFA();
+// ===== ACESSIBILIDADE DO MODAL: foco preso dentro, Tab não escapa, foco volta ao fechar =====
+let elementoQueAbriuConfig = null;
+
+function focoElementosDoModalConfig() {
+  const modal = document.getElementById("modal-config");
+  return Array.from(modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(
+    (el) => !el.disabled && el.offsetParent !== null
+  );
 }
+
+document.getElementById("modal-config").addEventListener("keydown", (e) => {
+  if (e.key !== "Tab") return;
+  const focaveis = focoElementosDoModalConfig();
+  if (focaveis.length === 0) return;
+  const primeiro = focaveis[0];
+  const ultimo = focaveis[focaveis.length - 1];
+  if (e.shiftKey && document.activeElement === primeiro) {
+    e.preventDefault();
+    ultimo.focus();
+  } else if (!e.shiftKey && document.activeElement === ultimo) {
+    e.preventDefault();
+    primeiro.focus();
+  }
+});
+
+function fecharModalConfig() {
+  document.getElementById("modal-config").classList.add("hidden");
+  elementoQueAbriuConfig?.focus();
+}
+document.getElementById("btn-sair-config").addEventListener("click", () => {
+  document.getElementById("btn-logout").click();
+});
+document.getElementById("btn-fechar-config-rodape").addEventListener("click", fecharModalConfig);
+
+// ===== TEMA: Escuro / Claro / Sistema =====
+const THEME_SISTEMA_KEY = "ccna-study-os-theme-sistema";
+
+function aplicarPreferenciaTema() {
+  const usaSistema = localStorage.getItem(THEME_SISTEMA_KEY) === "1";
+  const tema = usaSistema ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : temaPreferido();
+  aplicarTema(tema);
+  document.querySelectorAll(".tema-opcao").forEach((b) => {
+    b.classList.toggle("selecionada", usaSistema ? b.dataset.tema === "sistema" : b.dataset.tema === tema);
+  });
+}
+
+document.querySelectorAll(".tema-opcao").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (btn.dataset.tema === "sistema") {
+      localStorage.setItem(THEME_SISTEMA_KEY, "1");
+    } else {
+      localStorage.setItem(THEME_SISTEMA_KEY, "0");
+      localStorage.setItem(THEME_KEY, btn.dataset.tema);
+    }
+    aplicarPreferenciaTema();
+  });
+});
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (localStorage.getItem(THEME_SISTEMA_KEY) === "1") aplicarPreferenciaTema();
+});
+aplicarPreferenciaTema();
+
+// ===== COR DE DESTAQUE =====
+const ACCENT_KEY = "ccna-study-os-accent";
+
+function aplicarAccent(accent) {
+  if (accent) document.documentElement.setAttribute("data-accent", accent);
+  else document.documentElement.removeAttribute("data-accent");
+  document.querySelectorAll(".accent-swatch").forEach((s) => s.classList.toggle("selecionada", s.dataset.accent === accent));
+}
+document.querySelectorAll(".accent-swatch").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    localStorage.setItem(ACCENT_KEY, btn.dataset.accent);
+    aplicarAccent(btn.dataset.accent);
+  });
+});
+aplicarAccent(localStorage.getItem(ACCENT_KEY) || "");
 document.querySelectorAll(".config-tab").forEach((btn) => {
   btn.addEventListener("click", () => abrirConfigNaAba(btn.dataset.tab));
 });
@@ -379,7 +500,10 @@ document.getElementById("input-busca-global").addEventListener("keydown", (e) =>
 // Escape fecha qualquer modal aberto no app (não só o de busca).
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
-  document.querySelectorAll(".modal-overlay:not(.hidden)").forEach((m) => m.classList.add("hidden"));
+  document.querySelectorAll(".modal-overlay:not(.hidden)").forEach((m) => {
+    if (m.id === "modal-config") fecharModalConfig();
+    else m.classList.add("hidden");
+  });
 });
 
 let currentUser = null;
@@ -625,12 +749,10 @@ function trocarTela(nome) {
 let topologiaJaIniciada = false;
 let tutorJaIniciado = false;
 
-document.getElementById("btn-fechar-config").addEventListener("click", () => {
-  document.getElementById("modal-config").classList.add("hidden");
-});
+document.getElementById("btn-fechar-config").addEventListener("click", fecharModalConfig);
 
 document.getElementById("modal-config").addEventListener("click", (e) => {
-  if (e.target.id === "modal-config") document.getElementById("modal-config").classList.add("hidden");
+  if (e.target.id === "modal-config") fecharModalConfig();
 });
 
 // ---------- TELA HOJE ----------
@@ -1235,12 +1357,9 @@ document.getElementById("btn-cancelar-meta").addEventListener("click", () => {
   document.getElementById("modal-editar-meta").classList.add("hidden");
 });
 
-// Modal: editar lembrete
+// "Editar" lembrete (na Progressão) leva pra Configurações > Preferências, onde o controle real mora agora.
 document.getElementById("btn-editar-lembrete").addEventListener("click", () => {
-  document.getElementById("modal-editar-lembrete").classList.remove("hidden");
-});
-document.getElementById("btn-fechar-lembrete-modal").addEventListener("click", () => {
-  document.getElementById("modal-editar-lembrete").classList.add("hidden");
+  abrirConfigNaAba("preferencias");
 });
 
 // ---------- CELEBRAÇÃO DE CONQUISTA (confete + toast) ----------
@@ -2102,7 +2221,6 @@ document.getElementById("btn-salvar-lembrete").addEventListener("click", async (
   renderStatusLembrete();
   atualizarResumoLembrete();
   iniciarVerificacaoLembrete();
-  document.getElementById("modal-editar-lembrete").classList.add("hidden");
 });
 
 // ---------- FINANÇAS ----------
