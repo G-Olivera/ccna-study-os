@@ -185,10 +185,6 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.5 3.4 9.7 8 11 4.6-1.3 8-5.5 8-11V5l-8-3z"/><rect x="9.4" y="11.6" width="5.2" height="4.2" rx="0.9"/><path d="M10.4 11.6v-1.3a1.6 1.6 0 0 1 3.2 0v1.3"/></svg>
             <span>Segurança e MFA</span>
           </button>
-          <button class="menu-flip-item" data-abrir-config-tab="conta" role="menuitem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
-            <span>Conta</span>
-          </button>
         </aside>
       </div>
 
@@ -207,51 +203,126 @@
 
     <!-- MODAL: CONFIGURAÇÕES (com abas: Preferências / Aparência / Segurança e MFA / Conta) -->
     <div id="modal-config" class="modal-overlay hidden">
-      <div class="modal-conteudo modal-config-conteudo">
+      <div class="modal-conteudo modal-config-conteudo" role="dialog" aria-modal="true" aria-labelledby="config-titulo">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-          <h2 style="font-size:16px;">Configurações</h2>
+          <h2 id="config-titulo" style="font-size:16px;">Configurações</h2>
           <button id="btn-fechar-config" class="btn-logout" title="Fechar" aria-label="Fechar configurações">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
-        <div class="config-tabs" id="config-tabs">
-          <button class="config-tab" data-tab="preferencias">Preferências</button>
-          <button class="config-tab" data-tab="aparencia">Aparência</button>
-          <button class="config-tab" data-tab="seguranca">Segurança e MFA</button>
-          <button class="config-tab" data-tab="conta">Conta</button>
+        <div class="config-tabs" id="config-tabs" role="tablist">
+          <button class="config-tab" data-tab="preferencias" role="tab" aria-selected="false">⚙ Preferências</button>
+          <button class="config-tab" data-tab="aparencia" role="tab" aria-selected="false">◐ Aparência</button>
+          <button class="config-tab" data-tab="seguranca" role="tab" aria-selected="false">🔒 Segurança e MFA</button>
         </div>
 
-        <div class="config-tab-painel" id="config-tab-preferencias">
-          <p class="topo-empty">Preferências de notificações e lembretes chegam em uma próxima versão.</p>
-        </div>
+        <div class="config-grid">
+          <div class="config-tab-painel" id="config-tab-preferencias">
+            <h3 class="config-card-titulo">Preferências de estudo</h3>
 
-        <div class="config-tab-painel hidden" id="config-tab-aparencia">
-          <div class="task-card" style="margin-bottom:0;">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <div>
-                <div style="font-weight:700; font-size:14px; margin-bottom:2px;">Tema</div>
-                <div style="font-size:13px; color:var(--ink-soft);">Claro ou escuro, aplicado em todo o app.</div>
+            <div class="config-linha">
+              <div class="config-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></div>
+              <div class="config-info">
+                <strong>Lembrete diário</strong>
+                <small>Um aviso no horário que você escolher, enquanto o app estiver aberto.</small>
+                <div style="display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+                  <input id="input-lembrete-horario" type="time" value="19:00" style="padding:8px; border-radius:8px; border:1px solid var(--border);" />
+                  <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+                    <input type="checkbox" id="checkbox-lembrete-ativo" /> Ativo
+                  </label>
+                  <button class="btn-secondary" id="btn-salvar-lembrete" style="width:auto; margin-top:0; padding:8px 14px; font-size:12px;">Salvar</button>
+                </div>
+                <div id="lembrete-status" style="margin-top:8px; font-size:12px; color:var(--ink-soft);"></div>
               </div>
-              <button id="btn-theme-toggle" class="btn-secondary" style="width:auto; margin-top:0; padding:10px 16px; display:flex; align-items:center; gap:8px;">
-                <svg id="icon-theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-                <svg id="icon-theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" class="hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                <span>Alternar tema</span>
-              </button>
+            </div>
+
+            <div class="config-linha config-linha-sem-borda">
+              <div class="config-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+              <div class="config-info">
+                <strong>Meta diária, densidade e outras preferências</strong>
+                <small>Ainda não existem no app — só vão aparecer aqui quando forem reais de verdade.</small>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="config-tab-painel hidden" id="config-tab-seguranca">
-          <h3 style="margin-bottom:10px; font-size:13px; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft);">Segurança (dois fatores)</h3>
-          <div class="task-card" id="mfa-card" style="margin-bottom:0;">
-            <div id="mfa-status">Carregando…</div>
+          <div class="config-tab-painel" id="config-tab-aparencia">
+            <h3 class="config-card-titulo">Aparência</h3>
+
+            <div class="config-secao">
+              <strong>Tema</strong>
+              <small>Escolha o tema da interface.</small>
+              <div class="tema-opcoes">
+                <button class="tema-opcao" data-tema="dark">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  <span>Escuro</span>
+                </button>
+                <button class="tema-opcao" data-tema="light">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                  <span>Claro</span>
+                </button>
+                <button class="tema-opcao" data-tema="sistema">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  <span>Sistema</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="config-secao">
+              <strong>Cor de destaque</strong>
+              <small>Cor principal usada nos botões e destaques do app.</small>
+              <div class="accent-opcoes" id="accent-opcoes">
+                <button class="accent-swatch" data-accent="" style="background:#3E6B6B;" aria-label="Teal (padrão)"></button>
+                <button class="accent-swatch" data-accent="blue" style="background:#3185ff;" aria-label="Azul"></button>
+                <button class="accent-swatch" data-accent="purple" style="background:#8c4cff;" aria-label="Roxo"></button>
+                <button class="accent-swatch" data-accent="pink" style="background:#e93d86;" aria-label="Rosa"></button>
+                <button class="accent-swatch" data-accent="orange" style="background:#ff7b18;" aria-label="Laranja"></button>
+                <button class="accent-swatch" data-accent="yellow" style="background:#e0a800;" aria-label="Amarelo"></button>
+              </div>
+            </div>
+
+            <div class="config-secao">
+              <strong>Densidade da interface</strong>
+              <small>Confortável mantém o espaçamento atual; Compacta reduz o respiro entre elementos.</small>
+              <div class="densidade-opcoes">
+                <button class="densidade-opcao" data-densidade="confortavel">Confortável</button>
+                <button class="densidade-opcao" data-densidade="compacta">Compacta</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="config-tab-painel" id="config-tab-seguranca">
+            <h3 class="config-card-titulo">Segurança e MFA</h3>
+
+            <div class="config-linha">
+              <div class="config-avatar" id="config-conta-avatar">?</div>
+              <div class="config-info">
+                <strong>Conta</strong>
+                <span id="config-conta-email" style="display:block; font-size:13px; color:var(--ink-soft);">—</span>
+              </div>
+            </div>
+
+            <div class="config-linha">
+              <div class="config-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+              <div class="config-info">
+                <strong>Segurança</strong>
+                <small>Enviaremos um link no seu e-mail pra você trocar a senha.</small>
+              </div>
+              <button class="btn-secondary" id="btn-gerenciar-seguranca" style="width:auto; margin-top:0; padding:8px 12px; font-size:12px; white-space:nowrap;">Redefinir senha</button>
+            </div>
+
+            <div class="config-linha config-linha-sem-borda">
+              <div id="mfa-status" style="flex:1;">Carregando…</div>
+            </div>
             <div id="mfa-area"></div>
+
+            <button class="btn-secondary" id="btn-sair-config" style="width:100%; margin-top:16px; color:var(--terracotta); border-color:var(--terracotta);">Sair da conta</button>
           </div>
         </div>
 
-        <div class="config-tab-painel hidden" id="config-tab-conta">
-          <p class="topo-empty">Edição de perfil (nome, foto) chega em uma próxima versão. Por enquanto, use o menu da conta (avatar, no topo) para sair.</p>
+        <div class="config-footer">
+          <span>🛡 Tema e lembrete ficam salvos neste navegador (não sincronizam entre aparelhos ainda).</span>
+          <button class="btn-primary" id="btn-fechar-config-rodape" style="width:auto; margin-top:0;">Fechar</button>
         </div>
       </div>
     </div>
@@ -642,25 +713,6 @@
       <div style="display:flex; gap:8px; margin-top:8px;">
         <button class="btn-secondary" id="btn-cancelar-meta" style="margin-top:0;">Cancelar</button>
         <button class="btn-primary" id="btn-definir-meta" style="margin-top:0;">Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: editar lembrete diário -->
-  <div id="modal-editar-lembrete" class="modal-overlay hidden">
-    <div class="modal-conteudo" style="width:380px;">
-      <h2 style="font-size:16px; margin-bottom:12px;">Lembrete diário</h2>
-      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Funciona enquanto o app estiver aberto (mesmo minimizado) — não acorda o celular com tudo fechado, isso exigiria um servidor de push.</p>
-      <div id="lembrete-status" style="margin-bottom:12px; font-size:13px; color:var(--ink-soft);"></div>
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:16px;">
-        <input id="input-lembrete-horario" type="time" value="19:00" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);" />
-        <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
-          <input type="checkbox" id="checkbox-lembrete-ativo" /> Ativo
-        </label>
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn-secondary" id="btn-fechar-lembrete-modal" style="margin-top:0;">Fechar</button>
-        <button class="btn-primary" id="btn-salvar-lembrete" style="margin-top:0;">Salvar lembrete</button>
       </div>
     </div>
   </div>
