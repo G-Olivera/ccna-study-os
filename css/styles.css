@@ -238,14 +238,70 @@ button { font-family: var(--font-body); cursor: pointer; }
 }
 
 /* ===== MODAL DE CONFIGURAÇÕES: abas internas ===== */
-.modal-config-conteudo { width: 440px; }
+.modal-config-conteudo { width: min(1150px, calc(100vw - 64px)); padding: 32px; }
 .config-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
 .config-tab {
   background: none; border: none; padding: 8px 10px; font-size: 13px; font-weight: 600; color: var(--ink-soft);
   border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s ease, border-color 0.15s ease;
 }
 .config-tab.selecionada { color: var(--teal); border-bottom-color: var(--teal); }
-.config-tab-painel { font-size: 13px; }
+
+.config-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 900px) { .config-grid { grid-template-columns: repeat(3, 1fr); } }
+.config-tab-painel {
+  font-size: 13px; background: var(--surface-quiet); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px; scroll-margin-top: 12px;
+}
+.config-card-titulo { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--teal); margin-bottom: 16px; }
+
+.config-linha { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.config-linha-sem-borda { border-bottom: none; }
+.config-icone { width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px; background: var(--teal-soft); color: var(--teal); display: flex; align-items: center; justify-content: center; }
+.config-icone svg { width: 18px; height: 18px; }
+.config-info { flex: 1; min-width: 0; }
+.config-info strong { display: block; margin-bottom: 3px; font-size: 13px; }
+.config-info small { display: block; color: var(--ink-soft); font-size: 11px; line-height: 1.5; }
+
+.config-secao { margin-bottom: 24px; }
+.config-secao:last-child { margin-bottom: 0; }
+.config-secao > strong { display: block; font-size: 13px; margin-bottom: 3px; }
+.config-secao > small { display: block; color: var(--ink-soft); font-size: 11px; margin-bottom: 12px; }
+.tema-opcoes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tema-opcao {
+  min-height: 66px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 12px;
+}
+.tema-opcao svg { width: 18px; height: 18px; }
+.tema-opcao.selecionada { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); }
+.accent-opcoes { display: flex; flex-wrap: wrap; gap: 12px; }
+.accent-swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; }
+.accent-swatch.selecionada { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.config-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--teal); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+
+.config-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--ink-soft); }
+
+.densidade-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.densidade-opcao { padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 12px; }
+.densidade-opcao.selecionada { border-color: var(--teal); color: var(--teal); }
+
+/* Densidade compacta: reduz a escala de espaçamento usada em todo o app (cards, seções, grids). */
+[data-densidade="compacta"] {
+  --space-1: 3px; --space-2: 6px; --space-3: 9px; --space-4: 12px;
+  --space-5: 18px; --space-6: 24px; --space-7: 36px; --space-8: 48px;
+}
+
+@media (max-width: 600px) {
+  .modal-config-conteudo { padding: 20px; }
+}
+
+/* Cores de destaque alternativas — sobrescrevem --teal/--teal-soft em qualquer tema */
+[data-accent="blue"] { --teal: #3185ff; --teal-soft: color-mix(in srgb, #3185ff 15%, transparent); }
+[data-accent="purple"] { --teal: #8c4cff; --teal-soft: color-mix(in srgb, #8c4cff 15%, transparent); }
+[data-accent="pink"] { --teal: #e93d86; --teal-soft: color-mix(in srgb, #e93d86 15%, transparent); }
+[data-accent="orange"] { --teal: #ff7b18; --teal-soft: color-mix(in srgb, #ff7b18 15%, transparent); }
+[data-accent="yellow"] { --teal: #c99400; --teal-soft: color-mix(in srgb, #c99400 15%, transparent); }
+
 .config-tab-painel:not(.hidden) { animation: entrarAbaConfig 0.2s ease; }
 @keyframes entrarAbaConfig {
   from { opacity: 0; transform: translateY(4px); }
