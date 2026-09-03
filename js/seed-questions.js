@@ -720,13 +720,624 @@ const questoesExemplo = [
     },
     respostaCorreta: "B", justificativa: "Terraform usa uma abordagem declarativa: você descreve o estado final desejado, e a ferramenta calcula o plano pra chegar lá.",
   },
+
+  // ===== LOTE V7 — rebalanceamento pelo peso oficial do blueprint 200-301 =====
+  // Foco: IP Connectivity (25%), Network Access (20%) e Security Fundamentals (15%),
+  // que estavam sub-representados. Questões originais, sobre conceitos do blueprint.
+
+  // ---- IP Connectivity ----
+  {
+    id: "q-v7-001", dominio: "IP Connectivity", topicId: "m16-02", dificuldade: "medio",
+    enunciado: "Uma interface de roteador aparece como 'administratively down / down' no 'show ip interface brief'. Qual a causa?",
+    alternativas: {
+      A: "Cabo desconectado",
+      B: "A interface está com o comando 'shutdown' aplicado",
+      C: "Endereço IP duplicado na rede",
+      D: "Incompatibilidade de velocidade com o vizinho",
+    },
+    respostaCorreta: "B",
+    justificativa: "'administratively down' significa que a interface foi desligada por configuração ('shutdown'); precisa de 'no shutdown' pra subir.",
+  },
+  {
+    id: "q-v7-002", dominio: "IP Connectivity", topicId: "m17-02", dificuldade: "medio",
+    enunciado: "Qual a diferença entre uma rota estática configurada com next-hop e uma configurada apenas com a interface de saída, num enlace multiacesso (Ethernet)?",
+    alternativas: {
+      A: "Nenhuma, são idênticas",
+      B: "Com só a interface de saída o roteador pode precisar de ARP para cada destino, o que é ineficiente em redes multiacesso",
+      C: "A rota com next-hop nunca entra na tabela de roteamento",
+      D: "A rota com interface de saída só funciona em IPv6",
+    },
+    respostaCorreta: "B",
+    justificativa: "Em rede multiacesso, apontar só pra interface de saída faz o roteador tratar todos os destinos como diretamente conectados, gerando ARP para cada um. O ideal é usar o next-hop (ou ambos).",
+  },
+  {
+    id: "q-v7-003", dominio: "IP Connectivity", topicId: "m20-01", dificuldade: "facil",
+    enunciado: "No resultado de 'show ip route', o código 'S' identifica qual tipo de rota?",
+    alternativas: { A: "Rota OSPF", B: "Rota estática", C: "Rede diretamente conectada", D: "Rota sumarizada" },
+    respostaCorreta: "B",
+    justificativa: "'S' = static. 'C' = connected, 'L' = local, 'O' = OSPF, 'D' = EIGRP.",
+  },
+  {
+    id: "q-v7-004", dominio: "IP Connectivity", topicId: "m20-02", dificuldade: "medio",
+    enunciado: "Como o traceroute descobre cada roteador no caminho até o destino?",
+    alternativas: {
+      A: "Consultando o DNS de cada salto",
+      B: "Enviando pacotes com TTL crescente (1, 2, 3...) e recebendo mensagens ICMP Time Exceeded de cada roteador",
+      C: "Lendo a tabela de roteamento remota via SNMP",
+      D: "Fazendo broadcast em cada sub-rede",
+    },
+    respostaCorreta: "B",
+    justificativa: "Cada roteador que descarta o pacote por TTL=0 devolve um ICMP Time Exceeded, revelando seu endereço. Aumentando o TTL a cada rodada, o traceroute mapeia o caminho.",
+  },
+  {
+    id: "q-v7-005", dominio: "IP Connectivity", topicId: "m21-02", dificuldade: "facil",
+    enunciado: "Em OSPF de área única, qual área todas as interfaces devem usar?",
+    alternativas: { A: "Área 1", B: "Área 0 (backbone)", C: "Qualquer área, desde que igual", D: "Área 255" },
+    respostaCorreta: "B",
+    justificativa: "OSPF exige que todas as áreas se conectem à área 0 (backbone). Numa topologia de área única, essa área é a 0.",
+  },
+  {
+    id: "q-v7-006", dominio: "IP Connectivity", topicId: "m22-01", dificuldade: "dificil",
+    enunciado: "Qual wildcard mask no comando 'network 10.1.4.0 ? area 0' faz o OSPF casar exatamente a sub-rede 10.1.4.0/24?",
+    alternativas: { A: "0.0.0.255", B: "255.255.255.0", C: "0.0.0.0", D: "0.0.255.255" },
+    respostaCorreta: "A",
+    justificativa: "A wildcard 0.0.0.255 corresponde a uma máscara /24: os 3 primeiros octetos precisam bater, o último é 'não importa'.",
+  },
+  {
+    id: "q-v7-007", dominio: "IP Connectivity", topicId: "m22-02", dificuldade: "facil",
+    enunciado: "Qual comando mostra os vizinhos OSPF e o estado de cada adjacência?",
+    alternativas: { A: "show ip ospf database", B: "show ip ospf neighbor", C: "show ip protocols", D: "show ip route ospf" },
+    respostaCorreta: "B",
+    justificativa: "'show ip ospf neighbor' lista os vizinhos, o estado (deve chegar a FULL ou 2WAY), o Router ID e a interface.",
+  },
+  {
+    id: "q-v7-008", dominio: "IP Connectivity", topicId: "m24-01", dificuldade: "dificil",
+    enunciado: "Dois roteadores OSPF numa rede Ethernet ficam presos no estado 2WAY entre si e não avançam para FULL. Isso é um problema?",
+    alternativas: {
+      A: "Sim, sempre indica erro de configuração",
+      B: "Não necessariamente — roteadores DROTHER formam apenas 2WAY entre si; só formam FULL com o DR e o BDR",
+      C: "Sim, significa MTU incompatível",
+      D: "Não, mas as rotas não serão trocadas",
+    },
+    respostaCorreta: "B",
+    justificativa: "Numa rede multiacesso, os roteadores que não são DR nem BDR (DROTHER) formam adjacência plena só com DR/BDR. Entre si, 2WAY é o estado normal e esperado.",
+  },
+  {
+    id: "q-v7-009", dominio: "IP Connectivity", topicId: "m24-02", dificuldade: "medio",
+    enunciado: "Na eleição de DR/BDR do OSPF, qual critério decide quando as prioridades das interfaces são iguais?",
+    alternativas: { A: "O menor endereço MAC", B: "O maior Router ID", C: "O menor Router ID", D: "A maior largura de banda" },
+    respostaCorreta: "B",
+    justificativa: "Prioridade mais alta vence (0 = nunca vira DR/BDR). Em empate de prioridade, o maior Router ID é eleito DR.",
+  },
+  {
+    id: "q-v7-010", dominio: "IP Connectivity", topicId: "m24-03", dificuldade: "dificil",
+    enunciado: "Com a largura de banda de referência padrão do OSPF (100 Mbps), qual o custo de uma interface Gigabit Ethernet (1 Gbps)?",
+    alternativas: { A: "1", B: "10", C: "100", D: "0" },
+    respostaCorreta: "A",
+    justificativa: "Custo = referência / banda = 100 Mbps / 1000 Mbps = 0,1, arredondado para o mínimo de 1. Por isso links de 100 Mbps, 1 Gbps e 10 Gbps ficam todos com custo 1 no padrão — daí a recomendação de ajustar o 'auto-cost reference-bandwidth'.",
+  },
+  {
+    id: "q-v7-011", dominio: "IP Connectivity", topicId: "m17-02", dificuldade: "medio",
+    enunciado: "Qual a distância administrativa padrão de uma rota estática no IOS?",
+    alternativas: { A: "0", B: "1", C: "110", D: "120" },
+    respostaCorreta: "B",
+    justificativa: "Conectada = 0, estática = 1, EIGRP = 90, OSPF = 110, RIP = 120. Menor AD é preferida.",
+  },
+  {
+    id: "q-v7-012", dominio: "IP Connectivity", topicId: "m18-01", dificuldade: "medio",
+    enunciado: "No roteamento inter-VLAN 'router-on-a-stick', qual comando é obrigatório na subinterface para associá-la à VLAN 20?",
+    alternativas: {
+      A: "switchport access vlan 20",
+      B: "encapsulation dot1Q 20",
+      C: "vlan 20",
+      D: "trunk vlan 20",
+    },
+    respostaCorreta: "B",
+    justificativa: "Na subinterface do roteador, 'encapsulation dot1Q 20' define qual VLAN aquela subinterface atende. O IP da subinterface passa a ser o gateway daquela VLAN.",
+  },
+  {
+    id: "q-v7-013", dominio: "IP Connectivity", topicId: "m27-01", dificuldade: "dificil",
+    enunciado: "No método EUI-64 para formar o ID de interface IPv6 a partir de um MAC de 48 bits, o que é feito?",
+    alternativas: {
+      A: "O MAC é usado diretamente como os 64 bits",
+      B: "Insere-se FFFE no meio do MAC e inverte-se o 7º bit (bit U/L)",
+      C: "O MAC é duplicado para formar 96 bits",
+      D: "Descarta-se o OUI e usa-se só o serial",
+    },
+    respostaCorreta: "B",
+    justificativa: "EUI-64: divide o MAC ao meio, insere FFFE entre as metades e inverte o 7º bit do primeiro octeto (o bit Universal/Local).",
+  },
+  {
+    id: "q-v7-014", dominio: "IP Connectivity", topicId: "m29-01", dificuldade: "medio",
+    enunciado: "Qual afirmação sobre OSPFv3 (para IPv6) está correta?",
+    alternativas: {
+      A: "Usa endereços IPv4 para formar adjacências",
+      B: "É habilitado por interface e usa o endereço link-local como origem dos pacotes OSPF",
+      C: "Não usa o conceito de área",
+      D: "Substitui a necessidade de 'ipv6 unicast-routing'",
+    },
+    respostaCorreta: "B",
+    justificativa: "OSPFv3 é configurado diretamente na interface ('ipv6 ospf 1 area 0'), forma vizinhança usando o endereço link-local e ainda precisa de 'ipv6 unicast-routing' ativo.",
+  },
+  {
+    id: "q-v7-015", dominio: "IP Connectivity", topicId: "m45-01", dificuldade: "medio",
+    enunciado: "Em HSRP, qual roteador se torna o ativo (active) quando todos sobem ao mesmo tempo?",
+    alternativas: {
+      A: "O de maior prioridade; em empate, o de maior IP na interface",
+      B: "O de menor prioridade",
+      C: "Sempre o primeiro a ser configurado",
+      D: "O de menor endereço MAC",
+    },
+    respostaCorreta: "A",
+    justificativa: "Prioridade mais alta vence (padrão 100). Em empate, o maior endereço IP da interface HSRP decide. Sem 'preempt', quem assumiu primeiro continua ativo mesmo que outro com prioridade maior suba depois.",
+  },
+  {
+    id: "q-v7-016", dominio: "IP Connectivity", topicId: "m45-02", dificuldade: "facil",
+    enunciado: "Qual protocolo de redundância de gateway é o padrão aberto definido em RFC?",
+    alternativas: { A: "HSRP", B: "GLBP", C: "VRRP", D: "CARP" },
+    respostaCorreta: "C",
+    justificativa: "VRRP é o padrão aberto (RFC 5798). HSRP e GLBP são proprietários da Cisco.",
+  },
+  {
+    id: "q-v7-017", dominio: "IP Connectivity", topicId: "m16-01", dificuldade: "facil",
+    enunciado: "De onde um roteador Cisco carrega a imagem do IOS durante o boot normal?",
+    alternativas: { A: "RAM", B: "NVRAM", C: "Flash", D: "ROM" },
+    respostaCorreta: "C",
+    justificativa: "O IOS fica armazenado na memória Flash e é descompactado para a RAM durante o boot. A NVRAM guarda a startup-config; a ROM guarda o ROMMON/bootstrap.",
+  },
+  {
+    id: "q-v7-018", dominio: "IP Connectivity", topicId: "m27-02", dificuldade: "dificil",
+    enunciado: "Ao criar uma rota estática IPv6 usando um endereço link-local como next-hop, o que também é obrigatório no comando?",
+    alternativas: {
+      A: "A máscara de sub-rede",
+      B: "A interface de saída, já que o link-local não é roteável e só tem sentido num enlace específico",
+      C: "O número do sistema autônomo",
+      D: "A distância administrativa",
+    },
+    respostaCorreta: "B",
+    justificativa: "Endereços link-local (fe80::/10) só são únicos dentro de um enlace, então a rota precisa especificar a interface de saída junto: 'ipv6 route 2001:db8::/64 GigabitEthernet0/0 fe80::1'.",
+  },
+
+  // ---- Network Access ----
+  {
+    id: "q-v7-019", dominio: "Network Access", topicId: "m06-01", dificuldade: "facil",
+    enunciado: "Qual comando armazena a senha de acesso ao modo privilegiado de forma protegida por hash?",
+    alternativas: { A: "enable password", B: "enable secret", C: "line vty password", D: "username admin password" },
+    respostaCorreta: "B",
+    justificativa: "'enable secret' guarda a senha com hash (por padrão MD5, tipo 5; versões novas usam tipo 9/scrypt). 'enable password' guarda em texto claro por padrão.",
+  },
+  {
+    id: "q-v7-020", dominio: "Network Access", topicId: "m06-02", dificuldade: "medio",
+    enunciado: "Quais pré-requisitos são necessários para gerar a chave RSA e habilitar SSH num switch Cisco?",
+    alternativas: {
+      A: "Apenas um endereço IP de gerenciamento",
+      B: "Hostname diferente do padrão E um domain-name configurados",
+      C: "Uma VLAN de voz ativa",
+      D: "Port Security habilitado",
+    },
+    respostaCorreta: "B",
+    justificativa: "'crypto key generate rsa' exige hostname (não pode ser 'Switch'/'Router') e 'ip domain-name', porque o nome da chave é derivado de hostname.domínio.",
+  },
+  {
+    id: "q-v7-021", dominio: "Network Access", topicId: "m07-04", dificuldade: "medio",
+    enunciado: "Qual sintoma clássico aparece nos contadores de uma interface com duplex mismatch (um lado full, outro half)?",
+    alternativas: { A: "Giants", B: "Late collisions no lado configurado como half-duplex", C: "Input queue drops", D: "CRC zero" },
+    respostaCorreta: "B",
+    justificativa: "O lado half-duplex detecta colisões tardias (late collisions) porque o lado full-duplex transmite sem checar o meio. É a assinatura de duplex mismatch.",
+  },
+  {
+    id: "q-v7-022", dominio: "Network Access", topicId: "m08-01", dificuldade: "facil",
+    enunciado: "Qual é a VLAN padrão (default) de todas as portas de acesso num switch Cisco recém-configurado?",
+    alternativas: { A: "VLAN 0", B: "VLAN 1", C: "VLAN 99", D: "VLAN 1005" },
+    respostaCorreta: "B",
+    justificativa: "Por padrão, todas as portas pertencem à VLAN 1. Ela também é a VLAN nativa e de gerenciamento padrão — por segurança recomenda-se trocar ambas.",
+  },
+  {
+    id: "q-v7-023", dominio: "Network Access", topicId: "m08-02", dificuldade: "medio",
+    enunciado: "Qual comando força uma porta a ser trunk sem depender da negociação DTP?",
+    alternativas: {
+      A: "switchport mode dynamic auto",
+      B: "switchport mode dynamic desirable",
+      C: "switchport mode trunk",
+      D: "switchport nonegotiate access",
+    },
+    respostaCorreta: "C",
+    justificativa: "'switchport mode trunk' fixa a porta como trunk. Boa prática: adicionar 'switchport nonegotiate' pra parar de enviar frames DTP.",
+  },
+  {
+    id: "q-v7-024", dominio: "Network Access", topicId: "m08-04", dificuldade: "dificil",
+    enunciado: "Um trunk 802.1Q está com VLAN nativa 1 de um lado e VLAN nativa 99 do outro. O que acontece?",
+    alternativas: {
+      A: "O trunk não sobe de jeito nenhum",
+      B: "O CDP reporta um 'native VLAN mismatch' e o tráfego dessas VLANs pode vazar entre elas",
+      C: "Todas as VLANs param de passar",
+      D: "O switch reinicia",
+    },
+    respostaCorreta: "B",
+    justificativa: "O trunk ainda funciona para as VLANs marcadas, mas o CDP acusa mismatch e o tráfego não marcado (nativo) de um lado cai na VLAN nativa do outro — risco de segurança (VLAN hopping).",
+  },
+  {
+    id: "q-v7-025", dominio: "Network Access", topicId: "m10-01", dificuldade: "medio",
+    enunciado: "Qual o valor padrão de prioridade de bridge do STP, antes de somar o system ID extension (VLAN)?",
+    alternativas: { A: "0", B: "4096", C: "32768", D: "65535" },
+    respostaCorreta: "C",
+    justificativa: "A prioridade padrão é 32768. Como o Bridge ID hoje inclui o system ID extension (o número da VLAN), o valor efetivo vira 32768 + VLAN.",
+  },
+  {
+    id: "q-v7-026", dominio: "Network Access", topicId: "m09-04", dificuldade: "dificil",
+    enunciado: "No RSTP, qual papel tem uma porta que oferece um caminho alternativo até a root bridge, mas está em estado discarding?",
+    alternativas: { A: "Designated port", B: "Root port", C: "Alternate port", D: "Backup port" },
+    respostaCorreta: "C",
+    justificativa: "A alternate port é um caminho reserva até a raiz (recebe BPDUs superiores de outro switch) e assume rapidamente se a root port cair. A backup port é reserva de uma designated no mesmo segmento compartilhado.",
+  },
+  {
+    id: "q-v7-027", dominio: "Network Access", topicId: "m10-02", dificuldade: "medio",
+    enunciado: "O que o PortFast faz numa porta de acesso?",
+    alternativas: {
+      A: "Aumenta a velocidade do link",
+      B: "Coloca a porta direto em forwarding, pulando os estados listening e learning",
+      C: "Desativa o STP em toda a rede",
+      D: "Bloqueia BPDUs recebidas",
+    },
+    respostaCorreta: "B",
+    justificativa: "PortFast leva a porta imediatamente a forwarding, evitando os ~30s de atraso do STP — indicado só para portas que conectam hosts finais. Para bloquear BPDUs, use BPDU Guard junto.",
+  },
+  {
+    id: "q-v7-028", dominio: "Network Access", topicId: "m10-03", dificuldade: "dificil",
+    enunciado: "Quais combinações de modo formam um EtherChannel com LACP?",
+    alternativas: {
+      A: "passive / passive",
+      B: "active / active ou active / passive",
+      C: "auto / auto",
+      D: "on / active",
+    },
+    respostaCorreta: "B",
+    justificativa: "Com LACP: active/active e active/passive formam o canal; passive/passive não (ninguém inicia). 'on' não usa protocolo nenhum e só forma canal com 'on' do outro lado.",
+  },
+  {
+    id: "q-v7-029", dominio: "Network Access", topicId: "m31-01", dificuldade: "facil",
+    enunciado: "Qual a diferença principal entre um AP autônomo e um AP lightweight?",
+    alternativas: {
+      A: "O autônomo só funciona em 2,4 GHz",
+      B: "O lightweight depende de um WLC para configuração e funções de controle; o autônomo tem configuração própria e independente",
+      C: "O autônomo não suporta criptografia",
+      D: "Não há diferença funcional",
+    },
+    respostaCorreta: "B",
+    justificativa: "AP autônomo é auto-suficiente (cada um configurado individualmente). O lightweight forma túnel CAPWAP com um WLC, que centraliza políticas, RF e autenticação (arquitetura split-MAC).",
+  },
+  {
+    id: "q-v7-030", dominio: "Network Access", topicId: "m31-02", dificuldade: "medio",
+    enunciado: "Qual protocolo encapsula o tráfego de controle e de dados entre um AP lightweight e o WLC?",
+    alternativas: { A: "GRE", B: "CAPWAP", C: "IPsec", D: "802.1Q" },
+    respostaCorreta: "B",
+    justificativa: "CAPWAP usa UDP 5246 (controle) e 5247 (dados) para o túnel entre AP e WLC.",
+  },
+  {
+    id: "q-v7-031", dominio: "Network Access", topicId: "m32-02", dificuldade: "medio",
+    enunciado: "Qual cifra de criptografia o WPA2 utiliza para proteger os quadros wireless?",
+    alternativas: { A: "WEP/RC4", B: "TKIP", C: "AES com CCMP", D: "DES" },
+    respostaCorreta: "C",
+    justificativa: "WPA2 padroniza AES-CCMP. TKIP era a opção de transição do WPA original; WEP (RC4) é obsoleto e inseguro.",
+  },
+  {
+    id: "q-v7-032", dominio: "Network Access", topicId: "m07-01", dificuldade: "medio",
+    enunciado: "Dois dispositivos Ethernet não conseguem autonegociar (um lado está fixo, o outro em auto). Para o lado que ficou em auto, qual duplex o padrão IEEE manda assumir?",
+    alternativas: { A: "Full-duplex", B: "Half-duplex", C: "O mesmo do outro lado", D: "A porta fica desativada" },
+    respostaCorreta: "B",
+    justificativa: "Sem parceiro de negociação, o padrão manda a velocidade ser detectada pela sinalização elétrica e o duplex cair para half — o que gera duplex mismatch se o outro lado estiver fixo em full.",
+  },
+
+  // ---- Security Fundamentals ----
+  {
+    id: "q-v7-033", dominio: "Security Fundamentals", topicId: "m35-01", dificuldade: "facil",
+    enunciado: "Uma ACL padrão IPv4 numerada filtra o tráfego com base em quê?",
+    alternativas: {
+      A: "Endereço de origem apenas",
+      B: "Endereço de origem e destino",
+      C: "Protocolo e número de porta",
+      D: "Endereço MAC de origem",
+    },
+    respostaCorreta: "A",
+    justificativa: "ACL padrão (números 1–99 e 1300–1999) só olha o IP de origem. Para filtrar por destino e porta é preciso ACL estendida (100–199, 2000–2699).",
+  },
+  {
+    id: "q-v7-034", dominio: "Security Fundamentals", topicId: "m35-03", dificuldade: "medio",
+    enunciado: "Onde a boa prática recomenda aplicar uma ACL padrão?",
+    alternativas: {
+      A: "O mais perto possível da origem do tráfego",
+      B: "O mais perto possível do destino do tráfego",
+      C: "Sempre na interface de loopback",
+      D: "Em todas as interfaces do roteador",
+    },
+    respostaCorreta: "B",
+    justificativa: "Como a ACL padrão só conhece a origem, colocá-la perto da origem poderia bloquear tráfego legítimo para outros destinos. Por isso, perto do destino.",
+  },
+  {
+    id: "q-v7-035", dominio: "Security Fundamentals", topicId: "m36-02", dificuldade: "medio",
+    enunciado: "E uma ACL estendida, onde deve ser aplicada de preferência?",
+    alternativas: {
+      A: "Perto do destino",
+      B: "Perto da origem, para descartar o tráfego indesejado antes de ele atravessar a rede",
+      C: "Só na saída da internet",
+      D: "Não importa a posição",
+    },
+    respostaCorreta: "B",
+    justificativa: "A ACL estendida identifica origem, destino, protocolo e porta com precisão, então pode ser colocada perto da origem sem risco de bloquear tráfego legítimo — poupando banda.",
+  },
+  {
+    id: "q-v7-036", dominio: "Security Fundamentals", topicId: "m35-02", dificuldade: "dificil",
+    enunciado: "Qual wildcard mask corresponde exatamente à sub-rede 192.168.10.0/26?",
+    alternativas: { A: "0.0.0.63", B: "0.0.0.31", C: "0.0.0.255", D: "255.255.255.192" },
+    respostaCorreta: "A",
+    justificativa: "/26 = máscara 255.255.255.192. A wildcard é o complemento: 0.0.0.63 (os 6 bits de host são 'não importa').",
+  },
+  {
+    id: "q-v7-037", dominio: "Security Fundamentals", topicId: "m37-02", dificuldade: "medio",
+    enunciado: "Qual comando mostra quantos pacotes casaram com cada linha (ACE) de uma ACL?",
+    alternativas: { A: "show running-config", B: "show access-lists", C: "show ip interface", D: "show ip route" },
+    respostaCorreta: "B",
+    justificativa: "'show access-lists' exibe cada ACE com um contador de matches — útil pra confirmar se a regra está sendo atingida durante o troubleshooting.",
+  },
+  {
+    id: "q-v7-038", dominio: "Security Fundamentals", topicId: "m38-02", dificuldade: "dificil",
+    enunciado: "Qual diferença de segurança existe entre RADIUS e TACACS+ quanto à criptografia das mensagens?",
+    alternativas: {
+      A: "Os dois criptografam tudo",
+      B: "RADIUS criptografa só o campo de senha; TACACS+ criptografa todo o corpo do pacote",
+      C: "TACACS+ não criptografa nada",
+      D: "RADIUS usa TLS obrigatório",
+    },
+    respostaCorreta: "B",
+    justificativa: "RADIUS (UDP) protege apenas a senha no pacote Access-Request. TACACS+ (TCP 49) cifra todo o payload e separa autenticação, autorização e accounting.",
+  },
+  {
+    id: "q-v7-039", dominio: "Security Fundamentals", topicId: "m39-01", dificuldade: "medio",
+    enunciado: "O comando 'service password-encryption' oferece qual nível de proteção?",
+    alternativas: {
+      A: "Criptografia forte, irreversível",
+      B: "Apenas uma ofuscação fraca (tipo 7), facilmente reversível — evita 'shoulder surfing', não um atacante real",
+      C: "Protege só a senha do console",
+      D: "Aplica hash SHA-256 em todas as senhas",
+    },
+    respostaCorreta: "B",
+    justificativa: "'service password-encryption' usa o algoritmo tipo 7, que é trivialmente decifrável. Serve só pra não deixar senhas em texto puro à vista; use 'enable secret' e 'username ... secret' para hashes reais.",
+  },
+  {
+    id: "q-v7-040", dominio: "Security Fundamentals", topicId: "m39-02", dificuldade: "facil",
+    enunciado: "Qual comando nas linhas VTY garante que só conexões SSH (e não Telnet) sejam aceitas?",
+    alternativas: {
+      A: "transport input all",
+      B: "transport input telnet",
+      C: "transport input ssh",
+      D: "no ip telnet",
+    },
+    respostaCorreta: "C",
+    justificativa: "'transport input ssh' nas linhas vty restringe o acesso remoto a SSH, desabilitando o Telnet em texto claro.",
+  },
+  {
+    id: "q-v7-041", dominio: "Security Fundamentals", topicId: "m40-01", dificuldade: "medio",
+    enunciado: "O que faz o comando 'switchport port-security mac-address sticky'?",
+    alternativas: {
+      A: "Bloqueia todos os MACs na porta",
+      B: "Aprende dinamicamente o(s) MAC(s) conectado(s) e os grava na running-config como seguros",
+      C: "Cola a porta em err-disabled permanentemente",
+      D: "Habilita o DHCP Snooping na porta",
+    },
+    respostaCorreta: "B",
+    justificativa: "'sticky' aprende os MACs em uso e os converte em entradas de port-security na configuração, sem precisar digitar cada endereço manualmente.",
+  },
+  {
+    id: "q-v7-042", dominio: "Security Fundamentals", topicId: "m40-02", dificuldade: "medio",
+    enunciado: "Uma porta com Port Security no modo padrão sofreu uma violação e está em err-disabled. Como reativá-la manualmente?",
+    alternativas: {
+      A: "Só 'no shutdown' resolve",
+      B: "'shutdown' seguido de 'no shutdown' na interface (ou aguardar o errdisable recovery, se configurado)",
+      C: "Recarregar o switch é a única forma",
+      D: "Apagar a VLAN e recriá-la",
+    },
+    respostaCorreta: "B",
+    justificativa: "O modo padrão de violação é 'shutdown' (err-disabled). Recuperação: 'shutdown' + 'no shutdown' na porta, ou configurar 'errdisable recovery cause psecure-violation'.",
+  },
+  {
+    id: "q-v7-043", dominio: "Security Fundamentals", topicId: "m41-01", dificuldade: "dificil",
+    enunciado: "Ao habilitar DHCP Snooping numa VLAN, como devem ser tratadas as portas?",
+    alternativas: {
+      A: "Todas viram trusted automaticamente",
+      B: "Todas começam untrusted; só as portas que levam a um servidor DHCP legítimo (uplinks) devem ser marcadas como trusted",
+      C: "As portas de acesso devem ser trusted",
+      D: "DHCP Snooping não distingue portas",
+    },
+    respostaCorreta: "B",
+    justificativa: "Por padrão toda porta é untrusted e mensagens de servidor (Offer/Ack) recebidas nelas são descartadas. Só o uplink para o servidor DHCP real deve receber 'ip dhcp snooping trust'.",
+  },
+  {
+    id: "q-v7-044", dominio: "Security Fundamentals", topicId: "m38-01", dificuldade: "facil",
+    enunciado: "Um e-mail que finge ser do banco e pede que o usuário clique num link e digite a senha é um exemplo de qual ataque?",
+    alternativas: { A: "DDoS", B: "Phishing (engenharia social)", C: "ARP spoofing", D: "Força bruta" },
+    respostaCorreta: "B",
+    justificativa: "Phishing é engenharia social: engana a vítima a entregar credenciais ou executar ação. Não explora falha técnica, e sim o comportamento humano.",
+  },
+  {
+    id: "q-v7-045", dominio: "Security Fundamentals", topicId: "m36-01", dificuldade: "facil",
+    enunciado: "Numa ACL, o que acontece com um pacote que não casa com nenhuma entrada explícita?",
+    alternativas: {
+      A: "É permitido (permit any implícito)",
+      B: "É descartado pelo 'deny any' implícito no fim de toda ACL",
+      C: "É enviado para inspeção manual",
+      D: "Gera erro e a ACL é ignorada",
+    },
+    respostaCorreta: "B",
+    justificativa: "Toda ACL termina com um 'deny any' implícito e invisível. Se nada permitir o pacote antes, ele é bloqueado.",
+  },
+
+  // ---- IP Services ----
+  {
+    id: "q-v7-046", dominio: "IP Services", topicId: "m43-01", dificuldade: "medio",
+    enunciado: "Ao configurar NAT num roteador, quais comandos identificam as interfaces interna e externa?",
+    alternativas: {
+      A: "'ip nat local' e 'ip nat global'",
+      B: "'ip nat inside' na interface da LAN e 'ip nat outside' na interface da WAN",
+      C: "'ip nat source' e 'ip nat dest'",
+      D: "Não é preciso marcar interfaces",
+    },
+    respostaCorreta: "B",
+    justificativa: "O NAT do IOS precisa saber a direção do tráfego: 'ip nat inside' nas interfaces voltadas pra rede privada e 'ip nat outside' na(s) voltada(s) pra rede pública.",
+  },
+  {
+    id: "q-v7-047", dominio: "IP Services", topicId: "m43-03", dificuldade: "medio",
+    enunciado: "Como o PAT (NAT overload) permite que várias máquinas internas compartilhem um único IP público?",
+    alternativas: {
+      A: "Alternando o IP público a cada segundo",
+      B: "Multiplexando as conexões por número de porta de origem (cada fluxo recebe uma porta distinta na tabela de tradução)",
+      C: "Comprimindo os pacotes",
+      D: "Usando IPv6 no lado externo",
+    },
+    respostaCorreta: "B",
+    justificativa: "O PAT acrescenta a porta de transporte à tabela de NAT. Assim '10.0.0.1:1500' e '10.0.0.2:1500' viram, por exemplo, '200.1.1.1:1500' e '200.1.1.1:1501' — distinguíveis na volta.",
+  },
+  {
+    id: "q-v7-048", dominio: "IP Services", topicId: "m46-01", dificuldade: "dificil",
+    enunciado: "Qual a diferença entre um SNMP trap e um SNMP inform?",
+    alternativas: {
+      A: "Trap usa TCP; inform usa UDP",
+      B: "O inform é confirmado pelo gerenciador (com retransmissão se não houver ack); o trap é 'dispare e esqueça'",
+      C: "Trap só existe no SNMPv3",
+      D: "Não há diferença",
+    },
+    respostaCorreta: "B",
+    justificativa: "Trap é enviado sem garantia de entrega. Inform espera um acknowledgment do NMS e retransmite se necessário — mais confiável, porém com mais overhead.",
+  },
+  {
+    id: "q-v7-049", dominio: "IP Services", topicId: "m46-02", dificuldade: "facil",
+    enunciado: "Qual protocolo de transferência de arquivos é mais simples, sem autenticação, e usa UDP porta 69?",
+    alternativas: { A: "FTP", B: "SFTP", C: "TFTP", D: "SCP" },
+    respostaCorreta: "C",
+    justificativa: "TFTP (Trivial FTP) roda sobre UDP 69, não tem autenticação nem listagem de diretório — muito usado para backup de config e upgrade de IOS em LAN confiável.",
+  },
+  {
+    id: "q-v7-050", dominio: "IP Services", topicId: "m42-02", dificuldade: "medio",
+    enunciado: "No NTP, o que indica o valor de 'stratum'?",
+    alternativas: {
+      A: "A prioridade de roteamento do servidor",
+      B: "A distância (em saltos de sincronização) até a fonte de tempo de referência — stratum 1 está diretamente ligado a um relógio atômico/GPS",
+      C: "O fuso horário configurado",
+      D: "A versão do protocolo NTP",
+    },
+    respostaCorreta: "B",
+    justificativa: "Stratum 0 é a fonte de referência (relógio atômico, GPS). Stratum 1 sincroniza direto com ela; cada nível seguinte soma 1. Stratum 16 = não sincronizado.",
+  },
+
+  // ---- Automation and Programmability ----
+  {
+    id: "q-v7-051", dominio: "Automation and Programmability", topicId: "m50-01", dificuldade: "medio",
+    enunciado: "Numa arquitetura SDN, o que é uma interface 'southbound'?",
+    alternativas: {
+      A: "A comunicação entre o controller e as aplicações/scripts de gerência",
+      B: "A comunicação entre o controller e os dispositivos de rede que ele programa (ex.: NETCONF, OpenFlow)",
+      C: "O link físico entre dois data centers",
+      D: "A API de billing do provedor",
+    },
+    respostaCorreta: "B",
+    justificativa: "Southbound = controller → equipamentos (NETCONF, RESTCONF, OpenFlow). Northbound = controller → apps/automação (normalmente REST API).",
+  },
+  {
+    id: "q-v7-052", dominio: "Automation and Programmability", topicId: "m52-01", dificuldade: "dificil",
+    enunciado: "Qual método HTTP REST substitui um recurso inteiro e é idempotente (repetir a chamada leva ao mesmo estado)?",
+    alternativas: { A: "POST", B: "PUT", C: "PATCH", D: "GET" },
+    respostaCorreta: "B",
+    justificativa: "PUT substitui o recurso por completo e é idempotente. POST cria (não idempotente), PATCH altera parcialmente, GET só lê.",
+  },
+  {
+    id: "q-v7-053", dominio: "Automation and Programmability", topicId: "m52-02", dificuldade: "facil",
+    enunciado: "Em JSON, como é representada uma lista de valores?",
+    alternativas: {
+      A: "Entre chaves { }",
+      B: "Entre colchetes [ ], com os itens separados por vírgula",
+      C: "Com indentação, sem símbolos",
+      D: "Entre parênteses ( )",
+    },
+    respostaCorreta: "B",
+    justificativa: "Arrays JSON usam colchetes: [\"a\", \"b\", \"c\"]. Chaves { } delimitam objetos (pares chave:valor).",
+  },
+  {
+    id: "q-v7-054", dominio: "Automation and Programmability", topicId: "m53-01", dificuldade: "medio",
+    enunciado: "O que significa dizer que um playbook Ansible é 'idempotente'?",
+    alternativas: {
+      A: "Ele só pode rodar uma vez",
+      B: "Rodar o mesmo playbook várias vezes não muda nada além do necessário para atingir o estado desejado",
+      C: "Ele precisa de um agente no dispositivo",
+      D: "Ele só funciona em Linux",
+    },
+    respostaCorreta: "B",
+    justificativa: "Idempotência: o Ansible verifica o estado atual e só aplica o que falta. Se já estiver no estado desejado, a task reporta 'ok' e não altera nada.",
+  },
+  {
+    id: "q-v7-055", dominio: "Automation and Programmability", topicId: "m51-01", dificuldade: "facil",
+    enunciado: "Qual é o controller da solução Cisco de rede empresarial baseada em intenção (intent-based networking) para campus?",
+    alternativas: { A: "Cisco DNA Center (Catalyst Center)", B: "Cisco ISE", C: "Cisco Prime Infrastructure", D: "Cisco ACI APIC" },
+    respostaCorreta: "A",
+    justificativa: "O Cisco DNA Center (renomeado Catalyst Center) é o controller do SD-Access para campus. O APIC é o controller do ACI (data center).",
+  },
+
+  // ---- Network Fundamentals (preenchendo lacunas) ----
+  {
+    id: "q-v7-056", dominio: "Network Fundamentals", topicId: "m26-01", dificuldade: "medio",
+    enunciado: "Ao abreviar um endereço IPv6, quantas vezes o '::' pode ser usado?",
+    alternativas: { A: "Quantas forem necessárias", B: "No máximo uma vez por endereço", C: "Exatamente duas vezes", D: "Nunca em endereços globais" },
+    respostaCorreta: "B",
+    justificativa: "'::' representa um ou mais grupos de zeros e só pode aparecer uma vez, senão o endereço ficaria ambíguo (não dá pra saber quantos zeros cada '::' cobre).",
+  },
+  {
+    id: "q-v7-057", dominio: "Network Fundamentals", topicId: "m02-04", dificuldade: "facil",
+    enunciado: "Um endereço MAC tem 48 bits. O que representam os primeiros 24 bits?",
+    alternativas: {
+      A: "O número de série do dispositivo",
+      B: "O OUI — identificador do fabricante atribuído pelo IEEE",
+      C: "A VLAN do quadro",
+      D: "O checksum do quadro",
+    },
+    respostaCorreta: "B",
+    justificativa: "Os 24 bits iniciais são o OUI (Organizationally Unique Identifier), que identifica o fabricante. Os 24 bits finais são atribuídos por ele a cada placa.",
+  },
+  {
+    id: "q-v7-058", dominio: "Network Fundamentals", topicId: "m05-03", dificuldade: "facil",
+    enunciado: "O que um switch faz com um quadro cujo endereço MAC de destino é o broadcast (FFFF.FFFF.FFFF)?",
+    alternativas: {
+      A: "Descarta",
+      B: "Encaminha por todas as portas da VLAN, exceto a porta de entrada",
+      C: "Encaminha só pela porta do gateway",
+      D: "Responde ele mesmo ao remetente",
+    },
+    respostaCorreta: "B",
+    justificativa: "Quadros de broadcast (e de unicast desconhecido/multicast sem snooping) sofrem flooding: saem por todas as portas da VLAN menos a de origem.",
+  },
+  {
+    id: "q-v7-059", dominio: "Network Fundamentals", topicId: "m03-04", dificuldade: "medio",
+    enunciado: "Qual protocolo de transporte e porta o DNS usa para consultas normais de resolução de nomes?",
+    alternativas: { A: "TCP 53", B: "UDP 53", C: "UDP 67", D: "TCP 25" },
+    respostaCorreta: "B",
+    justificativa: "Consultas DNS comuns usam UDP 53 (rápido, sem conexão). TCP 53 é usado para transferência de zona e respostas grandes.",
+  },
+  {
+    id: "q-v7-060", dominio: "Network Fundamentals", topicId: "m19-02", dificuldade: "medio",
+    enunciado: "Um host tem IP e máscara corretos, mas o default gateway configurado está errado. Qual o sintoma?",
+    alternativas: {
+      A: "Não consegue se comunicar com ninguém, nem na própria sub-rede",
+      B: "Se comunica normalmente dentro da própria sub-rede, mas não alcança outras redes",
+      C: "Perde o endereço IP",
+      D: "Só consegue usar IPv6",
+    },
+    respostaCorreta: "B",
+    justificativa: "O tráfego local (mesma sub-rede) não passa pelo gateway, então funciona. Já qualquer destino em outra rede é entregue ao gateway errado e não chega.",
+  },
 ];
 
 export async function seedQuestionsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().questionsSeededV6) {
+  if (metaSnap.exists() && metaSnap.data().questionsSeededV7) {
     console.log("[seed] Banco de questões já populado, pulando.");
     return { seeded: false };
   }
@@ -736,7 +1347,7 @@ export async function seedQuestionsIfNeeded() {
     const ref = doc(db, "content", "questions", "items", q.id);
     batch.set(ref, q);
   });
-  batch.set(metaRef, { questionsSeededV6: true, questionsCount: questoesExemplo.length, questionsSeededV6At: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { questionsSeededV7: true, questionsCount: questoesExemplo.length, questionsSeededV7At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${questoesExemplo.length} questões gravadas`);
