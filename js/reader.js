@@ -62,14 +62,15 @@ function getCacheCapasEstaticas() {
 /** Gera uma miniatura da 1ª página do PDF (sempre o conteúdo do próprio usuário, nunca capa de terceiros). */
 export async function gerarCapaAutomatica(livro) {
   const lib = await garantirPdfJsCarregado();
-  let doc;
+  let loadingTask;
   if (livro.origem === "local") {
     const completo = await getLivroLocalCompleto(livro.id);
     if (!completo) return null;
-    doc = await lib.getDocument({ data: completo.dadosArquivo.slice(0) }).promise;
+    loadingTask = lib.getDocument({ data: completo.dadosArquivo.slice(0) });
   } else {
-    doc = await lib.getDocument(livro.arquivo).promise;
+    loadingTask = lib.getDocument(livro.arquivo);
   }
+  const doc = await loadingTask.promise;
 
   const pagina = await doc.getPage(1);
   const viewport = pagina.getViewport({ scale: 0.4 });
@@ -79,7 +80,13 @@ export async function gerarCapaAutomatica(livro) {
   const ctx = canvas.getContext("2d");
   await pagina.render({ canvasContext: ctx, viewport }).promise;
   const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
-  doc.destroy();
+  // Nas versões atuais do pdf.js quem tem .destroy() é o loadingTask (não o
+  // documento). Libera a memória sem derrubar a geração da capa se algo mudar.
+  try {
+    await loadingTask.destroy();
+  } catch (e) {
+    console.warn("[reader] não consegui liberar o PDF da capa:", e);
+  }
 
   // Guarda em cache pra não precisar baixar/renderizar o PDF de novo só pra mostrar a capa.
   if (livro.origem === "local") {
