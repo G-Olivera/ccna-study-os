@@ -227,13 +227,74 @@ const flashcards = [
   { id: "fc-gap-56", topicId: "m51-02", categoria: "Automation", front: "O que a política de fabric no SD-Access usa como base pra decisões, em vez de IP/porta?", back: "Identidade do usuário/dispositivo (grupo de segurança), permitindo políticas consistentes independente de onde o dispositivo se conecta." },
   { id: "fc-gap-57", topicId: "m52-02", categoria: "Automation", front: "Quais os tipos básicos de dados suportados em JSON?", back: "String, número, booleano, null, array (lista) e objeto (pares chave-valor)." },
   { id: "fc-gap-58", topicId: "m53-02", categoria: "Automation", front: "Qual o conceito central do Terraform como ferramenta de infraestrutura como código?", back: "Definir o estado desejado da infraestrutura em arquivos declarativos, e o Terraform calcula e aplica as mudanças necessárias pra chegar lá." },
+
+  // ===== LOTE V7 — reforço nos tópicos operacionais e de cálculo mais cobrados na prova =====
+
+  // Subnetting — treino rápido (o maior gargalo de tempo na prova)
+  { id: "fc-v7-sub-01", topicId: "m13-02", categoria: "Subnetting", front: "Quantas sub-redes e quantos hosts por sub-rede um /26 gera dentro de um /24?", back: "4 sub-redes de 62 hosts utilizáveis cada (blocos de 64: .0, .64, .128, .192)." },
+  { id: "fc-v7-sub-02", topicId: "m14-01", categoria: "Subnetting", front: "A qual sub-rede pertence o host 172.16.20.200/21?", back: "172.16.16.0/21 (bloco de 8 no 3º octeto: 0, 8, 16, 24… → 20 cai em 16). Broadcast: 172.16.23.255." },
+  { id: "fc-v7-sub-03", topicId: "m13-01", categoria: "Subnetting", front: "Qual o 'magic number' (tamanho do bloco) de uma máscara /27?", back: "32 — as sub-redes /27 começam em .0, .32, .64, .96, .128, .160, .192, .224." },
+  { id: "fc-v7-sub-04", topicId: "m13-02", categoria: "Subnetting", front: "Preciso de pelo menos 30 hosts numa sub-rede. Qual o menor prefixo que serve?", back: "/27 (32 endereços, 30 utilizáveis). Um /28 só daria 14." },
+  { id: "fc-v7-sub-05", topicId: "m15-01", categoria: "Subnetting", front: "Qual prefixo é usado tipicamente em links ponto-a-ponto entre roteadores, e por quê?", back: "/30 (2 hosts utilizáveis) ou /31 (RFC 3021, 2 hosts sem broadcast) — economiza endereços onde só há 2 pontas." },
+  { id: "fc-v7-sub-06", topicId: "m11-02", categoria: "Subnetting", front: "Numa máscara /19, qual o valor do 3º octeto e o tamanho do bloco?", back: "Máscara 255.255.224.0; bloco de 32 no 3º octeto (0, 32, 64, 96…)." },
+
+  // TCP/UDP — portas bem conhecidas
+  { id: "fc-v7-port-01", topicId: "m34-01", categoria: "TCP", front: "Portas de FTP (controle e dados), SSH, Telnet e SMTP?", back: "FTP: TCP 21 (controle) e 20 (dados); SSH: TCP 22; Telnet: TCP 23; SMTP: TCP 25." },
+  { id: "fc-v7-port-02", topicId: "m34-01", categoria: "TCP", front: "Portas de HTTP, HTTPS, DNS e RDP?", back: "HTTP: TCP 80; HTTPS: TCP 443; DNS: UDP/TCP 53; RDP: TCP 3389." },
+  { id: "fc-v7-port-03", topicId: "m34-02", categoria: "TCP", front: "Portas de DHCP, TFTP, SNMP, NTP e Syslog?", back: "DHCP: UDP 67 (servidor) / 68 (cliente); TFTP: UDP 69; SNMP: UDP 161 (poll) / 162 (trap); NTP: UDP 123; Syslog: UDP 514." },
+  { id: "fc-v7-port-04", topicId: "m34-02", categoria: "TCP", front: "Diferença de uso entre TCP e UDP em uma frase?", back: "TCP = confiável, ordenado, com conexão (web, e-mail, transferência). UDP = rápido, sem garantia (voz, vídeo, DNS, DHCP)." },
+
+  // Gerenciamento — NTP
+  { id: "fc-v7-ntp-01", topicId: "m42-02", categoria: "Gerenciamento", front: "O que significa 'stratum 1' no NTP? E 'stratum 16'?", back: "Stratum 1 sincroniza diretamente com uma fonte de referência (GPS/relógio atômico, que é stratum 0). Stratum 16 = não sincronizado / inválido." },
+  { id: "fc-v7-ntp-02", topicId: "m42-02", categoria: "Gerenciamento", front: "Qual comando aponta um roteador Cisco para um servidor NTP?", back: "ntp server <endereço-ip>. Verificação: show ntp status / show ntp associations." },
+
+  // Gerenciamento — SNMP
+  { id: "fc-v7-snmp-01", topicId: "m46-01", categoria: "Gerenciamento", front: "Diferença entre SNMP trap e SNMP inform?", back: "Trap é 'dispare e esqueça' (sem confirmação). Inform espera ACK do NMS e retransmite se não receber — mais confiável, mais overhead." },
+  { id: "fc-v7-snmp-02", topicId: "m46-01", categoria: "Gerenciamento", front: "O que é uma community string no SNMPv2c e qual seu problema?", back: "É a 'senha' que separa read-only de read-write. Problema: trafega em texto claro. SNMPv3 resolve com autenticação e criptografia." },
+
+  // Gerenciamento — Syslog
+  { id: "fc-v7-syslog-01", topicId: "m42-01", categoria: "Gerenciamento", front: "Quais os nomes dos níveis de severidade 0 a 3 do Syslog?", back: "0 Emergency, 1 Alert, 2 Critical, 3 Error. (Mnemônico: 'Every Awesome Cisco Engineer Will Need Ice cream Daily'.)" },
+  { id: "fc-v7-syslog-02", topicId: "m42-01", categoria: "Gerenciamento", front: "Onde o IOS pode enviar mensagens de log?", back: "Console, linhas VTY (terminal monitor), buffer interno (logging buffered) e servidor Syslog externo (logging host)." },
+
+  // NAT — verificação
+  { id: "fc-v7-nat-01", topicId: "m43-03", categoria: "NAT", front: "Qual comando mostra a tabela de traduções NAT ativas?", back: "show ip nat translations. Para contadores de acerto/erro: show ip nat statistics." },
+  { id: "fc-v7-nat-02", topicId: "m43-03", categoria: "NAT", front: "Na terminologia NAT, o que é 'inside local' vs 'inside global'?", back: "Inside local = IP privado do host na LAN; inside global = IP público com que ele aparece na internet após a tradução." },
+  { id: "fc-v7-nat-03", topicId: "m43-03", categoria: "NAT", front: "Como configurar PAT usando o IP da própria interface de saída?", back: "ip nat inside source list <ACL> interface <WAN> overload" },
+
+  // FHRP
+  { id: "fc-v7-fhrp-01", topicId: "m45-01", categoria: "FHRP", front: "Quais os estados principais do HSRP?", back: "Initial → Listen → Speak → Standby → Active. Só um roteador fica Active, um fica Standby, o resto Listen." },
+  { id: "fc-v7-fhrp-02", topicId: "m45-01", categoria: "FHRP", front: "Qual o range de grupos e o MAC virtual do HSRPv1 vs HSRPv2?", back: "v1: grupos 0–255, MAC 0000.0C07.ACxx. v2: grupos 0–4095, MAC 0000.0C9F.Fxxx." },
+  { id: "fc-v7-fhrp-03", topicId: "m45-02", categoria: "FHRP", front: "O que o 'preempt' faz num roteador FHRP?", back: "Permite que um roteador com prioridade maior retome o papel Active/Master ao voltar — sem preempt, quem assumiu primeiro fica." },
+
+  // DHCP
+  { id: "fc-v7-dhcp-01", topicId: "m19-01", categoria: "DHCP", front: "Qual comando numa interface de roteador encaminha broadcasts DHCP para um servidor remoto?", back: "ip helper-address <ip-do-servidor> — configurado na interface do lado dos clientes." },
+  { id: "fc-v7-dhcp-02", topicId: "m19-01", categoria: "DHCP", front: "Como excluir um range de IPs do pool DHCP do IOS?", back: "ip dhcp excluded-address <início> <fim> (modo global, antes de definir o pool)." },
+
+  // STP / EtherChannel
+  { id: "fc-v7-stp-01", topicId: "m10-01", categoria: "STP", front: "Qual comando torna um switch a root bridge da VLAN 10 de forma garantida?", back: "spanning-tree vlan 10 root primary (ajusta a prioridade para 24576 ou menos)." },
+  { id: "fc-v7-stp-02", topicId: "m10-03", categoria: "Switching", front: "Quais comandos verificam um EtherChannel e seu estado?", back: "show etherchannel summary (flags: SU = em uso na camada 2; P = porta no bundle)." },
+  { id: "fc-v7-rstp-01", topicId: "m09-04", categoria: "STP", front: "Como o RSTP converge mais rápido que o STP 802.1D clássico?", back: "Usa proposta/acordo entre switches e tipos de porta (edge, point-to-point) em vez de esperar os timers (Max Age 20s + 2×Forward Delay 15s)." },
+
+  // IPv6 — tipos de endereço
+  { id: "fc-v7-ipv6-01", topicId: "m25-02", categoria: "IPv6", front: "Qual prefixo identifica endereços IPv6 unicast global? E unique local?", back: "Global unicast: 2000::/3. Unique local (ULA, equivalente ao privado): FC00::/7 (na prática FD00::/8)." },
+  { id: "fc-v7-ipv6-02", topicId: "m25-02", categoria: "IPv6", front: "Qual endereço multicast IPv6 alcança 'todos os roteadores do enlace'? E 'todos os nós'?", back: "Todos os roteadores: FF02::2. Todos os nós: FF02::1. (Substituem o broadcast, que não existe em IPv6.)" },
+  { id: "fc-v7-ipv6-03", topicId: "m27-01", categoria: "IPv6", front: "O que o comando 'ipv6 address autoconfig' faz numa interface?", back: "Faz a interface gerar o próprio endereço via SLAAC, usando o prefixo anunciado pelo roteador (RA) + EUI-64 ou aleatório." },
+
+  // Wireless — RF
+  { id: "fc-v7-rf-01", topicId: "m30-02", categoria: "Wireless", front: "Quais canais de 2,4 GHz não se sobrepõem (padrão nas Américas)?", back: "1, 6 e 11 — cada canal Wi-Fi de 2,4 GHz ocupa ~22 MHz, e só esses três cabem sem interferência mútua." },
+  { id: "fc-v7-rf-02", topicId: "m30-01", categoria: "Wireless", front: "Diferença entre BSS, ESS e IBSS?", back: "BSS: 1 AP + clientes. ESS: vários APs com o mesmo SSID formando cobertura contínua. IBSS: ad-hoc, sem AP (dispositivos direto entre si)." },
+
+  // Verificação / troubleshooting — comandos-chave
+  { id: "fc-v7-show-01", topicId: "m20-01", categoria: "Roteamento", front: "Qual comando resume o status (IP + linha + protocolo) de todas as interfaces?", back: "show ip interface brief" },
+  { id: "fc-v7-show-02", topicId: "m08-04", categoria: "VLAN", front: "Quais comandos verificam VLANs e o status de um trunk?", back: "show vlan brief (portas por VLAN) e show interfaces trunk (trunks ativos, VLAN nativa, VLANs permitidas)." },
+  { id: "fc-v7-show-03", topicId: "m42-03", categoria: "Gerenciamento", front: "Qual comando lista os vizinhos diretamente conectados descobertos por CDP, com IP e plataforma?", back: "show cdp neighbors detail (ou show lldp neighbors detail para LLDP)." },
 ];
 
 export async function seedFlashcardsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().flashcardsSeededV6) {
+  if (metaSnap.exists() && metaSnap.data().flashcardsSeededV7) {
     console.log("[seed] Flashcards já populados, pulando.");
     return { seeded: false };
   }
@@ -243,7 +304,7 @@ export async function seedFlashcardsIfNeeded() {
     const ref = doc(db, "content", "flashcards", "items", fc.id);
     batch.set(ref, fc);
   });
-  batch.set(metaRef, { flashcardsSeededV6: true, flashcardsCount: flashcards.length, flashcardsSeededV6At: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { flashcardsSeededV7: true, flashcardsCount: flashcards.length, flashcardsSeededV7At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${flashcards.length} flashcards gravados`);
