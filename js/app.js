@@ -71,7 +71,8 @@ import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
 import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, editarTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
 import { escapeHtml } from "./utils.js";
-import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, editarLivroLocal, removerLivroLocal, removerProgressoLeitura, gerarCapaAutomatica, getCapaEstaticaCache } from "./reader.js";
+import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, irParaPagina, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, editarLivroLocal, removerLivroLocal, removerProgressoLeitura, gerarCapaAutomatica, getCapaEstaticaCache } from "./reader.js";
+import { capituloDaLicao, acharLivroDoVolume, TOTAL_CAPITULOS } from "./book-map.js";
 import {
   iniciarCronometro,
   pausarCronometro,
@@ -1640,6 +1641,7 @@ async function carregarTrilha() {
   renderResumoTrilha();
   renderModulosTrilha();
   renderProximosModulos();
+  renderProgressoLivro();
   await renderContinueEstudando();
 
   const ritmo = await calcularRitmo(currentUser.uid);
@@ -1726,13 +1728,15 @@ function renderModulosTrilha() {
     .map((mod) => {
       const { licoes, percent, status } = progressoDoModulo(mod);
       const icone = ICONES_DOMINIO[mod.dominio] || ICONES_DOMINIO["Automation and Programmability"];
+      const cap = capituloDaLicao(mod.ordem);
+      const capBadge = cap ? `<span class="modulo-cap-badge" title="${cap.titulo ? escapeHtml(cap.titulo) : ""}">📘 Vol ${cap.vol} · Cap ${cap.cap}</span>` : "";
       return `
       <div class="modulo-card ${status === "concluido" ? "concluido" : ""}">
         <div class="modulo-header" data-modulo="${mod.ordem}" role="button" tabindex="0" aria-expanded="false">
           <div class="modulo-numero">${mod.ordem}</div>
           <div class="modulo-icone-quadro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icone}</svg></div>
           <div>
-            <div class="titulo">${escapeHtml(mod.nome)} <span class="modulo-dominio-badge">${escapeHtml(mod.dominio)}</span></div>
+            <div class="titulo">${escapeHtml(mod.nome)} <span class="modulo-dominio-badge">${escapeHtml(mod.dominio)}</span> ${capBadge}</div>
             <div class="meta">${licoes.filter((t) => (progressoMapCache.get(t.id)?.masteryPercent ?? 0) >= 80).length} de ${mod.totalLicoes} lições concluídas</div>
           </div>
           <div class="modulo-percent-num">${percent}%</div>
@@ -1777,6 +1781,44 @@ function renderModulosTrilha() {
       await abrirConteudoLicao(linha.dataset.licaoId, linha.dataset.licaoNome, moduloOrdem);
     });
   });
+}
+
+// Grade de capítulos do Official Cert Guide, colorida pelo domínio de cada
+// módulo correspondente (concluído / em andamento / não iniciado).
+function renderProgressoLivro() {
+  const container = document.getElementById("trilha-livro-progresso");
+  if (!container) return;
+
+  const porVolume = { 1: [], 2: [] };
+  modulosCache.forEach((mod) => {
+    const cap = capituloDaLicao(mod.ordem);
+    if (!cap) return;
+    porVolume[cap.vol].push({ cap: cap.cap, titulo: cap.titulo, ...progressoDoModulo(mod) });
+  });
+
+  const grade = (vol) => {
+    const itens = porVolume[vol].sort((a, b) => a.cap - b.cap);
+    if (!itens.length) return "";
+    const concluidos = itens.filter((i) => i.status === "concluido").length;
+    const celulas = itens
+      .map(
+        (i) =>
+          `<span class="cap-cel ${i.status}" title="Cap ${i.cap}${i.titulo ? " — " + escapeHtml(i.titulo) : ""} · ${i.percent}%">${i.cap}</span>`
+      )
+      .join("");
+    return `
+      <div class="cap-grade-bloco">
+        <div class="cap-grade-titulo">Volume ${vol} <span>${concluidos}/${itens.length} capítulos</span></div>
+        <div class="cap-grade">${celulas}</div>
+      </div>`;
+  };
+
+  container.innerHTML = grade(1) + grade(2);
+
+  const totalCaps = (TOTAL_CAPITULOS[1] || 0) + (TOTAL_CAPITULOS[2] || 0);
+  const totalConcl = [...porVolume[1], ...porVolume[2]].filter((i) => i.status === "concluido").length;
+  const resumoEl = document.getElementById("trilha-livro-resumo");
+  if (resumoEl) resumoEl.textContent = `${totalConcl} de ${totalCaps} capítulos concluídos`;
 }
 
 function renderProximosModulos() {
@@ -1896,13 +1938,23 @@ async function abrirConteudoLicao(licaoId, licaoNome, moduloOrdem) {
   painel.classList.remove("hidden");
   painel.innerHTML = `<p class="eyebrow">${escapeHtml(licaoNome)}</p><p>Gerando explicação…</p>`;
 
+  const ref = capituloDaLicao(moduloOrdem);
+  const refHtml = ref
+    ? `<div class="licao-livro-ref">
+         <span>📘 No livro: <strong>OCG Vol ${ref.vol}, Cap. ${ref.cap}</strong>${ref.titulo ? ` — ${escapeHtml(ref.titulo)}` : ""}</span>
+         <button class="btn-secondary" id="btn-abrir-no-livro" style="width:auto; margin-top:0; padding:6px 12px; font-size:12px; white-space:nowrap;">Abrir no livro →</button>
+       </div>`
+    : "";
+
   try {
     const texto = await explicarTopico(licaoNome, "iniciante");
     painel.innerHTML = `
       <p class="eyebrow">${escapeHtml(licaoNome)}</p>
+      ${refHtml}
       <p class="licao-texto">${escapeHtml(texto)}</p>
       <button class="btn-primary" id="btn-marcar-estudada" data-licao="${licaoId}" style="margin-top:12px;">Marcar como estudada</button>
     `;
+    document.getElementById("btn-abrir-no-livro")?.addEventListener("click", () => abrirLivroNoCapitulo(ref.vol, ref.cap));
     document.getElementById("btn-marcar-estudada").addEventListener("click", async () => {
       const atual = await getUserTopicProgress(currentUser.uid, licaoId);
       const novoMastery = Math.max(atual?.masteryPercent ?? 0, 50);
@@ -1912,8 +1964,65 @@ async function abrirConteudoLicao(licaoId, licaoNome, moduloOrdem) {
       await carregarTrilha();
     });
   } catch (e) {
-    painel.innerHTML = `<p class="eyebrow">${licaoNome}</p><p>Não consegui gerar a explicação agora. Verifique se o Firebase AI Logic está ativado.</p>`;
+    painel.innerHTML = `<p class="eyebrow">${licaoNome}</p>${refHtml}<p>Não consegui gerar a explicação agora. Verifique se o Firebase AI Logic está ativado.</p>`;
+    document.getElementById("btn-abrir-no-livro")?.addEventListener("click", () => abrirLivroNoCapitulo(ref.vol, ref.cap));
   }
+}
+
+// Leva o leitor até o volume/capítulo correspondente do Official Cert Guide.
+// Se o livro do volume ainda não estiver na Biblioteca, avisa. Pular pra página
+// exata do capítulo depende de o usuário cadastrar as páginas iniciais (ver
+// "Índice de capítulos" no leitor) — sem isso, abre na última posição lida.
+async function abrirLivroNoCapitulo(vol, cap) {
+  // Troca de tela manualmente (sem trocarTela) pra não disparar um carregarLivro
+  // concorrente que reabriria a biblioteca por cima do leitor.
+  document.querySelectorAll(".tela").forEach((t) => t.classList.add("hidden"));
+  document.getElementById("tela-livro").classList.remove("hidden");
+  document.querySelectorAll(".sidebar-item").forEach((b) => b.classList.toggle("active", b.dataset.tela === "livro"));
+  fecharDrawerMobile();
+  window.scrollTo({ top: 0 });
+
+  await carregarLivro();
+  const livro = acharLivroDoVolume(vol, todosLivrosCache);
+
+  if (!livro) {
+    mostrarToast(`Adicione o Volume ${vol} do Official Cert Guide na Biblioteca pra abrir direto no capítulo.`, "erro");
+    return;
+  }
+
+  await abrirLeitorDoLivro(livro.id);
+
+  const mapa = getMapaCapitulos(livro.id);
+  const pagina = mapa[cap];
+  if (pagina) {
+    const canvas = document.getElementById("livro-canvas");
+    await irParaPagina(currentUser.uid, canvas, pagina, (p, t) => {
+      document.getElementById("livro-pagina-texto").textContent = `Página ${p} de ${t}`;
+    });
+  } else {
+    mostrarToast(`Abri o Volume ${vol}. Vá até o Capítulo ${cap}. Dica: no leitor, cadastre a página inicial dos capítulos pra pular automático da próxima vez.`, "sucesso");
+  }
+}
+
+// Mapa capítulo -> página inicial, por livro, salvo neste navegador.
+const MAPA_CAPITULOS_KEY = "ccna_mapa_capitulos_v1";
+function getMapaCapitulos(livroId) {
+  try {
+    return (JSON.parse(localStorage.getItem(MAPA_CAPITULOS_KEY) || "{}")[livroId]) || {};
+  } catch {
+    return {};
+  }
+}
+function setPaginaCapitulo(livroId, cap, pagina) {
+  let tudo = {};
+  try {
+    tudo = JSON.parse(localStorage.getItem(MAPA_CAPITULOS_KEY) || "{}");
+  } catch {
+    tudo = {};
+  }
+  tudo[livroId] = tudo[livroId] || {};
+  tudo[livroId][cap] = pagina;
+  localStorage.setItem(MAPA_CAPITULOS_KEY, JSON.stringify(tudo));
 }
 
 function renderCronograma(ritmo) {
@@ -3415,6 +3524,9 @@ document.getElementById("btn-voltar-biblioteca").addEventListener("click", () =>
   carregarLivro(); // atualiza progresso ao voltar
 });
 
+let livroAbertoId = null;
+let livroAbertoPagina = 1;
+
 async function abrirLeitorDoLivro(livroId) {
   const livro = todosLivrosCache.find((l) => l.id === livroId);
   const statusEl = document.getElementById("livro-status");
@@ -3423,9 +3535,11 @@ async function abrirLeitorDoLivro(livroId) {
   document.getElementById("livro-biblioteca-view").classList.add("hidden");
   document.getElementById("livro-leitura-view").classList.remove("hidden");
   statusEl.textContent = "Carregando…";
+  livroAbertoId = livroId;
 
   try {
     await abrirLivro(currentUser.uid, livro, canvas, (pagina, total) => {
+      livroAbertoPagina = pagina;
       document.getElementById("livro-pagina-texto").textContent = `Página ${pagina} de ${total}`;
       statusEl.textContent = livro.titulo;
     });
@@ -3434,9 +3548,22 @@ async function abrirLeitorDoLivro(livroId) {
   }
 }
 
+// Marca a página atual como início de um capítulo — alimenta o "Abrir no livro"
+// da trilha pra pular direto pro ponto certo na próxima vez.
+document.getElementById("btn-marcar-cap")?.addEventListener("click", () => {
+  const cap = parseInt(document.getElementById("input-cap-numero").value, 10);
+  if (!livroAbertoId || !cap || cap < 1) {
+    mostrarToast("Informe o número do capítulo.", "erro");
+    return;
+  }
+  setPaginaCapitulo(livroAbertoId, cap, livroAbertoPagina);
+  mostrarToast(`Capítulo ${cap} marcado na página ${livroAbertoPagina}.`, "sucesso");
+});
+
 document.getElementById("btn-pagina-anterior").addEventListener("click", async () => {
   const canvas = document.getElementById("livro-canvas");
   await paginaAnterior(currentUser.uid, canvas, (pagina, total) => {
+    livroAbertoPagina = pagina;
     document.getElementById("livro-pagina-texto").textContent = `Página ${pagina} de ${total}`;
   });
 });
@@ -3444,6 +3571,7 @@ document.getElementById("btn-pagina-anterior").addEventListener("click", async (
 document.getElementById("btn-pagina-proxima").addEventListener("click", async () => {
   const canvas = document.getElementById("livro-canvas");
   await proximaPagina(currentUser.uid, canvas, (pagina, total) => {
+    livroAbertoPagina = pagina;
     document.getElementById("livro-pagina-texto").textContent = `Página ${pagina} de ${total}`;
   });
 });

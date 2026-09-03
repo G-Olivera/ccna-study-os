@@ -534,6 +534,15 @@
       </div>
     </div>
 
+    <div class="task-card" id="trilha-livro-card" style="margin-top:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px;">
+        <div class="eyebrow" style="margin-bottom:0;">PROGRESSO DE LEITURA — OFFICIAL CERT GUIDE</div>
+        <span id="trilha-livro-resumo" style="font-size:12px; color:var(--ink-soft);"></span>
+      </div>
+      <p class="descricao" style="font-size:12px; margin:6px 0 12px;">Cada capítulo do livro corresponde a um módulo da trilha. A cor mostra o quanto você já domina daquele capítulo.</p>
+      <div id="trilha-livro-progresso"></div>
+    </div>
+
     <div class="task-card hidden" id="area-simulado" style="margin-top:16px;"></div>
     <div id="area-labs"></div>
   </section>
@@ -1061,6 +1070,13 @@
         <button class="btn-secondary" id="btn-pagina-anterior" style="margin-top:0;">◀ Anterior</button>
         <span id="livro-pagina-texto" style="font-family:var(--font-mono); font-size:13px;"></span>
         <button class="btn-secondary" id="btn-pagina-proxima" style="margin-top:0;">Próxima ▶</button>
+      </div>
+
+      <div class="livro-cap-marca">
+        <span>Esta página é o início do capítulo</span>
+        <input type="number" id="input-cap-numero" min="1" max="29" placeholder="nº" />
+        <button class="btn-secondary" id="btn-marcar-cap" style="width:auto; margin-top:0; padding:6px 12px; font-size:12px;">Salvar marca</button>
+        <small>usado pelo botão "Abrir no livro" da trilha</small>
       </div>
     </div>
   </section>
