@@ -4,7 +4,11 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { getAI, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-ai.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check.js";
 
@@ -19,7 +23,14 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// Firestore com cache local persistente (IndexedDB): o app abre com os últimos
+// dados conhecidos e continua funcionando offline — leituras vêm do cache e as
+// escritas ficam numa fila que sincroniza sozinha quando a conexão volta.
+// persistentMultipleTabManager: mantém o cache consistente com várias abas abertas.
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});
 
 // App Check: protege Firestore/Auth/AI Logic contra chamadas automatizadas (bots, scripts)
 // que não venham do seu app de verdade. Funciona no plano gratuito Spark.

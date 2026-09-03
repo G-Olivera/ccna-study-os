@@ -9,7 +9,7 @@
 // Gemini (outros domínios, e tudo que não for GET) passam direto pra rede,
 // sem interferência — nunca ficam em cache, pra não servir dados desatualizados.
 
-const CACHE_NAME = "ccna-study-os-v32";
+const CACHE_NAME = "ccna-study-os-v33";
 
 const APP_SHELL = [
   "./",
@@ -57,8 +57,8 @@ const APP_SHELL = [
   "js/finance/export.js",
   "js/mfa.js",
   "js/rag.js",
-  "js/pdf.min.mjs",
-  "js/pdf.worker.min.mjs",
+  "js/vendor/pdf.min.mjs",
+  "js/vendor/pdf.worker.min.mjs",
 ];
 
 self.addEventListener("install", (event) => {

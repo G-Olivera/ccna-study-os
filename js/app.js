@@ -4,11 +4,8 @@ import { listarFatoresMFA, iniciarCadastroMFA, confirmarCadastroMFA, removerFato
 import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
-import { seedContentIfNeeded, getModulosResumo } from "./seed-content.js";
-import { seedQuestionsIfNeeded } from "./seed-questions.js";
-import { seedLabsIfNeeded } from "./seed-labs.js";
-import { seedFlashcardsIfNeeded } from "./seed-flashcards.js";
-import { initTopologia } from "./topology.js";
+// seed-*.js (conteúdo global do CCNA, ~130KB) e topology.js (~64KB) são carregados
+// sob demanda via import() dinâmico — não entram no caminho de inicialização do app.
 import { carregarIndiceBusca, buscarConteudo, totalResultados } from "./search.js";
 import {
   GRUPOS,
@@ -85,6 +82,10 @@ import {
   salvarProgressoCronometro,
   buscarMinutosHoje,
 } from "./timer.js";
+
+// UID da conta que administra o conteúdo global (mesmo valor de firestore.rules).
+// Só essa conta popula content/** — os seeds ficam restritos a ela.
+const ADMIN_UID = "18Uv2Goc7cOdVPErrFV81COmvnT2";
 
 // ---------- LOGOUT AUTOMÁTICO POR INATIVIDADE ----------
 // Útil em computador compartilhado: desloga sozinho se ninguém mexer no app.
@@ -680,11 +681,15 @@ onAuthStateChanged(auth, async (user) => {
     const inicial = (user.email || "?").trim().charAt(0).toUpperCase();
     document.getElementById("avatar-inicial").textContent = inicial || "?";
 
-    // Seeds best-effort — só têm efeito real se as regras liberarem escrita pro seu UID.
-    seedContentIfNeeded().catch(() => {});
-    seedQuestionsIfNeeded().catch(() => {});
-    seedLabsIfNeeded().catch(() => {});
-    seedFlashcardsIfNeeded().catch(() => {});
+    // Seeds do conteúdo global: só o UID admin consegue gravar em content/** (ver
+    // firestore.rules), então só ele carrega esses módulos. Para os demais usuários
+    // o conteúdo já existe no Firestore — não faz sentido baixar ~130KB de seed.
+    if (user.uid === ADMIN_UID) {
+      import("./seed-content.js").then((m) => m.seedContentIfNeeded()).catch(() => {});
+      import("./seed-questions.js").then((m) => m.seedQuestionsIfNeeded()).catch(() => {});
+      import("./seed-labs.js").then((m) => m.seedLabsIfNeeded()).catch(() => {});
+      import("./seed-flashcards.js").then((m) => m.seedFlashcardsIfNeeded()).catch(() => {});
+    }
     seedCategoriasIfNeeded(user.uid).catch(() => {});
 
     await carregarHoje();
@@ -739,7 +744,12 @@ function trocarTela(nome) {
   if (nome === "livro") carregarLivro();
   if (nome === "topologia" && !topologiaJaIniciada) {
     topologiaJaIniciada = true;
-    initTopologia(currentUser.uid);
+    import("./topology.js")
+      .then((m) => m.initTopologia(currentUser.uid))
+      .catch((e) => {
+        topologiaJaIniciada = false;
+        console.warn("[topologia] não foi possível carregar o editor:", e);
+      });
   }
   if (nome === "tutor" && !tutorJaIniciado) {
     tutorJaIniciado = true;
@@ -1620,6 +1630,7 @@ function modulosFiltrados() {
 }
 
 async function carregarTrilha() {
+  const { getModulosResumo } = await import("./seed-content.js");
   modulosCache = getModulosResumo();
   const [allTopics, progresso] = await Promise.all([getAllTopics(), getAllUserTopicProgress(currentUser.uid)]);
   allTopicsCache = allTopics;
