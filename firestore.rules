@@ -3,37 +3,76 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ---------- Helpers ----------
+    function autenticado() {
+      return request.auth != null;
+    }
+    function dono(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    // Campo de texto OPCIONAL: se vier no documento, precisa ser string dentro do limite.
+    function textoOpc(dados, campo, max) {
+      return !(campo in dados) || (dados[campo] is string && dados[campo].size() <= max);
+    }
+    // Campo numérico OPCIONAL não-negativo e dentro de um teto sensato.
+    function numeroOpc(dados, campo, teto) {
+      return !(campo in dados) || (dados[campo] is number && dados[campo] >= 0 && dados[campo] <= teto);
+    }
+
+    // Validações por subcoleção. Só rejeitam dado claramente abusivo/malformado —
+    // campos continuam opcionais pra não quebrar updates parciais do app.
+    function validaTarefa(d) {
+      return d.titulo is string && d.titulo.size() <= 200
+        && d.categoria in ["trabalho", "estudo", "bemestar"];
+    }
+    function validaTransacao(d) {
+      return numeroOpc(d, "valor", 1000000000)
+        && numeroOpc(d, "valorParcela", 1000000000)
+        && textoOpc(d, "descricao", 1000)
+        && textoOpc(d, "observacoes", 2000)
+        && textoOpc(d, "categoria", 200);
+    }
+    function validaTopologia(d) {
+      return textoOpc(d, "nome", 200) && textoOpc(d, "descricao", 4000);
+    }
+    function validaTextoNome(d, max) {
+      return textoOpc(d, "nome", max) && textoOpc(d, "descricao", 500);
+    }
+
     // --- Conteúdo global (curado) ---
-    // Leitura: qualquer usuário logado.
-    // Escrita: só o UID admin (você) pode popular/atualizar o conteúdo global.
-    // Troque "COLOQUE_SEU_UID_AQUI" pelo seu UID do Firebase Auth
-    // (Console > Authentication > Users > coluna "User UID").
+    // Leitura: qualquer usuário logado. Escrita: só o UID admin (popula content/**).
     match /content/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == "18Uv2Goc7cOdVPErrFV81COmvnT2";
+      allow read: if autenticado();
+      allow write: if dono("18Uv2Goc7cOdVPErrFV81COmvnT2");
     }
 
     // --- Dados pessoais do usuário ---
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // O próprio documento do usuário (profile, preferências).
+      allow read, delete: if dono(userId);
+      allow create, update: if dono(userId)
+        && request.resource.data.keys().size() <= 60;
 
-      // Validação extra nas tarefas (texto livre digitado pelo usuário):
-      // limita tamanho do título e restringe a categoria a valores esperados.
-      // Evita abuso de cota (ex: título gigante) e dados malformados quebrando a UI.
-      match /tarefas/{tarefaId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if request.auth != null && request.auth.uid == userId
-          && request.resource.data.titulo is string
-          && request.resource.data.titulo.size() <= 200
-          && request.resource.data.categoria in ["trabalho", "estudo", "bemestar"];
-      }
-
-      match /{subcollection}/{docId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Todas as subcoleções em uma única regra (evita o "catch-all permissivo"
+      // que, com a semântica OR do Firestore, anulava as validações específicas).
+      // Cada validação é ativada só pra sua coleção; o resto passa só pelo teto
+      // genérico de nº de campos — que nenhum documento legítimo do app encosta.
+      // 'delete' fica de fora da validação (não há request.resource num delete).
+      match /{sub}/{docId} {
+        allow read, delete: if dono(userId);
+        allow create, update: if dono(userId)
+          && request.resource.data.keys().size() <= 100
+          && (sub != "tarefas"               || validaTarefa(request.resource.data))
+          && (sub != "transacoes"            || validaTransacao(request.resource.data))
+          && (sub != "topologias"            || validaTopologia(request.resource.data))
+          && (sub != "categoriasFinanceiras" || validaTextoNome(request.resource.data, 120))
+          && (sub != "cartoes"               || validaTextoNome(request.resource.data, 120))
+          && (sub != "gastosFixos"           || textoOpc(request.resource.data, "descricao", 300))
+          && (sub != "leituras"              || numeroOpc(request.resource.data, "paginaAtual", 1000000));
       }
     }
 
-    // Bloqueia tudo que não foi explicitamente liberado acima
+    // Bloqueia tudo que não foi explicitamente liberado acima.
     match /{document=**} {
       allow read, write: if false;
     }
