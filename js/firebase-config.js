@@ -10,7 +10,7 @@ import {
   persistentMultipleTabManager,
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { getAI, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-ai.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDCfSuD0tDJeT_9yiKe9cwzZI9dNZBNQaI",
@@ -33,19 +33,19 @@ export const db = initializeFirestore(app, {
 });
 
 // App Check: protege Firestore/Auth/AI Logic contra chamadas automatizadas (bots, scripts)
-// que não venham do seu app de verdade. Funciona no plano gratuito Spark.
-// Troque "SUA_CHAVE_RECAPTCHA_V3_AQUI" pela site key gerada em
-// Firebase Console > App Check > Registrar app > reCAPTCHA v3.
-const CHAVE_RECAPTCHA_V3 = "6LdgbKktAAAAAH_If3V3Npdq-8Lbqr628AJUjPoZ";
+// que não venham do seu app de verdade. Usa reCAPTCHA Enterprise — o reCAPTCHA v3
+// "clássico" foi descontinuado pelo Google como provedor de App Check em 2025.
+// Site key gerada em Firebase Console > App Check > Registrar app > reCAPTCHA Enterprise.
+const CHAVE_RECAPTCHA_ENTERPRISE = "6LdgbKktAAAAAH_If3V3Npdq-8Lbqr628AJUjPoZ";
 
 export let appCheck = null;
-if (CHAVE_RECAPTCHA_V3 !== "SUA_CHAVE_RECAPTCHA_V3_AQUI") {
+if (CHAVE_RECAPTCHA_ENTERPRISE !== "SUA_CHAVE_RECAPTCHA_AQUI") {
   appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(CHAVE_RECAPTCHA_V3),
+    provider: new ReCaptchaEnterpriseProvider(CHAVE_RECAPTCHA_ENTERPRISE),
     isTokenAutoRefreshEnabled: true,
   });
 } else {
-  console.info("[App Check] Ainda não configurado — troque CHAVE_RECAPTCHA_V3 em firebase-config.js quando quiser ativar essa camada extra de segurança.");
+  console.info("[App Check] Ainda não configurado — troque CHAVE_RECAPTCHA_ENTERPRISE em firebase-config.js quando quiser ativar essa camada extra de segurança.");
 }
 
 // Firebase AI Logic, backend "Gemini Developer API" — funciona no plano Spark (gratuito),
