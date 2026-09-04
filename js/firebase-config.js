@@ -36,7 +36,7 @@ export const db = initializeFirestore(app, {
 // que não venham do seu app de verdade. Funciona no plano gratuito Spark.
 // Troque "SUA_CHAVE_RECAPTCHA_V3_AQUI" pela site key gerada em
 // Firebase Console > App Check > Registrar app > reCAPTCHA v3.
-const CHAVE_RECAPTCHA_V3 = "SUA_CHAVE_RECAPTCHA_V3_AQUI";
+const CHAVE_RECAPTCHA_V3 = "6LdgbKktAAAAAH_If3V3Npdq-8Lbqr628AJUjPoZ";
 
 export let appCheck = null;
 if (CHAVE_RECAPTCHA_V3 !== "SUA_CHAVE_RECAPTCHA_V3_AQUI") {
