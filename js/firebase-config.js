@@ -36,7 +36,7 @@ export const db = initializeFirestore(app, {
 // que não venham do seu app de verdade. Usa reCAPTCHA Enterprise — o reCAPTCHA v3
 // "clássico" foi descontinuado pelo Google como provedor de App Check em 2025.
 // Site key gerada em Firebase Console > App Check > Registrar app > reCAPTCHA Enterprise.
-const CHAVE_RECAPTCHA_ENTERPRISE = "6LdgbKktAAAAAH_If3V3Npdq-8Lbqr628AJUjPoZ";
+const CHAVE_RECAPTCHA_ENTERPRISE = "6LdgbKktAAAAAKZkjg78N6EFicrB1FLHlEsnTHjm";
 
 export let appCheck = null;
 if (CHAVE_RECAPTCHA_ENTERPRISE !== "SUA_CHAVE_RECAPTCHA_AQUI") {
