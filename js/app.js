@@ -64,14 +64,14 @@ import {
   isLembreteAtivo,
   iniciarVerificacaoLembrete,
 } from "./reminder.js";
-import { explicarTopico, perguntarLivre } from "./ai-tutor.js";
+import { explicarTopico, perguntarLivre, explicarTrechoLivro } from "./ai-tutor.js";
 import { logActivity, getAllTopics, getAllUserTopicProgress, getUserTopicProgress, upsertUserTopicProgress } from "./data-schema.js";
 import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
 import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
 import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, editarTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
 import { escapeHtml } from "./utils.js";
-import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, irParaPagina, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, editarLivroLocal, removerLivroLocal, removerProgressoLeitura, gerarCapaAutomatica, getCapaEstaticaCache } from "./reader.js";
+import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, irParaPagina, getTextoPaginaAtual, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, editarLivroLocal, removerLivroLocal, removerProgressoLeitura, gerarCapaAutomatica, getCapaEstaticaCache } from "./reader.js";
 import { capituloDaLicao, acharLivroDoVolume, TOTAL_CAPITULOS } from "./book-map.js";
 import {
   iniciarCronometro,
@@ -3558,6 +3558,28 @@ document.getElementById("btn-marcar-cap")?.addEventListener("click", () => {
   }
   setPaginaCapitulo(livroAbertoId, cap, livroAbertoPagina);
   mostrarToast(`Capítulo ${cap} marcado na página ${livroAbertoPagina}.`, "sucesso");
+});
+
+// "Explicar esta página em português": extrai o texto da página aberta e pede
+// ao Tutor IA uma explicação didática dos conceitos (não uma tradução literal).
+document.getElementById("btn-explicar-pagina")?.addEventListener("click", async () => {
+  const btn = document.getElementById("btn-explicar-pagina");
+  const painel = document.getElementById("livro-explicacao");
+  painel.classList.remove("hidden");
+  painel.textContent = "Lendo a página e gerando explicação…";
+  btn.disabled = true;
+  try {
+    const texto = await getTextoPaginaAtual();
+    if (!texto || texto.length < 40) {
+      painel.textContent = "Não consegui extrair texto desta página — pode ser uma imagem, diagrama ou página em branco.";
+      return;
+    }
+    painel.textContent = await explicarTrechoLivro(texto.slice(0, 6000));
+  } catch (e) {
+    painel.textContent = "Não foi possível gerar a explicação agora. Verifique se o Firebase AI Logic está ativado no console do Firebase.";
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 document.getElementById("btn-pagina-anterior").addEventListener("click", async () => {

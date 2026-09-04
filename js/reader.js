@@ -301,6 +301,23 @@ export async function paginaAnterior(uid, canvas, onProgresso) {
   if (onProgresso) onProgresso(paginaAtual, totalPaginas);
 }
 
+/** Extrai o texto da página que está sendo lida — usado pra pedir ao Tutor IA
+ * uma explicação em português do conteúdo daquela página. */
+export async function getTextoPaginaAtual() {
+  if (!pdfDoc) return "";
+  try {
+    const pagina = await pdfDoc.getPage(paginaAtual);
+    const conteudo = await pagina.getTextContent();
+    return conteudo.items
+      .map((i) => i.str || "")
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+  } catch {
+    return "";
+  }
+}
+
 export async function irParaPagina(uid, canvas, numero, onProgresso) {
   const alvo = Math.max(1, Math.min(totalPaginas, numero));
   paginaAtual = alvo;

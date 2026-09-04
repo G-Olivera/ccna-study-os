@@ -1296,3 +1296,11 @@ button:active { transform: scale(0.97); }
 }
 .cap-cel.andamento { background: var(--amber-soft); color: var(--amber); border-color: var(--amber); }
 .cap-cel.concluido { background: var(--sage-soft); color: var(--sage); border-color: var(--sage); }
+
+/* Explicação da página do livro em português (Tutor IA) */
+.livro-explicar { margin-top: 12px; }
+.livro-explicacao {
+  margin-top: 10px; background: var(--surface-quiet); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px 16px; font-size: 14px; line-height: 1.65;
+  color: var(--ink); white-space: pre-wrap; max-height: 440px; overflow-y: auto;
+}

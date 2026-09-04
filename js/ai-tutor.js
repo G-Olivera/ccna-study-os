@@ -50,6 +50,22 @@ export async function explicarTopico(nomeTopico, modo = MODOS_EXPLICACAO.INICIAN
   return result.response.text();
 }
 
+/** Explica em português o conteúdo de um trecho da página que o usuário está lendo no livro.
+ * Não é tradução literal — é uma explicação didática dos conceitos, como assistente de estudo
+ * sobre o material que o próprio usuário possui. */
+export async function explicarTrechoLivro(trecho) {
+  const prompt =
+    "O texto a seguir é um trecho de uma página de um livro técnico de CCNA que estou lendo em inglês. " +
+    "Explique em português brasileiro, com SUAS PRÓPRIAS PALAVRAS, os conceitos que esse trecho apresenta. " +
+    "Não faça tradução literal frase a frase — resuma e ensine a ideia principal em tópicos curtos. " +
+    "Mantenha comandos Cisco IOS, siglas e nomes de protocolo no original. " +
+    "Se o trecho for só índice, cabeçalho ou legenda de figura, diga que não há conteúdo explicável nesta página.\n\n" +
+    "--- TRECHO ---\n" +
+    trecho;
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+}
+
 /** Pergunta livre pro tutor, com RAG buscando contexto relevante na sua própria Trilha.
  * `modo` e `contexto` agora influenciam de verdade o prompt (antes só existiam pra explicarTopico). */
 export async function perguntarLivre(pergunta, modo = MODOS_EXPLICACAO.INICIANTE, contexto = null) {
