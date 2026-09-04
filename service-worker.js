@@ -9,7 +9,7 @@
 // Gemini (outros domínios, e tudo que não for GET) passam direto pra rede,
 // sem interferência — nunca ficam em cache, pra não servir dados desatualizados.
 
-const CACHE_NAME = "ccna-study-os-v36";
+const CACHE_NAME = "ccna-study-os-v37";
 
 const APP_SHELL = [
   "./",

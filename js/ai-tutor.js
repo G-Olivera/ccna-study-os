@@ -66,6 +66,21 @@ export async function explicarTrechoLivro(trecho) {
   return result.response.text();
 }
 
+/** Lista, em português, os termos técnicos / siglas / comandos que aparecem no
+ * trecho da página — cada um com uma definição curta. Não traduz o trecho. */
+export async function glossarioDoTrecho(trecho) {
+  const prompt =
+    "Abaixo está um trecho de uma página de um livro de CCNA em inglês. " +
+    "Liste os termos técnicos, siglas e comandos Cisco IOS que aparecem nele. " +
+    "Para cada um, escreva uma linha no formato 'TERMO — definição curta em português'. " +
+    "Ordene do mais importante para o menos. Não traduza o trecho inteiro, só monte o glossário. " +
+    "Se não houver termos técnicos relevantes, diga isso.\n\n" +
+    "--- TRECHO ---\n" +
+    trecho;
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+}
+
 /** Pergunta livre pro tutor, com RAG buscando contexto relevante na sua própria Trilha.
  * `modo` e `contexto` agora influenciam de verdade o prompt (antes só existiam pra explicarTopico). */
 export async function perguntarLivre(pergunta, modo = MODOS_EXPLICACAO.INICIANTE, contexto = null) {

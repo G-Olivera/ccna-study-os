@@ -64,7 +64,7 @@ import {
   isLembreteAtivo,
   iniciarVerificacaoLembrete,
 } from "./reminder.js";
-import { explicarTopico, perguntarLivre, explicarTrechoLivro } from "./ai-tutor.js";
+import { explicarTopico, perguntarLivre, explicarTrechoLivro, glossarioDoTrecho } from "./ai-tutor.js";
 import { logActivity, getAllTopics, getAllUserTopicProgress, getUserTopicProgress, upsertUserTopicProgress } from "./data-schema.js";
 import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
 import { definirCronograma, calcularRitmo } from "./planner.js";
@@ -3560,27 +3560,35 @@ document.getElementById("btn-marcar-cap")?.addEventListener("click", () => {
   mostrarToast(`Capítulo ${cap} marcado na página ${livroAbertoPagina}.`, "sucesso");
 });
 
-// "Explicar esta página em português": extrai o texto da página aberta e pede
-// ao Tutor IA uma explicação didática dos conceitos (não uma tradução literal).
-document.getElementById("btn-explicar-pagina")?.addEventListener("click", async () => {
-  const btn = document.getElementById("btn-explicar-pagina");
+// Assistentes de leitura: extraem o texto da página aberta e pedem ao Tutor IA
+// uma explicação em PT-BR (não tradução literal) ou um glossário dos termos.
+async function assistirPaginaLivro(fnIA, textoCarregando) {
   const painel = document.getElementById("livro-explicacao");
+  const botoes = document.querySelectorAll("#btn-explicar-pagina, #btn-glossario-pagina");
   painel.classList.remove("hidden");
-  painel.textContent = "Lendo a página e gerando explicação…";
-  btn.disabled = true;
+  painel.textContent = textoCarregando;
+  botoes.forEach((b) => (b.disabled = true));
   try {
     const texto = await getTextoPaginaAtual();
     if (!texto || texto.length < 40) {
       painel.textContent = "Não consegui extrair texto desta página — pode ser uma imagem, diagrama ou página em branco.";
       return;
     }
-    painel.textContent = await explicarTrechoLivro(texto.slice(0, 6000));
+    painel.textContent = await fnIA(texto.slice(0, 6000));
   } catch (e) {
-    painel.textContent = "Não foi possível gerar a explicação agora. Verifique se o Firebase AI Logic está ativado no console do Firebase.";
+    painel.textContent = "Não foi possível gerar agora. Verifique se o Firebase AI Logic está ativado no console do Firebase.";
   } finally {
-    btn.disabled = false;
+    botoes.forEach((b) => (b.disabled = false));
   }
-});
+}
+
+document
+  .getElementById("btn-explicar-pagina")
+  ?.addEventListener("click", () => assistirPaginaLivro(explicarTrechoLivro, "Lendo a página e gerando explicação…"));
+
+document
+  .getElementById("btn-glossario-pagina")
+  ?.addEventListener("click", () => assistirPaginaLivro(glossarioDoTrecho, "Montando o glossário desta página…"));
 
 document.getElementById("btn-pagina-anterior").addEventListener("click", async () => {
   const canvas = document.getElementById("livro-canvas");
