@@ -1304,3 +1304,23 @@ button:active { transform: scale(0.97); }
   border-radius: var(--radius-sm); padding: 14px 16px; font-size: 14px; line-height: 1.65;
   color: var(--ink); white-space: pre-wrap; max-height: 440px; overflow-y: auto;
 }
+
+/* ===== SEGURANÇA: banner de e-mail não verificado + aviso de lockout do MFA ===== */
+.banner-email {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--amber-soft); color: var(--ink);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px; font-size: 13px;
+}
+.banner-email span { flex: 1; min-width: 200px; color: var(--ink); }
+.banner-email-fechar {
+  background: none; border: none; color: var(--ink-soft); font-size: 14px;
+  width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+}
+.banner-email-fechar:hover { background: rgba(0,0,0,0.06); }
+.mfa-aviso-lockout {
+  background: var(--terracotta-soft); color: var(--ink);
+  border: 1px solid var(--terracotta); border-radius: var(--radius-sm);
+  padding: 10px 12px; font-size: 12px; line-height: 1.55;
+}
+.mfa-aviso-lockout strong { display: block; margin-bottom: 4px; color: var(--terracotta); }

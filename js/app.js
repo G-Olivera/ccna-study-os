@@ -522,6 +522,29 @@ const SECOES_LABEL = { teoria: "Teoria", lab: "Laboratório", revisao: "Revisão
 
 // ---------- AUTH ----------
 
+// Traduz códigos de erro do Firebase Auth pra mensagens curtas em português.
+// wrong-password / user-not-found / invalid-credential caem todos na MESMA
+// mensagem de propósito — não revela se o e-mail existe (anti-enumeração).
+function mensagemErroAuth(code) {
+  const mapa = {
+    "auth/invalid-email": "E-mail inválido.",
+    "auth/user-disabled": "Esta conta foi desativada.",
+    "auth/user-not-found": "E-mail ou senha inválidos.",
+    "auth/wrong-password": "E-mail ou senha inválidos.",
+    "auth/invalid-credential": "E-mail ou senha inválidos.",
+    "auth/too-many-requests": "Muitas tentativas. Aguarde alguns minutos antes de tentar de novo.",
+    "auth/email-already-in-use": "Já existe uma conta com esse e-mail.",
+    "auth/weak-password": "Senha fraca — use pelo menos 8 caracteres, com letras e números.",
+    "auth/network-request-failed": "Sem conexão. Verifique sua internet e tente de novo.",
+  };
+  return mapa[code] || "Não foi possível concluir agora. Tente de novo.";
+}
+
+// Política mínima de senha (usada só na criação de conta).
+function senhaAtendePolitica(senha) {
+  return typeof senha === "string" && senha.length >= 8 && /[A-Za-z]/.test(senha) && /[0-9]/.test(senha);
+}
+
 // Medidor de força de senha — heurística simples (tamanho + variedade de caracteres),
 // só um retorno visual pra ajudar a escolher senhas melhores.
 function avaliarForcaSenha(senha) {
@@ -545,7 +568,9 @@ document.getElementById("login-senha").addEventListener("input", (e) => {
   const senha = e.target.value;
   const wrapper = document.getElementById("forca-senha-wrapper");
 
-  if (!senha) {
+  // O medidor só serve pra escolher senha na CRIAÇÃO de conta. Como o signup
+  // fica desativado por padrão (sem #btn-signup no HTML), no login ele nunca aparece.
+  if (!senha || !document.getElementById("btn-signup")) {
     wrapper.classList.add("hidden");
     return;
   }
@@ -583,7 +608,7 @@ async function tentarLogin() {
       limparCaixasMFA();
       document.querySelectorAll(".mfa-code-box")[0].focus();
     } else {
-      document.getElementById("login-erro").textContent = "E-mail ou senha inválidos.";
+      document.getElementById("login-erro").textContent = mensagemErroAuth(e.code);
     }
   }
 }
@@ -667,10 +692,47 @@ document.getElementById("btn-voltar-login").addEventListener("click", () => {
 document.getElementById("btn-signup")?.addEventListener("click", async () => {
   const email = document.getElementById("login-email").value;
   const senha = document.getElementById("login-senha").value;
+  const erroEl = document.getElementById("login-erro");
+  erroEl.textContent = "";
+  if (!senhaAtendePolitica(senha)) {
+    erroEl.textContent = "Crie uma senha com no mínimo 8 caracteres, incluindo letras e números.";
+    return;
+  }
   try {
-    await createUserWithEmailAndPassword(auth, email, senha);
+    const cred = await createUserWithEmailAndPassword(auth, email, senha);
+    await sendEmailVerification(cred.user).catch(() => {});
   } catch (e) {
-    document.getElementById("login-erro").textContent = e.message;
+    erroEl.textContent = mensagemErroAuth(e.code);
+  }
+});
+
+// Aviso persistente (não bloqueia o app) enquanto o e-mail não estiver verificado.
+// Pode ser dispensado; volta a aparecer no próximo login se ainda não verificou.
+function atualizarBannerEmail(user) {
+  const banner = document.getElementById("banner-email-nao-verificado");
+  if (!banner) return;
+  const dispensado = sessionStorage.getItem("banner-email-dispensado") === "1";
+  banner.classList.toggle("hidden", !user || user.emailVerified || dispensado);
+}
+
+document.getElementById("btn-fechar-banner-email")?.addEventListener("click", () => {
+  sessionStorage.setItem("banner-email-dispensado", "1");
+  document.getElementById("banner-email-nao-verificado").classList.add("hidden");
+});
+
+document.getElementById("btn-reenviar-verificacao")?.addEventListener("click", async () => {
+  const btn = document.getElementById("btn-reenviar-verificacao");
+  if (!currentUser) return;
+  btn.disabled = true;
+  btn.textContent = "Enviando…";
+  try {
+    await sendEmailVerification(currentUser);
+    mostrarToast("E-mail de verificação enviado. Confira sua caixa de entrada.", "sucesso");
+  } catch (e) {
+    mostrarToast(mensagemErroAuth(e.code), "erro");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Reenviar e-mail";
   }
 });
 
@@ -693,12 +755,15 @@ onAuthStateChanged(auth, async (user) => {
     }
     seedCategoriasIfNeeded(user.uid).catch(() => {});
 
+    atualizarBannerEmail(user);
+
     await carregarHoje();
     await inicializarCronometroUI();
     iniciarVerificacaoLembrete();
     resetarTimerInatividade();
     carregarIndiceBusca().catch(() => {});
   } else {
+    document.getElementById("banner-email-nao-verificado")?.classList.add("hidden");
     currentUser = null;
     document.getElementById("login-screen").classList.remove("hidden");
     document.getElementById("app-shell").classList.add("hidden");
@@ -2543,8 +2608,8 @@ async function renderCartoesCompleto() {
 
   document.getElementById("lista-cartoes").innerHTML = cartoesComFatura
     .map((c) => {
-      const cor = corDoBanco(c.nome);
-      const inicial = c.nome.trim().charAt(0).toUpperCase();
+      const cor = corHexSegura(corDoBanco(c.nome), "#5B6672");
+      const inicial = escapeHtml(c.nome.trim().charAt(0).toUpperCase());
       const percentualLimite = c.limiteTotal ? Math.min(100, Math.round((c.faturaAtual / c.limiteTotal) * 100)) : null;
       return `
       <div class="cartao-item" style="flex-direction:column; align-items:stretch;">
@@ -3030,10 +3095,23 @@ async function carregarMFA() {
           <div class="mfa-status-desc">Seu login pede o código do app autenticador.</div>
         </div>
       </div>`;
-    areaEl.innerHTML = `<button class="btn-secondary" id="btn-remover-mfa" style="color:var(--terracotta); border-color:var(--terracotta);">Desativar dois fatores</button>`;
+    areaEl.innerHTML = `
+      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">
+        Sem app autenticador não dá pra entrar. Se trocar de celular, desative aqui
+        (logado) antes, ou reative com a chave secreta que você guardou.
+      </p>
+      <button class="btn-secondary" id="btn-remover-mfa" style="color:var(--terracotta); border-color:var(--terracotta);">Desativar dois fatores</button>`;
     document.getElementById("btn-remover-mfa").addEventListener("click", async () => {
-      await removerFatorMFA(currentUser, fatores[0].uid);
-      await carregarMFA();
+      try {
+        await removerFatorMFA(currentUser, fatores[0].uid);
+        await carregarMFA();
+      } catch (e) {
+        if (e.code === "auth/requires-recent-login") {
+          mostrarToast("Por segurança, saia e entre de novo antes de desativar o MFA.", "erro");
+        } else {
+          mostrarToast("Não consegui desativar agora. Tente de novo.", "erro");
+        }
+      }
     });
     return;
   }
@@ -3079,15 +3157,30 @@ async function iniciarFluxoAtivacaoMFA() {
 
     areaEl.innerHTML = `
       <p style="font-size:13px; margin-bottom:8px;">1. Abra o Google Authenticator, Authy ou similar e adicione uma conta manualmente com esta chave:</p>
-      <div style="font-family:var(--font-mono); font-size:14px; background:var(--surface-quiet); padding:10px; border-radius:8px; margin-bottom:12px; word-break:break-all; user-select:all;">${secretKey}</div>
+      <div style="font-family:var(--font-mono); font-size:14px; background:var(--surface-quiet); padding:10px; border-radius:8px; margin-bottom:10px; word-break:break-all; user-select:all;">${secretKey}</div>
+      <div class="mfa-aviso-lockout">
+        <strong>⚠ Guarde esta chave num lugar seguro</strong> (gerenciador de senhas, papel).
+        Se você perder o acesso ao app autenticador e não tiver a chave, só será possível
+        recuperar a conta desativando o MFA enquanto ainda estiver logado — não há código de backup.
+      </div>
+      <label style="display:flex; gap:8px; align-items:flex-start; font-size:12px; margin:10px 0;">
+        <input type="checkbox" id="check-mfa-chave-guardada" />
+        <span>Guardei a chave secreta num lugar seguro.</span>
+      </label>
       <p style="font-size:13px; margin-bottom:8px;">2. Digite o código de 6 dígitos que o app gerou:</p>
       <input id="input-mfa-cadastro-codigo" type="text" inputmode="numeric" maxlength="6" placeholder="000000" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); text-align:center; letter-spacing:4px; font-family:var(--font-mono); margin-bottom:10px;" />
-      <button class="btn-primary" id="btn-confirmar-cadastro-mfa">Confirmar e ativar</button>
+      <button class="btn-primary" id="btn-confirmar-cadastro-mfa" disabled>Confirmar e ativar</button>
     `;
 
-    document.getElementById("btn-confirmar-cadastro-mfa").addEventListener("click", async () => {
+    const checkChave = document.getElementById("check-mfa-chave-guardada");
+    const btnConfirmar = document.getElementById("btn-confirmar-cadastro-mfa");
+    checkChave.addEventListener("change", () => {
+      btnConfirmar.disabled = !checkChave.checked;
+    });
+
+    btnConfirmar.addEventListener("click", async () => {
       const codigo = document.getElementById("input-mfa-cadastro-codigo").value;
-      if (!codigo) return;
+      if (!codigo || !checkChave.checked) return;
       try {
         await confirmarCadastroMFA(currentUser, totpSecretPendente, codigo);
         await carregarMFA();
@@ -3116,8 +3209,18 @@ let filtroStatusLivro = "todos";
 let visualizacaoLivro = "grid";
 let menuLivroAberto = null;
 
+// Só deixa passar um #rgb / #rrggbb válido pra dentro de style="" — impede que um
+// valor manipulado no armazenamento local injete CSS (ex: "red;background:url(...)").
+function corHexSegura(valor, fallback = "#3E6B6B") {
+  return typeof valor === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(valor.trim())
+    ? valor.trim()
+    : fallback;
+}
+
 function corTextoContraste(hex) {
-  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  const seguro = corHexSegura(hex);
+  const h = seguro.length === 4 ? `#${seguro[1]}${seguro[1]}${seguro[2]}${seguro[2]}${seguro[3]}${seguro[3]}` : seguro;
+  const r = parseInt(h.slice(1, 3), 16), g = parseInt(h.slice(3, 5), 16), b = parseInt(h.slice(5, 7), 16);
   return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#24303A" : "#FFFFFF";
 }
 
@@ -3242,7 +3345,7 @@ function renderContinueLendo() {
       const corTexto = corTextoContraste(livro.corCapa);
       return `
       <div class="livro-continue-card">
-        <div class="livro-capa ${capaDoLivro(livro) ? "livro-capa-com-imagem" : ""}" style="background:${livro.corCapa}; color:${corTexto}; aspect-ratio:auto; height:100%; border-radius:8px;">
+        <div class="livro-capa ${capaDoLivro(livro) ? "livro-capa-com-imagem" : ""}" style="background:${corHexSegura(livro.corCapa)}; color:${corTexto}; aspect-ratio:auto; height:100%; border-radius:8px;">
           ${htmlCapa(livro, 16)}
         </div>
         <div class="livro-continue-info">
@@ -3296,7 +3399,7 @@ function renderBiblioteca() {
         const corTexto = corTextoContraste(livro.corCapa);
         return `
         <div class="livro-card">
-          <div class="livro-capa ${capaDoLivro(livro) ? "livro-capa-com-imagem" : ""}" style="background:${livro.corCapa}; color:${corTexto};">
+          <div class="livro-capa ${capaDoLivro(livro) ? "livro-capa-com-imagem" : ""}" style="background:${corHexSegura(livro.corCapa)}; color:${corTexto};">
             ${htmlCapa(livro)}
             ${livro.origem === "local" ? `<span class="livro-tag-local">Neste aparelho</span>` : ""}
           </div>
@@ -3324,7 +3427,7 @@ function renderBiblioteca() {
         const ultima = progresso?.atualizadaEm ? formatarDataRelativa(progresso.atualizadaEm) : "—";
         return `
         <div class="lista-livros-linha">
-          <div class="lista-livros-capa-mini ${capaDoLivro(livro) ? "livro-capa-com-imagem" : ""}" style="background:${livro.corCapa};">${htmlCapa(livro, 9)}</div>
+          <div class="lista-livros-capa-mini ${capaDoLivro(livro) ? "livro-capa-com-imagem" : ""}" style="background:${corHexSegura(livro.corCapa)};">${htmlCapa(livro, 9)}</div>
           <div>
             <div class="livro-titulo" style="margin-bottom:0;">${escapeHtml(livro.titulo)} ${favorito ? "★" : ""}</div>
             <div class="livro-meta" style="margin-bottom:0;">${escapeHtml(livro.autor || "")}</div>
