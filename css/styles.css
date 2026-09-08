@@ -1431,3 +1431,23 @@ button:active { transform: scale(0.97); }
   .cyber-metrics { grid-template-columns: 1fr; }
   .cyber-track-grid { grid-template-columns: 1fr; }
 }
+
+/* Laboratório Cybersecurity — execução interativa */
+.cyber-lab-ambiente {
+  font-size: 12px; color: var(--sage); background: var(--sage-soft);
+  border: 1px solid var(--sage); border-radius: var(--radius-sm); padding: 8px 10px; margin: 10px 0;
+}
+.cyber-lab-progresso { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.cyber-lab-progresso .track { flex: 1; }
+.cyber-lab-progresso span { font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
+.cyber-lab-checklist { display: flex; flex-direction: column; gap: 6px; }
+.cyber-lab-check {
+  display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer;
+}
+.cyber-lab-check input { margin-top: 2px; flex-shrink: 0; }
+.cyber-lab-check:has(input:checked) { background: var(--sage-soft); border-color: var(--sage); }
+.cyber-lab-conclusao {
+  width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--ink); font-family: var(--font-body); font-size: 13px; resize: vertical;
+}

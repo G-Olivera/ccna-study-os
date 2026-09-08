@@ -82,6 +82,19 @@ export async function marcarLicaoCyber(uid, licaoId, mastery) {
   await logActivity(uid, "cyber_licao", licaoId, 5).catch(() => {});
 }
 
+export async function salvarProgressoLab(uid, labId, dados) {
+  await setDoc(
+    doc(db, "users", uid, "cyberLabProgress", labId),
+    { ...dados, lastUpdated: serverTimestamp() },
+    { merge: true }
+  );
+}
+
+export async function concluirLab(uid, labId, conclusao, tempoMin) {
+  await salvarProgressoLab(uid, labId, { concluido: true, conclusao: conclusao || "", concluidoEm: new Date().toISOString() });
+  await logActivity(uid, "cyber_lab", labId, tempoMin || 20).catch(() => {});
+}
+
 // ---------- CÁLCULO DE PROGRESSO ----------
 
 const LICAO_CONCLUIDA = 80;
@@ -226,8 +239,13 @@ function painelTrilhaHtml(track, lessons, progLicoes) {
     .map((l) => {
       const m = progLicoes[l.id]?.masteryPercent ?? 0;
       const feita = m >= LICAO_CONCLUIDA;
+      // Lições do tipo "lab" abrem o laboratório interativo em vez do texto.
+      const attrs =
+        l.tipo === "lab" && l.labId
+          ? `data-cyber-abrir-lab="${l.labId}"`
+          : `data-cyber-licao="${l.id}" data-cyber-licao-nome="${escapeHtml(l.nome)}"`;
       return `
-      <button class="cyber-licao-linha ${feita ? "feita" : ""}" data-cyber-licao="${l.id}" data-cyber-licao-nome="${escapeHtml(l.nome)}">
+      <button class="cyber-licao-linha ${feita ? "feita" : ""}" ${attrs}>
         <span class="cyber-licao-status">${feita ? "✓" : ""}</span>
         <span class="cyber-licao-nome">${escapeHtml(l.nome)}</span>
         <span class="cyber-licao-tipo">${TIPO_LABEL[l.tipo] || l.tipo}${l.ccnaTopicId ? " · ligado ao CCNA" : ""}</span>
@@ -318,8 +336,9 @@ async function render() {
 
   raiz.innerHTML = html;
 
-  // Reabre o painel da trilha que estava aberto (após re-render pós "marcar estudada").
-  if (trilhaAbertaId) abrirPainelTrilha(trilhaAbertaId, { silencioso: true });
+  // Reabre o painel que estava aberto (após re-render pós conclusão de lição/lab).
+  if (labAbertoId) abrirLabPainel(labAbertoId);
+  else if (trilhaAbertaId) abrirPainelTrilha(trilhaAbertaId, { silencioso: true });
 }
 
 function abrirPainelTrilha(trackId, { silencioso = false } = {}) {
@@ -333,12 +352,6 @@ function abrirPainelTrilha(trackId, { silencioso = false } = {}) {
     slot.innerHTML = painelTrilhaHtml(track, lessons, prog.licoes);
     if (!silencioso) document.getElementById("cyber-painel-trilha")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
-}
-
-function fecharPainelTrilha() {
-  trilhaAbertaId = null;
-  const slot = document.getElementById("cyber-slot-painel");
-  if (slot) slot.innerHTML = "";
 }
 
 async function abrirLicao(licaoId, licaoNome) {
@@ -377,11 +390,13 @@ function ligarEventos() {
     const licao = e.target.closest("[data-cyber-licao]");
     const marcar = e.target.closest("[data-cyber-marcar]");
     const abrirLab = e.target.closest("[data-cyber-abrir-lab]");
+    const salvarLab = e.target.closest("[data-cyber-lab-salvar]");
+    const concluirLabBtn = e.target.closest("[data-cyber-lab-concluir]");
 
     if (comecar || abrirTrilha) {
       abrirPainelTrilha((comecar || abrirTrilha).dataset.cyberComecar || abrirTrilha.dataset.cyberAbrirTrilha);
     } else if (fecharTrilha) {
-      fecharPainelTrilha();
+      fecharPainel();
     } else if (licao) {
       abrirLicao(licao.dataset.cyberLicao, licao.dataset.cyberLicaoNome);
     } else if (marcar) {
@@ -392,22 +407,120 @@ function ligarEventos() {
       await marcarLicaoCyber(uidAtual, btn.dataset.cyberMarcar, Math.max(atual, 100));
       await render();
     } else if (abrirLab) {
-      // Fase 2 abre a execução completa do lab. Por ora, leva ao checklist.
-      abrirLabResumo(abrirLab.dataset.cyberAbrirLab);
+      abrirLabPainel(abrirLab.dataset.cyberAbrirLab);
+    } else if (salvarLab) {
+      await persistirEstadoLab(salvarLab.dataset.cyberLabSalvar);
+      const st = document.getElementById("cyber-lab-status");
+      if (st) st.textContent = "Progresso salvo.";
+    } else if (concluirLabBtn) {
+      const labId = concluirLabBtn.dataset.cyberLabConcluir;
+      const lab = conteudoCache.labs.find((l) => l.id === labId);
+      const conclusao = document.getElementById("cyber-lab-conclusao")?.value?.trim() || "";
+      if (!estadoLabCompleto(labId, lab)) return;
+      concluirLabBtn.disabled = true;
+      concluirLabBtn.textContent = "Registrando…";
+      await persistirEstadoLab(labId);
+      await concluirLab(uidAtual, labId, conclusao, lab?.tempoMin);
+      await render();
+    }
+  });
+
+  // Checkbox do checklist e textarea de conclusão (não são 'click').
+  raiz.addEventListener("change", (e) => {
+    const chk = e.target.closest("[data-cyber-lab-item]");
+    if (chk) {
+      atualizarBotaoConcluirLab(chk.closest("[data-cyber-lab-painel]")?.dataset.cyberLabPainel);
+      agendarSalvarLab(chk.closest("[data-cyber-lab-painel]")?.dataset.cyberLabPainel);
+    }
+  });
+  raiz.addEventListener("input", (e) => {
+    if (e.target.id === "cyber-lab-conclusao") {
+      const labId = e.target.closest("[data-cyber-lab-painel]")?.dataset.cyberLabPainel;
+      atualizarBotaoConcluirLab(labId);
+      agendarSalvarLab(labId);
     }
   });
 }
 
-function abrirLabResumo(labId) {
-  const lab = conteudoCache.labs.find((l) => l.id === labId);
-  if (!lab) return;
-  const slot = document.getElementById("cyber-slot-painel");
-  if (!slot) return;
+// ---------- LABORATÓRIO INTERATIVO ----------
+
+let labAbertoId = null;
+let salvarLabTimer = null;
+
+function fecharPainel() {
   trilhaAbertaId = null;
+  labAbertoId = null;
+  const slot = document.getElementById("cyber-slot-painel");
+  if (slot) slot.innerHTML = "";
+}
+
+function itensMarcadosNoDom(labId) {
+  return Array.from(document.querySelectorAll(`[data-cyber-lab-painel="${labId}"] [data-cyber-lab-item]:checked`)).map((c) =>
+    Number(c.dataset.cyberLabItem)
+  );
+}
+
+function estadoLabCompleto(labId, lab) {
+  const total = (lab?.checklist || []).length;
+  const marcados = itensMarcadosNoDom(labId).length;
+  const conclusao = document.getElementById("cyber-lab-conclusao")?.value?.trim() || "";
+  return total > 0 && marcados === total && conclusao.length >= 10;
+}
+
+function atualizarBotaoConcluirLab(labId) {
+  if (!labId) return;
+  const lab = conteudoCache.labs.find((l) => l.id === labId);
+  const btn = document.querySelector(`[data-cyber-lab-concluir="${labId}"]`);
+  const barra = document.getElementById("cyber-lab-fill");
+  const texto = document.getElementById("cyber-lab-progresso-texto");
+  const total = (lab?.checklist || []).length;
+  const feitos = itensMarcadosNoDom(labId).length;
+  if (barra) barra.style.width = total ? `${Math.round((feitos / total) * 100)}%` : "0%";
+  if (texto) texto.textContent = `${feitos} de ${total} passos`;
+  if (btn) btn.disabled = !estadoLabCompleto(labId, lab);
+}
+
+async function persistirEstadoLab(labId) {
+  const conclusao = document.getElementById("cyber-lab-conclusao")?.value?.trim() || "";
+  await salvarProgressoLab(uidAtual, labId, { itensConcluidos: itensMarcadosNoDom(labId), conclusao });
+}
+
+function agendarSalvarLab(labId) {
+  if (!labId) return;
+  clearTimeout(salvarLabTimer);
+  salvarLabTimer = setTimeout(() => {
+    persistirEstadoLab(labId).catch(() => {});
+    const st = document.getElementById("cyber-lab-status");
+    if (st) st.textContent = "Progresso salvo automaticamente.";
+  }, 1200);
+}
+
+async function abrirLabPainel(labId) {
+  const lab = conteudoCache.labs.find((l) => l.id === labId);
+  const slot = document.getElementById("cyber-slot-painel");
+  if (!lab || !slot) return;
+  trilhaAbertaId = null;
+  labAbertoId = labId;
+
+  const prog = (await carregarProgresso(uidAtual)).labs[labId] || {};
+  const marcados = new Set(prog.itensConcluidos || []);
+  const total = (lab.checklist || []).length;
+  const feitos = marcados.size;
+
+  const itensHtml = (lab.checklist || [])
+    .map(
+      (c, i) => `
+      <label class="cyber-lab-check">
+        <input type="checkbox" data-cyber-lab-item="${i}" ${marcados.has(i) ? "checked" : ""} />
+        <span>${escapeHtml(c)}</span>
+      </label>`
+    )
+    .join("");
+
   slot.innerHTML = `
-    <div class="task-card cyber-painel-trilha">
+    <div class="task-card cyber-painel-trilha" data-cyber-lab-painel="${labId}">
       <div class="cyber-secao-header">
-        <h3>${escapeHtml(lab.nome)}</h3>
+        <h3>${escapeHtml(lab.nome)} ${prog.concluido ? '<span class="cyber-lab-ok">✓ concluído</span>' : ""}</h3>
         <button class="btn-secondary" data-cyber-fechar-trilha style="width:auto; margin-top:0; padding:6px 12px; font-size:12px;">Fechar</button>
       </div>
       <p style="font-size:13px; color:var(--ink-soft);">${escapeHtml(lab.descricao || "")}</p>
@@ -416,11 +529,28 @@ function abrirLabResumo(labId) {
         ~${lab.tempoMin || "?"} min ·
         Ferramenta: ${escapeHtml(lab.ferramenta || "—")}
       </p>
-      <p style="font-size:12px; color:var(--sage);">🔒 ${escapeHtml(lab.ambiente || "Ambiente de laboratório próprio/autorizado.")}</p>
-      <strong style="display:block; margin:12px 0 6px; font-size:13px;">Checklist</strong>
-      <ul class="cyber-checklist">${(lab.checklist || []).map((c) => `<li>${escapeHtml(c)}</li>`).join("")}</ul>
-      <p style="font-size:12px; color:var(--ink-soft); margin-top:12px;">A execução guiada com registro de conclusão chega na Fase 2.</p>
+      <p class="cyber-lab-ambiente">🔒 ${escapeHtml(lab.ambiente || "Execute somente em ambiente de laboratório próprio/autorizado e isolado.")}</p>
+
+      <div class="cyber-lab-progresso">
+        <div class="track"><div class="fill" id="cyber-lab-fill" style="width:${total ? Math.round((feitos / total) * 100) : 0}%; background:var(--sage);"></div></div>
+        <span id="cyber-lab-progresso-texto">${feitos} de ${total} passos</span>
+      </div>
+
+      <strong style="display:block; margin:14px 0 8px; font-size:13px;">Passos do laboratório</strong>
+      <div class="cyber-lab-checklist">${itensHtml}</div>
+
+      <label style="display:block; margin-top:16px; font-size:13px; font-weight:600;">Sua conclusão</label>
+      <p style="font-size:11px; color:var(--ink-soft); margin:2px 0 6px;">O que você encontrou, como classificou e o que faltaria confirmar (mín. 10 caracteres).</p>
+      <textarea id="cyber-lab-conclusao" class="cyber-lab-conclusao" rows="4" placeholder="Escreva sua conclusão do laboratório…">${escapeHtml(prog.conclusao || "")}</textarea>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+        <button class="btn-secondary" data-cyber-lab-salvar="${labId}" style="width:auto; margin-top:0;">Salvar progresso</button>
+        <button class="btn-primary" data-cyber-lab-concluir="${labId}" style="width:auto; margin-top:0;" disabled>Marcar lab como concluído</button>
+      </div>
+      <p id="cyber-lab-status" style="font-size:12px; color:var(--ink-soft); margin-top:8px;"></p>
     </div>`;
+
+  atualizarBotaoConcluirLab(labId);
   slot.querySelector(".cyber-painel-trilha")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
