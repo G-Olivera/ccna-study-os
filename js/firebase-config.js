@@ -1,7 +1,6 @@
 // firebase-config.js
 // Substitua os valores abaixo pelos do SEU projeto Firebase
 // (Console > Configurações do projeto > Seus apps > SDK setup and configuration).
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import {
@@ -10,7 +9,6 @@ import {
   persistentMultipleTabManager,
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { getAI, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-ai.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDCfSuD0tDJeT_9yiKe9cwzZI9dNZBNQaI",
@@ -33,26 +31,28 @@ export const db = initializeFirestore(app, {
 });
 
 // App Check: protege Firestore/Auth/AI Logic contra chamadas automatizadas (bots, scripts)
-// que não venham do seu app de verdade. Usa reCAPTCHA v3 "clássico" — o Firebase marca
-// esse provedor como não-recomendado pra projetos novos, mas ele continua funcionando
-// (só o Enterprise pediria criar uma chave de verdade no Google Cloud, normalmente com
-// faturamento ativado — fricção desnecessária pra um app pessoal).
+// que não venham do seu app de verdade.
 //
-// Duas chaves são geradas juntas no Google reCAPTCHA Admin (google.com/recaptcha/admin):
-// - CHAVE DE SITE (pública, vai aqui no código do cliente)
-// - CHAVE SECRETA (privada, NUNCA vai no código — cola só no Firebase Console em
-//   App Check > Apps > provedor "reCAPTCHA" > campo "Chave reCAPTCHA do secret")
-const CHAVE_RECAPTCHA_V3 = "6LdgbKktAAAAAKZkjg78N6EFicrB1FLHlEsnTHjm";
-
-export let appCheck = null;
-if (CHAVE_RECAPTCHA_V3 !== "SUA_CHAVE_RECAPTCHA_V3_AQUI") {
-  appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(CHAVE_RECAPTCHA_V3),
-    isTokenAutoRefreshEnabled: true,
-  });
-} else {
-  console.info("[App Check] Ainda não configurado — troque CHAVE_RECAPTCHA_V3 em firebase-config.js quando quiser ativar essa camada extra de segurança.");
-}
+// DESLIGADO por enquanto, de propósito: o reCAPTCHA v3 "clássico" foi descontinuado
+// pelo Google e já não funciona (erro 400 confirmado tentando usar, em 08/09/2026).
+// O substituto, reCAPTCHA Enterprise, tem cota gratuita de 10.000 avaliações/mês, mas
+// exige cadastrar um cartão de crédito no Google Cloud (mesmo sem cobrança dentro da
+// cota) — decisão consciente de não fazer isso agora. O app funciona 100% sem essa
+// camada extra; ela só adicionava proteção contra bots chamando a API diretamente
+// (sem passar pelo seu app de verdade). A segurança principal (regras do Firestore,
+// Auth, MFA) continua ativa normalmente.
+//
+// Pra ativar quando quiser: gere uma chave em Google Cloud Console > Segurança >
+// reCAPTCHA Enterprise > Criar chave (tipo "Site", domínio g-olivera.github.io) e troque
+// este bloco por:
+//
+// import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check.js";
+// const CHAVE_RECAPTCHA_ENTERPRISE = "SUA_CHAVE_AQUI";
+// export const appCheck = initializeAppCheck(app, {
+//   provider: new ReCaptchaEnterpriseProvider(CHAVE_RECAPTCHA_ENTERPRISE),
+//   isTokenAutoRefreshEnabled: true,
+// });
+export const appCheck = null;
 
 // Firebase AI Logic, backend "Gemini Developer API" — funciona no plano Spark (gratuito),
 // sem precisar de Cloud Functions nem cartão de crédito. Precisa estar ativado em
