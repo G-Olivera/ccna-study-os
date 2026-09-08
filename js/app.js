@@ -73,6 +73,8 @@ import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, edit
 import { escapeHtml } from "./utils.js";
 import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, irParaPagina, getTextoPaginaAtual, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, editarLivroLocal, removerLivroLocal, removerProgressoLeitura, gerarCapaAutomatica, getCapaEstaticaCache } from "./reader.js";
 import { capituloDaLicao, acharLivroDoVolume, TOTAL_CAPITULOS } from "./book-map.js";
+import { baixarPreferencias, aplicarPreferenciasNoLocalStorage, salvarPreferencias } from "./preferences.js";
+import { exportarTudo, importarTudo, contarItens } from "./backup.js";
 import {
   iniciarCronometro,
   pausarCronometro,
@@ -203,6 +205,7 @@ document.querySelectorAll(".densidade-opcao").forEach((btn) => {
   btn.addEventListener("click", () => {
     localStorage.setItem(DENSIDADE_KEY, btn.dataset.densidade);
     aplicarDensidade(btn.dataset.densidade);
+    agendarSyncPrefs();
   });
 });
 aplicarDensidade(localStorage.getItem(DENSIDADE_KEY) || "confortavel");
@@ -221,6 +224,60 @@ document.getElementById("btn-gerenciar-seguranca").addEventListener("click", asy
   } finally {
     btn.disabled = false;
     btn.textContent = "Redefinir senha";
+  }
+});
+
+// ===== BACKUP: exportar / importar todos os dados do usuário =====
+document.getElementById("btn-exportar-dados")?.addEventListener("click", async () => {
+  const btn = document.getElementById("btn-exportar-dados");
+  const status = document.getElementById("backup-status");
+  if (!currentUser) return;
+  btn.disabled = true;
+  status.textContent = "Montando o backup…";
+  try {
+    const dados = await exportarTudo(currentUser.uid);
+    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ccna-study-os-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    status.textContent = `Backup gerado — ${contarItens(dados)} registros.`;
+  } catch (e) {
+    console.warn("[backup] falha ao exportar:", e);
+    status.textContent = "Não consegui gerar o backup agora. Tente de novo.";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("btn-importar-dados")?.addEventListener("click", () => {
+  document.getElementById("input-importar-dados").click();
+});
+
+document.getElementById("input-importar-dados")?.addEventListener("change", async (e) => {
+  const arquivo = e.target.files?.[0];
+  e.target.value = "";
+  const status = document.getElementById("backup-status");
+  if (!arquivo || !currentUser) return;
+
+  let dados;
+  try {
+    dados = JSON.parse(await arquivo.text());
+  } catch {
+    status.textContent = "Arquivo inválido — não é um JSON.";
+    return;
+  }
+  const total = contarItens(dados);
+  if (!confirm(`Isso vai gravar ${total} registros do backup na sua conta. Mescla com o que já existe — não apaga nada. Continuar?`)) return;
+
+  status.textContent = "Importando…";
+  try {
+    const n = await importarTudo(currentUser.uid, dados);
+    status.textContent = `Importados ${n} registros. Recarregue a página pra ver tudo.`;
+  } catch (err) {
+    status.textContent = err.message || "Falha ao importar o backup.";
   }
 });
 
@@ -279,6 +336,7 @@ document.querySelectorAll(".tema-opcao").forEach((btn) => {
       localStorage.setItem(THEME_KEY, btn.dataset.tema);
     }
     aplicarPreferenciaTema();
+    agendarSyncPrefs();
   });
 });
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
@@ -298,6 +356,7 @@ document.querySelectorAll(".accent-swatch").forEach((btn) => {
   btn.addEventListener("click", () => {
     localStorage.setItem(ACCENT_KEY, btn.dataset.accent);
     aplicarAccent(btn.dataset.accent);
+    agendarSyncPrefs();
   });
 });
 aplicarAccent(localStorage.getItem(ACCENT_KEY) || "");
@@ -736,6 +795,38 @@ document.getElementById("btn-reenviar-verificacao")?.addEventListener("click", a
   }
 });
 
+// ---------- SINCRONIZAÇÃO DE PREFERÊNCIAS ENTRE APARELHOS ----------
+// No login, o que está no Firestore vence o localStorage (reconcilia e re-aplica
+// tema/accent/densidade/lembrete). Se ainda não houver nada no Firestore, semeia
+// a partir do que está local. Depois disso, cada mudança de preferência chama
+// agendarSyncPrefs() (com debounce) pra propagar pros outros aparelhos.
+async function sincronizarPreferencias(uid) {
+  try {
+    const remoto = await baixarPreferencias(uid);
+    if (remoto) {
+      const mudou = aplicarPreferenciasNoLocalStorage(remoto);
+      if (mudou) {
+        aplicarPreferenciaTema();
+        aplicarAccent(localStorage.getItem(ACCENT_KEY) || "");
+        aplicarDensidade(localStorage.getItem(DENSIDADE_KEY) || "confortavel");
+        valoresOcultos = localStorage.getItem("ccna-study-os-ocultar-valores") === "1";
+        inicializarLembreteUI();
+      }
+    } else {
+      await salvarPreferencias(uid);
+    }
+  } catch (e) {
+    console.warn("[preferências] não consegui sincronizar:", e);
+  }
+}
+
+let syncPrefsTimer = null;
+function agendarSyncPrefs() {
+  if (!currentUser) return;
+  clearTimeout(syncPrefsTimer);
+  syncPrefsTimer = setTimeout(() => salvarPreferencias(currentUser.uid).catch(() => {}), 1500);
+}
+
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
@@ -756,6 +847,7 @@ onAuthStateChanged(auth, async (user) => {
     seedCategoriasIfNeeded(user.uid).catch(() => {});
 
     atualizarBannerEmail(user);
+    await sincronizarPreferencias(user.uid);
 
     await carregarHoje();
     await inicializarCronometroUI();
@@ -2088,6 +2180,7 @@ function setPaginaCapitulo(livroId, cap, pagina) {
   tudo[livroId] = tudo[livroId] || {};
   tudo[livroId][cap] = pagina;
   localStorage.setItem(MAPA_CAPITULOS_KEY, JSON.stringify(tudo));
+  agendarSyncPrefs();
 }
 
 function renderCronograma(ritmo) {
@@ -2398,6 +2491,7 @@ document.getElementById("btn-salvar-lembrete").addEventListener("click", async (
 
   salvarHorarioLembrete(horario);
   setLembreteAtivo(ativo);
+  agendarSyncPrefs();
 
   if (ativo && getPermissaoAtual() === "default") {
     await pedirPermissao();
@@ -2430,6 +2524,7 @@ document.getElementById("btn-toggle-valores").addEventListener("click", () => {
   document.getElementById("icon-olho-aberto").classList.toggle("hidden", valoresOcultos);
   document.getElementById("icon-olho-fechado").classList.toggle("hidden", !valoresOcultos);
   carregarFinancas();
+  agendarSyncPrefs();
 });
 
 // ---- Período ----

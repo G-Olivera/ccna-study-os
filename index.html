@@ -322,6 +322,20 @@
             </div>
             <div id="mfa-area"></div>
 
+            <div class="config-linha">
+              <div class="config-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+              <div class="config-info">
+                <strong>Backup dos seus dados</strong>
+                <small>Baixe um arquivo com tudo (transações, progresso, tarefas, topologias, preferências) — ou restaure de um backup. Não inclui os PDFs de livros locais.</small>
+                <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                  <button class="btn-secondary" id="btn-exportar-dados" style="width:auto; margin-top:0; padding:8px 14px; font-size:12px;">Exportar (.json)</button>
+                  <button class="btn-secondary" id="btn-importar-dados" style="width:auto; margin-top:0; padding:8px 14px; font-size:12px;">Importar backup</button>
+                  <input type="file" id="input-importar-dados" accept="application/json,.json" class="hidden" />
+                </div>
+                <div id="backup-status" style="margin-top:8px; font-size:12px; color:var(--ink-soft);"></div>
+              </div>
+            </div>
+
             <button class="btn-secondary" id="btn-sair-config" style="width:100%; margin-top:16px; color:var(--terracotta); border-color:var(--terracotta);">Sair da conta</button>
           </div>
         </div>
