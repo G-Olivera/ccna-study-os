@@ -217,14 +217,14 @@
           </button>
         </div>
 
-        <div class="config-tabs" id="config-tabs" role="tablist">
-          <button class="config-tab" data-tab="preferencias" role="tab" aria-selected="false">⚙ Preferências</button>
-          <button class="config-tab" data-tab="aparencia" role="tab" aria-selected="false">◐ Aparência</button>
-          <button class="config-tab" data-tab="seguranca" role="tab" aria-selected="false">🔒 Segurança e MFA</button>
+        <div class="config-tabs" id="config-tabs" role="tablist" aria-label="Seções de configurações">
+          <button class="config-tab" id="config-tabbtn-preferencias" data-tab="preferencias" role="tab" aria-selected="true" aria-controls="config-tab-preferencias" tabindex="0">⚙ Preferências</button>
+          <button class="config-tab" id="config-tabbtn-aparencia" data-tab="aparencia" role="tab" aria-selected="false" aria-controls="config-tab-aparencia" tabindex="-1">◐ Aparência</button>
+          <button class="config-tab" id="config-tabbtn-seguranca" data-tab="seguranca" role="tab" aria-selected="false" aria-controls="config-tab-seguranca" tabindex="-1">🔒 Segurança e MFA</button>
         </div>
 
         <div class="config-grid">
-          <div class="config-tab-painel" id="config-tab-preferencias">
+          <div class="config-tab-painel" id="config-tab-preferencias" role="tabpanel" aria-labelledby="config-tabbtn-preferencias" tabindex="0">
             <h3 class="config-card-titulo">Preferências de estudo</h3>
 
             <div class="config-linha">
@@ -246,13 +246,13 @@
             <div class="config-linha config-linha-sem-borda">
               <div class="config-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
               <div class="config-info">
-                <strong>Meta diária, densidade e outras preferências</strong>
-                <small>Ainda não existem no app — só vão aparecer aqui quando forem reais de verdade.</small>
+                <strong>Meta diária</strong>
+                <small>Ainda não existe no app — chega numa próxima versão. Tema, cores e densidade agora ficam na aba Aparência.</small>
               </div>
             </div>
           </div>
 
-          <div class="config-tab-painel" id="config-tab-aparencia">
+          <div class="config-tab-painel hidden" id="config-tab-aparencia" role="tabpanel" aria-labelledby="config-tabbtn-aparencia" tabindex="0">
             <h3 class="config-card-titulo">Aparência</h3>
 
             <div class="config-secao">
@@ -297,7 +297,7 @@
             </div>
           </div>
 
-          <div class="config-tab-painel" id="config-tab-seguranca">
+          <div class="config-tab-painel hidden" id="config-tab-seguranca" role="tabpanel" aria-labelledby="config-tabbtn-seguranca" tabindex="0">
             <h3 class="config-card-titulo">Segurança e MFA</h3>
 
             <div class="config-linha">
@@ -341,7 +341,7 @@
         </div>
 
         <div class="config-footer">
-          <span>🛡 Tema e lembrete ficam salvos neste navegador (não sincronizam entre aparelhos ainda).</span>
+          <span>🛡 Tema, cores, densidade e lembrete sincronizam entre seus aparelhos ao entrar na conta.</span>
           <button class="btn-primary" id="btn-fechar-config-rodape" style="width:auto; margin-top:0;">Fechar</button>
         </div>
       </div>

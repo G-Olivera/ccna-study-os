@@ -172,21 +172,52 @@ document.querySelectorAll(".menu-wrapper").forEach((wrapper) => {
 
 
 // ===== CONFIGURAÇÕES: abas (Preferências / Aparência / Segurança e MFA) =====
-// As 3 seções ficam visíveis juntas (em coluna, no celular; em 3 colunas, em telas grandes).
-// As abas aqui só rolam a tela até a seção certa — não escondem as outras.
+// Abas verdadeiras e exclusivas: só o painel da aba ativa fica no DOM visível
+// (os outros ganham .hidden). Aba padrão ao abrir: "preferencias".
+const ABAS_CONFIG = ["preferencias", "aparencia", "seguranca"];
+let activeSettingsTab = "preferencias";
+
+function selecionarAbaConfig(aba, { focarPainel = false } = {}) {
+  if (!ABAS_CONFIG.includes(aba)) aba = "preferencias";
+  activeSettingsTab = aba;
+
+  document.querySelectorAll(".config-tab").forEach((t) => {
+    const sel = t.dataset.tab === aba;
+    t.classList.toggle("selecionada", sel);
+    t.setAttribute("aria-selected", String(sel));
+    t.tabIndex = sel ? 0 : -1;
+  });
+  document.querySelectorAll(".config-tab-painel").forEach((p) => {
+    p.classList.toggle("hidden", p.id !== `config-tab-${aba}`);
+  });
+
+  const painel = document.getElementById(`config-tab-${aba}`);
+  if (focarPainel) painel?.focus();
+  painel?.scrollTo?.({ top: 0 });
+}
+
 function abrirConfigNaAba(aba, origem = null) {
   const modal = document.getElementById("modal-config");
   if (modal.classList.contains("hidden")) elementoQueAbriuConfig = origem || document.activeElement;
   modal.classList.remove("hidden");
-  document.querySelectorAll(".config-tab").forEach((t) => {
-    const selecionada = t.dataset.tab === aba;
-    t.classList.toggle("selecionada", selecionada);
-    t.setAttribute("aria-selected", String(selecionada));
-  });
-  document.getElementById(`config-tab-${aba}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  selecionarAbaConfig(aba || activeSettingsTab);
   carregarMFA();
   popularContaConfig();
 }
+
+// Setas ← → (e Home/End) navegam entre as abas, padrão de tablist ARIA.
+document.getElementById("config-tabs")?.addEventListener("keydown", (e) => {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+  e.preventDefault();
+  const i = ABAS_CONFIG.indexOf(activeSettingsTab);
+  let alvo = i;
+  if (e.key === "ArrowLeft") alvo = (i - 1 + ABAS_CONFIG.length) % ABAS_CONFIG.length;
+  if (e.key === "ArrowRight") alvo = (i + 1) % ABAS_CONFIG.length;
+  if (e.key === "Home") alvo = 0;
+  if (e.key === "End") alvo = ABAS_CONFIG.length - 1;
+  selecionarAbaConfig(ABAS_CONFIG[alvo]);
+  document.getElementById(`config-tabbtn-${ABAS_CONFIG[alvo]}`)?.focus();
+});
 
 // ===== DENSIDADE DA INTERFACE =====
 function popularContaConfig() {
