@@ -874,6 +874,7 @@ onAuthStateChanged(auth, async (user) => {
       import("./seed-questions.js").then((m) => m.seedQuestionsIfNeeded()).catch(() => {});
       import("./seed-labs.js").then((m) => m.seedLabsIfNeeded()).catch(() => {});
       import("./seed-flashcards.js").then((m) => m.seedFlashcardsIfNeeded()).catch(() => {});
+      import("./seed-cyber.js").then((m) => m.seedCyberIfNeeded()).catch(() => {});
     }
     seedCategoriasIfNeeded(user.uid).catch(() => {});
 
@@ -939,6 +940,11 @@ function trocarTela(nome) {
         topologiaJaIniciada = false;
         console.warn("[topologia] não foi possível carregar o editor:", e);
       });
+  }
+  if (nome === "ciberseguranca") {
+    import("./cyber.js")
+      .then((m) => m.initCyber(currentUser.uid))
+      .catch((e) => console.warn("[cyber] não foi possível carregar o módulo:", e));
   }
   if (nome === "tutor" && !tutorJaIniciado) {
     tutorJaIniciado = true;
