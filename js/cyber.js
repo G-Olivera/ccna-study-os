@@ -28,29 +28,34 @@ function corHexSegura(v, fallback = "#3E6B6B") {
 
 async function carregarConteudo() {
   if (conteudoCache) return conteudoCache;
-  const [tr, le, la] = await Promise.all([
+  const [tr, le, la, so] = await Promise.all([
     getDocs(collection(db, "content", "cyberTracks", "items")),
     getDocs(collection(db, "content", "cyberLessons", "items")),
     getDocs(collection(db, "content", "cyberLabs", "items")),
+    getDocs(collection(db, "content", "socScenarios", "items")).catch(() => ({ docs: [] })),
   ]);
   conteudoCache = {
     tracks: tr.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)),
     lessons: le.docs.map((d) => ({ id: d.id, ...d.data() })),
     labs: la.docs.map((d) => ({ id: d.id, ...d.data() })),
+    soc: so.docs.map((d) => ({ id: d.id, ...d.data() })),
   };
   return conteudoCache;
 }
 
 async function carregarProgresso(uid) {
-  const [licSnap, labSnap] = await Promise.all([
+  const [licSnap, labSnap, socSnap] = await Promise.all([
     getDocs(collection(db, "users", uid, "cyberProgress")),
     getDocs(collection(db, "users", uid, "cyberLabProgress")),
+    getDocs(collection(db, "users", uid, "socAttempts")).catch(() => ({ docs: [] })),
   ]);
   const licoes = {};
   licSnap.docs.forEach((d) => (licoes[d.id] = d.data()));
   const labs = {};
   labSnap.docs.forEach((d) => (labs[d.id] = d.data()));
-  return { licoes, labs };
+  const soc = {};
+  socSnap.docs.forEach((d) => (soc[d.id] = d.data()));
+  return { licoes, labs, soc };
 }
 
 // Minutos de atividade Cybersecurity no mês corrente.
@@ -93,6 +98,22 @@ export async function salvarProgressoLab(uid, labId, dados) {
 export async function concluirLab(uid, labId, conclusao, tempoMin) {
   await salvarProgressoLab(uid, labId, { concluido: true, conclusao: conclusao || "", concluidoEm: new Date().toISOString() });
   await logActivity(uid, "cyber_lab", labId, tempoMin || 20).catch(() => {});
+}
+
+export async function registrarTentativaSoc(uid, cenarioId, classificacao, conclusao, acertou, tentativasAtuais = 0) {
+  await setDoc(
+    doc(db, "users", uid, "socAttempts", cenarioId),
+    {
+      classificacao,
+      conclusao: conclusao || "",
+      acertou: !!acertou,
+      tentativas: tentativasAtuais + 1,
+      concluidoEm: new Date().toISOString(),
+      lastUpdated: serverTimestamp(),
+    },
+    { merge: true }
+  );
+  if (acertou) await logActivity(uid, "cyber_soc", cenarioId, 15).catch(() => {});
 }
 
 // ---------- CÁLCULO DE PROGRESSO ----------
@@ -231,6 +252,153 @@ function desempenhoHtml(tracks, lessons, progLicoes) {
     </div>`;
 }
 
+// ---------- SOC LAB ----------
+
+const SEV_ORDEM = { critico: 0, alto: 1, medio: 2, baixo: 3 };
+const SEV_LABEL = { critico: "Crítico", alto: "Alto", medio: "Médio", baixo: "Baixo" };
+const SEV_CLASSE = { critico: "advanced", alto: "advanced", medio: "medium", baixo: "basic" };
+const CLASSIF_LABEL = { vp: "Verdadeiro positivo", fp: "Falso positivo", investigar: "Necessita investigação" };
+
+function socPainelHtml(cenarios, progSoc) {
+  if (!cenarios.length) {
+    return `<div class="task-card"><div class="cyber-secao-header"><h3>SOC Lab</h3></div>
+      <p style="font-size:13px; color:var(--ink-soft);">Os cenários de alerta são populados no login da conta admin.</p></div>`;
+  }
+  const resolvidos = cenarios.filter((c) => progSoc[c.id]?.acertou).length;
+  const linhas = cenarios
+    .slice()
+    .sort((a, b) => {
+      const ra = progSoc[a.id]?.acertou ? 1 : 0;
+      const rb = progSoc[b.id]?.acertou ? 1 : 0;
+      if (ra !== rb) return ra - rb; // não resolvidos primeiro
+      return (SEV_ORDEM[a.severidade] ?? 9) - (SEV_ORDEM[b.severidade] ?? 9);
+    })
+    .map((c) => {
+      const at = progSoc[c.id];
+      const estado = at?.acertou ? '<span class="cyber-lab-ok">✓ resolvido</span>' : at ? '<span class="cyber-soc-retry">tentar de novo</span>' : "";
+      return `
+      <button class="cyber-soc-alerta" data-cyber-abrir-soc="${c.id}">
+        <span class="badge ${SEV_CLASSE[c.severidade] || "medium"}">${SEV_LABEL[c.severidade] || c.severidade}</span>
+        <span class="cyber-soc-alerta-info">
+          <span class="cyber-soc-alerta-titulo">${escapeHtml(c.codigo)} · ${escapeHtml(c.titulo)}</span>
+          <span class="cyber-soc-alerta-sub">${escapeHtml(c.categoria || "")} ${estado}</span>
+        </span>
+      </button>`;
+    })
+    .join("");
+  return `
+    <div class="task-card">
+      <div class="cyber-secao-header">
+        <h3>SOC Lab</h3>
+        <span style="font-size:12px; color:var(--ink-soft);">${resolvidos}/${cenarios.length} resolvidos</span>
+      </div>
+      <p style="font-size:11px; color:var(--ink-soft); margin-bottom:10px;">Cenários fictícios e educacionais. Analise, classifique e registre a conclusão.</p>
+      <div class="cyber-soc-lista">${linhas}</div>
+    </div>`;
+}
+
+let socAbertoId = null;
+
+async function abrirCenarioSoc(cenarioId) {
+  const c = conteudoCache.soc.find((s) => s.id === cenarioId);
+  const slot = document.getElementById("cyber-slot-painel");
+  if (!c || !slot) return;
+  trilhaAbertaId = null;
+  labAbertoId = null;
+  socAbertoId = cenarioId;
+
+  const at = (await carregarProgresso(uidAtual)).soc[cenarioId] || {};
+  const jaResolvido = at.acertou;
+
+  const timeline = (c.timeline || [])
+    .map((e) => `<li><span class="cyber-soc-hora">${escapeHtml(e.hora || "")}</span><span><strong>${escapeHtml(e.evento || "")}</strong>${e.detalhe ? " — " + escapeHtml(e.detalhe) : ""}</span></li>`)
+    .join("");
+  const evid = (c.evidencias || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("");
+  const guia = (c.perguntasGuia || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("");
+
+  slot.innerHTML = `
+    <div class="task-card cyber-painel-trilha" data-cyber-soc-painel="${cenarioId}">
+      <div class="cyber-secao-header">
+        <h3>${escapeHtml(c.codigo)} · ${escapeHtml(c.titulo)} ${jaResolvido ? '<span class="cyber-lab-ok">✓ resolvido</span>' : ""}</h3>
+        <button class="btn-secondary" data-cyber-fechar-trilha style="width:auto; margin-top:0; padding:6px 12px; font-size:12px;">Fechar</button>
+      </div>
+
+      <div class="cyber-soc-cabecalho">
+        <span class="badge ${SEV_CLASSE[c.severidade] || "medium"}">${SEV_LABEL[c.severidade] || c.severidade}</span>
+        <span><strong>Categoria:</strong> ${escapeHtml(c.categoria || "—")}</span>
+        <span><strong>Origem:</strong> ${escapeHtml(c.origem || "—")}</span>
+        <span><strong>Destino:</strong> ${escapeHtml(c.destino || "—")}</span>
+      </div>
+
+      <p class="cyber-lab-ambiente">🔒 Cenário 100% fictício. IPs externos usam faixas de documentação (RFC 5737). Nenhum sistema real é consultado ou afetado.</p>
+
+      <p style="font-size:13px; margin:12px 0 4px;"><strong>Resumo</strong></p>
+      <p style="font-size:13px; color:var(--ink-soft);">${escapeHtml(c.resumo || "")}</p>
+      <p style="font-size:13px; color:var(--ink-soft); margin-top:6px;">${escapeHtml(c.contexto || "")}</p>
+
+      <p style="font-size:13px; margin:14px 0 4px;"><strong>Timeline</strong></p>
+      <ul class="cyber-soc-timeline">${timeline}</ul>
+
+      <p style="font-size:13px; margin:14px 0 4px;"><strong>Evidências</strong></p>
+      <ul class="cyber-checklist">${evid}</ul>
+
+      ${guia ? `<p style="font-size:13px; margin:14px 0 4px;"><strong>Perguntas-guia</strong></p><ul class="cyber-checklist">${guia}</ul>` : ""}
+
+      <p style="font-size:13px; margin:16px 0 6px;"><strong>Sua classificação</strong></p>
+      <div class="cyber-soc-opcoes" id="cyber-soc-opcoes">
+        <button class="cyber-soc-op" data-classif="vp">Verdadeiro positivo</button>
+        <button class="cyber-soc-op" data-classif="fp">Falso positivo</button>
+        <button class="cyber-soc-op" data-classif="investigar">Necessita investigação</button>
+      </div>
+
+      <label style="display:block; margin-top:14px; font-size:13px; font-weight:600;">Conclusão</label>
+      <p style="font-size:11px; color:var(--ink-soft); margin:2px 0 6px;">O que aconteceu, por que você classificou assim e qual seria a próxima ação (mín. 15 caracteres).</p>
+      <textarea id="cyber-soc-conclusao" class="cyber-lab-conclusao" rows="3" placeholder="Escreva sua conclusão…">${escapeHtml(at.conclusao || "")}</textarea>
+
+      <button class="btn-primary" data-cyber-soc-enviar="${cenarioId}" style="width:auto; margin-top:12px;" disabled>Enviar classificação</button>
+      <div id="cyber-soc-feedback" class="cyber-soc-feedback hidden"></div>
+    </div>`;
+
+  slot.querySelector(".cyber-painel-trilha")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function socClassifSelecionada() {
+  return document.querySelector("#cyber-soc-opcoes .cyber-soc-op.selecionada")?.dataset.classif || null;
+}
+function atualizarBotaoSoc() {
+  const btn = document.querySelector("[data-cyber-soc-enviar]");
+  const conclusao = document.getElementById("cyber-soc-conclusao")?.value?.trim() || "";
+  if (btn) btn.disabled = !(socClassifSelecionada() && conclusao.length >= 15);
+}
+
+async function enviarClassificacaoSoc(cenarioId) {
+  const c = conteudoCache.soc.find((s) => s.id === cenarioId);
+  const classif = socClassifSelecionada();
+  const conclusao = document.getElementById("cyber-soc-conclusao")?.value?.trim() || "";
+  if (!c || !classif || conclusao.length < 15) return;
+
+  const acertou = classif === c.classificacaoCorreta;
+  const at = (await carregarProgresso(uidAtual)).soc[cenarioId] || {};
+  await registrarTentativaSoc(uidAtual, cenarioId, classif, conclusao, acertou, at.tentativas || 0);
+
+  const fb = document.getElementById("cyber-soc-feedback");
+  if (fb) {
+    fb.classList.remove("hidden");
+    fb.classList.toggle("acerto", acertou);
+    fb.classList.toggle("erro", !acertou);
+    fb.innerHTML = `
+      <strong>${acertou ? "✓ Classificação correta" : "✗ Não é a classificação esperada"}</strong>
+      <p style="margin-top:4px;">Resposta do cenário: <strong>${CLASSIF_LABEL[c.classificacaoCorreta]}</strong>.</p>
+      <p style="margin-top:6px;">${escapeHtml(c.explicacao || "")}</p>
+      ${acertou ? '<p style="margin-top:6px; color:var(--sage);">XP registrado. Volte ao painel pra ver o próximo alerta.</p>' : '<p style="margin-top:6px;">Revise a timeline e as evidências e tente de novo.</p>'}`;
+  }
+  // Atualiza o painel lateral em segundo plano (marca resolvido / contador).
+  const lateral = document.querySelector(".cyber-col-lateral");
+  carregarProgresso(uidAtual).then((prog) => {
+    if (lateral) lateral.querySelector(".task-card").outerHTML = socPainelHtml(conteudoCache.soc, prog.soc);
+  });
+}
+
 // Painel de lições de uma trilha (expandido abaixo da grade).
 function painelTrilhaHtml(track, lessons, progLicoes) {
   const itens = lessons
@@ -273,7 +441,7 @@ async function render() {
   if (!raiz) return;
   raiz.innerHTML = `<p style="color:var(--ink-soft); font-size:13px;">Carregando Cybersecurity…</p>`;
 
-  const [{ tracks, lessons, labs }, progresso, dash, minutosMes] = await Promise.all([
+  const [{ tracks, lessons, labs, soc }, progresso, dash, minutosMes] = await Promise.all([
     carregarConteudo(),
     carregarProgresso(uidAtual),
     getDashboardData(uidAtual).catch(() => ({ nivel: 0, xp: 0, streakDias: 0 })),
@@ -292,11 +460,13 @@ async function render() {
 
   const progLicoes = progresso.licoes;
   const progLabs = progresso.labs;
+  const progSoc = progresso.soc || {};
 
   const licoesTotais = lessons.length;
   const licoesFeitas = lessons.filter((l) => (progLicoes[l.id]?.masteryPercent ?? 0) >= LICAO_CONCLUIDA).length;
   const percentGeral = licoesTotais ? Math.round((licoesFeitas / licoesTotais) * 100) : 0;
   const labsFeitos = Object.values(progLabs).filter((p) => p.concluido).length;
+  const socResolvidos = (soc || []).filter((s) => progSoc[s.id]?.acertou).length;
   const h = Math.floor(minutosMes / 60);
   const min = Math.round(minutosMes % 60);
   const horasMes = minutosMes === 0 ? "0h" : h > 0 ? `${h}h ${min}min` : `${min}min`;
@@ -331,13 +501,15 @@ async function render() {
   html += labsHtml(labs, progLabs);
 
   html += `</div><div class="cyber-col-lateral">`;
+  html += socPainelHtml(soc || [], progSoc);
   html += desempenhoHtml(tracks, lessons, progLicoes);
   html += `</div></div>`;
 
   raiz.innerHTML = html;
 
   // Reabre o painel que estava aberto (após re-render pós conclusão de lição/lab).
-  if (labAbertoId) abrirLabPainel(labAbertoId);
+  if (socAbertoId) abrirCenarioSoc(socAbertoId);
+  else if (labAbertoId) abrirLabPainel(labAbertoId);
   else if (trilhaAbertaId) abrirPainelTrilha(trilhaAbertaId, { silencioso: true });
 }
 
@@ -392,6 +564,27 @@ function ligarEventos() {
     const abrirLab = e.target.closest("[data-cyber-abrir-lab]");
     const salvarLab = e.target.closest("[data-cyber-lab-salvar]");
     const concluirLabBtn = e.target.closest("[data-cyber-lab-concluir]");
+    const abrirSoc = e.target.closest("[data-cyber-abrir-soc]");
+    const socOp = e.target.closest("#cyber-soc-opcoes .cyber-soc-op");
+    const enviarSoc = e.target.closest("[data-cyber-soc-enviar]");
+
+    if (abrirSoc) {
+      abrirCenarioSoc(abrirSoc.dataset.cyberAbrirSoc);
+      return;
+    }
+    if (socOp) {
+      document.querySelectorAll("#cyber-soc-opcoes .cyber-soc-op").forEach((b) => b.classList.toggle("selecionada", b === socOp));
+      atualizarBotaoSoc();
+      return;
+    }
+    if (enviarSoc) {
+      enviarSoc.disabled = true;
+      enviarSoc.textContent = "Enviando…";
+      await enviarClassificacaoSoc(enviarSoc.dataset.cyberSocEnviar);
+      enviarSoc.textContent = "Enviar classificação";
+      atualizarBotaoSoc();
+      return;
+    }
 
     if (comecar || abrirTrilha) {
       abrirPainelTrilha((comecar || abrirTrilha).dataset.cyberComecar || abrirTrilha.dataset.cyberAbrirTrilha);
@@ -438,6 +631,8 @@ function ligarEventos() {
       const labId = e.target.closest("[data-cyber-lab-painel]")?.dataset.cyberLabPainel;
       atualizarBotaoConcluirLab(labId);
       agendarSalvarLab(labId);
+    } else if (e.target.id === "cyber-soc-conclusao") {
+      atualizarBotaoSoc();
     }
   });
 }
@@ -450,6 +645,7 @@ let salvarLabTimer = null;
 function fecharPainel() {
   trilhaAbertaId = null;
   labAbertoId = null;
+  socAbertoId = null;
   const slot = document.getElementById("cyber-slot-painel");
   if (slot) slot.innerHTML = "";
 }
