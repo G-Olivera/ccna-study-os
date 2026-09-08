@@ -28,26 +28,29 @@ function corHexSegura(v, fallback = "#3E6B6B") {
 
 async function carregarConteudo() {
   if (conteudoCache) return conteudoCache;
-  const [tr, le, la, so] = await Promise.all([
+  const [tr, le, la, so, ct] = await Promise.all([
     getDocs(collection(db, "content", "cyberTracks", "items")),
     getDocs(collection(db, "content", "cyberLessons", "items")),
     getDocs(collection(db, "content", "cyberLabs", "items")),
     getDocs(collection(db, "content", "socScenarios", "items")).catch(() => ({ docs: [] })),
+    getDocs(collection(db, "content", "cyberCtf", "items")).catch(() => ({ docs: [] })),
   ]);
   conteudoCache = {
     tracks: tr.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)),
     lessons: le.docs.map((d) => ({ id: d.id, ...d.data() })),
     labs: la.docs.map((d) => ({ id: d.id, ...d.data() })),
     soc: so.docs.map((d) => ({ id: d.id, ...d.data() })),
+    ctf: ct.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)),
   };
   return conteudoCache;
 }
 
 async function carregarProgresso(uid) {
-  const [licSnap, labSnap, socSnap] = await Promise.all([
+  const [licSnap, labSnap, socSnap, ctfSnap] = await Promise.all([
     getDocs(collection(db, "users", uid, "cyberProgress")),
     getDocs(collection(db, "users", uid, "cyberLabProgress")),
     getDocs(collection(db, "users", uid, "socAttempts")).catch(() => ({ docs: [] })),
+    getDocs(collection(db, "users", uid, "cyberCtfProgress")).catch(() => ({ docs: [] })),
   ]);
   const licoes = {};
   licSnap.docs.forEach((d) => (licoes[d.id] = d.data()));
@@ -55,7 +58,9 @@ async function carregarProgresso(uid) {
   labSnap.docs.forEach((d) => (labs[d.id] = d.data()));
   const soc = {};
   socSnap.docs.forEach((d) => (soc[d.id] = d.data()));
-  return { licoes, labs, soc };
+  const ctf = {};
+  ctfSnap.docs.forEach((d) => (ctf[d.id] = d.data()));
+  return { licoes, labs, soc, ctf };
 }
 
 // Minutos de atividade Cybersecurity no mês corrente.
@@ -399,6 +404,164 @@ async function enviarClassificacaoSoc(cenarioId) {
   });
 }
 
+// ---------- FASE 3: painéis (ferramentas, CTF, tutor) ----------
+
+let painelFase3 = null; // "tools" | "ctf" — pra reabrir após re-render
+
+async function abrirFerramentas() {
+  const slot = document.getElementById("cyber-slot-painel");
+  if (!slot) return;
+  trilhaAbertaId = labAbertoId = socAbertoId = null;
+  painelFase3 = "tools";
+  slot.innerHTML = `
+    <div class="task-card cyber-painel-trilha">
+      <div class="cyber-secao-header">
+        <h3>Ferramentas de Segurança</h3>
+        <button class="btn-secondary" data-cyber-fechar-trilha style="width:auto; margin-top:0; padding:6px 12px; font-size:12px;">Fechar</button>
+      </div>
+      <p class="cyber-lab-ambiente">🔒 Tudo roda localmente no navegador. Nenhuma varredura de rede, descoberta de hosts ou chamada externa.</p>
+      <div id="cyber-tools-raiz"></div>
+    </div>`;
+  slot.querySelector(".cyber-painel-trilha")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  try {
+    const mod = await import("./cyber-tools.js");
+    mod.renderFerramentas(document.getElementById("cyber-tools-raiz"));
+  } catch (e) {
+    const r = document.getElementById("cyber-tools-raiz");
+    if (r) r.innerHTML = `<p style="color:var(--terracotta); font-size:13px;">Não consegui carregar as ferramentas.</p>`;
+  }
+}
+
+async function abrirDesafioCtf(ctfId) {
+  const d = conteudoCache.ctf.find((x) => x.id === ctfId);
+  const slot = document.getElementById("cyber-slot-painel");
+  if (!d || !slot) return;
+  trilhaAbertaId = labAbertoId = socAbertoId = null;
+  painelFase3 = "ctf:" + ctfId;
+  const prog = (await carregarProgresso(uidAtual)).ctf[ctfId] || {};
+
+  slot.innerHTML = `
+    <div class="task-card cyber-painel-trilha" data-cyber-ctf-painel="${ctfId}">
+      <div class="cyber-secao-header">
+        <h3>${escapeHtml(d.titulo)} ${prog.resolvido ? '<span class="cyber-lab-ok">✓ resolvido</span>' : ""}</h3>
+        <button class="btn-secondary" data-cyber-fechar-trilha style="width:auto; margin-top:0; padding:6px 12px; font-size:12px;">Fechar</button>
+      </div>
+      <p style="font-size:12px; color:var(--ink-soft);">${escapeHtml(d.categoria || "")} · ${DIFICULDADE_LABEL[d.dificuldade] || d.dificuldade}</p>
+      <pre class="cyber-ctf-enunciado">${escapeHtml(d.enunciado || "")}</pre>
+      ${d.dica ? `<details class="cyber-ctf-dica"><summary>Dica</summary><p>${escapeHtml(d.dica)}</p></details>` : ""}
+      <label class="cyber-tool-label" style="margin-top:12px;">Sua resposta</label>
+      <input id="cyber-ctf-resp" class="cyber-tool-input" placeholder="Digite a resposta…" />
+      <button class="btn-primary" data-cyber-ctf-enviar="${ctfId}" style="width:auto; margin-top:10px;">Verificar</button>
+      <div id="cyber-ctf-feedback" class="cyber-soc-feedback hidden"></div>
+    </div>`;
+  slot.querySelector(".cyber-painel-trilha")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function verificarCtf(ctfId) {
+  const d = conteudoCache.ctf.find((x) => x.id === ctfId);
+  const entrada = document.getElementById("cyber-ctf-resp")?.value || "";
+  if (!d || !entrada.trim()) return;
+  const mod = await import("./cyber-tools.js");
+  const acertou = mod.conferirRespostaCtf(entrada, d.respostas);
+  const fb = document.getElementById("cyber-ctf-feedback");
+
+  if (acertou) {
+    const prog = (await carregarProgresso(uidAtual)).ctf[ctfId] || {};
+    await setDoc(
+      doc(db, "users", uidAtual, "cyberCtfProgress", ctfId),
+      { resolvido: true, tentativas: (prog.tentativas || 0) + 1, resolvidoEm: new Date().toISOString(), lastUpdated: serverTimestamp() },
+      { merge: true }
+    );
+    await logActivity(uidAtual, "cyber_ctf", ctfId, 10).catch(() => {});
+  }
+  if (fb) {
+    fb.classList.remove("hidden");
+    fb.classList.toggle("acerto", acertou);
+    fb.classList.toggle("erro", !acertou);
+    fb.innerHTML = acertou
+      ? `<strong>✓ Correto!</strong><p style="margin-top:6px;">${escapeHtml(d.explicacao || "")}</p><p style="margin-top:6px; color:var(--sage);">XP registrado.</p>`
+      : `<strong>✗ Ainda não</strong><p style="margin-top:6px;">Revise o enunciado${d.dica ? " e a dica" : ""} e tente outra formulação da resposta.</p>`;
+  }
+}
+
+async function perguntarTutorCyberUI() {
+  const inp = document.getElementById("cyber-tutor-in");
+  const out = document.getElementById("cyber-tutor-out");
+  const pergunta = inp?.value?.trim();
+  if (!pergunta || !out) return;
+  out.classList.remove("hidden");
+  out.textContent = "Consultando o Tutor…";
+  try {
+    const { perguntarTutorCyber } = await import("./ai-tutor.js");
+    out.textContent = await perguntarTutorCyber(pergunta);
+  } catch (e) {
+    out.textContent = "Não consegui responder agora. Verifique se o Firebase AI Logic está ativado.";
+  }
+}
+
+// ---------- FASE 3: cards (pontos fracos, ferramentas, CTF, tutor) ----------
+
+function pontosFracosHtml(tracks, lessons, progLicoes) {
+  const comConteudo = tracks
+    .map((t) => ({ t, p: progressoDaTrilha(t, lessons, progLicoes) }))
+    .filter((x) => x.p.percent !== null);
+  const iniciadas = comConteudo.filter((x) => x.p.percent > 0);
+  if (iniciadas.length === 0) {
+    return `<div class="task-card"><div class="cyber-secao-header"><h3>Pontos fracos</h3></div>
+      <p style="font-size:13px; color:var(--ink-soft);">Comece uma trilha pra o sistema apontar onde reforçar.</p></div>`;
+  }
+  const fracas = iniciadas.sort((a, b) => a.p.percent - b.p.percent).slice(0, 3);
+  const recomendacoes = ["Revisar a teoria da trilha", "Refazer as lições marcadas como pendentes", "Executar o laboratório da trilha", "Fazer o quiz da trilha"];
+  const linhas = fracas
+    .map(
+      ({ t, p }) => `
+      <div class="cyber-fraco">
+        <div class="cyber-fraco-topo"><strong>${escapeHtml(t.nome)}</strong><span>${p.percent}%</span></div>
+        <div class="track"><div class="fill" style="width:${p.percent}%; background:var(--terracotta);"></div></div>
+        <button class="btn-secondary" data-cyber-abrir-trilha="${t.id}" style="width:auto; margin-top:8px; padding:6px 12px; font-size:12px;">${escapeHtml(recomendacoes[0])} →</button>
+      </div>`
+    )
+    .join("");
+  return `<div class="task-card"><div class="cyber-secao-header"><h3>Pontos fracos</h3></div>
+    <p style="font-size:11px; color:var(--ink-soft); margin-bottom:10px;">Trilhas iniciadas com menor domínio. Sugestão: ${escapeHtml(recomendacoes.join(" · "))}.</p>
+    ${linhas}</div>`;
+}
+
+function ferramentasCardHtml() {
+  return `<div class="task-card"><div class="cyber-secao-header"><h3>Ferramentas de Segurança</h3></div>
+    <p style="font-size:11px; color:var(--ink-soft); margin-bottom:10px;">Base64, hash, analisador de IP/URL, portas e calculadora CVSS — tudo roda só no navegador, sem chamada externa.</p>
+    <button class="btn-secondary" data-cyber-abrir-tools style="width:auto; margin-top:0;">Abrir ferramentas</button></div>`;
+}
+
+function tutorCyberHtml() {
+  return `<div class="task-card"><div class="cyber-secao-header"><h3>Tutor Cyber</h3></div>
+    <p style="font-size:11px; color:var(--ink-soft); margin-bottom:8px;">Explica logs, alertas e conceitos de defesa. Reaproveita o Tutor IA do app.</p>
+    <textarea id="cyber-tutor-in" class="cyber-lab-conclusao" rows="2" placeholder="Ex.: o que significa Event ID 4672?"></textarea>
+    <button class="btn-secondary" data-cyber-tutor-perguntar style="width:auto; margin-top:8px;">Perguntar</button>
+    <div id="cyber-tutor-out" class="cyber-tutor-out hidden"></div></div>`;
+}
+
+function ctfHtml(desafios, progCtf) {
+  if (!desafios.length) return "";
+  const resolvidos = desafios.filter((d) => progCtf[d.id]?.resolvido).length;
+  const linhas = desafios
+    .map((d) => {
+      const ok = progCtf[d.id]?.resolvido;
+      return `<button class="cyber-lab-item cyber-ctf-linha" data-cyber-abrir-ctf="${d.id}" style="width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--border);">
+        <div>
+          <div class="cyber-lab-titulo">${escapeHtml(d.titulo)} ${ok ? '<span class="cyber-lab-ok">✓ resolvido</span>' : ""}</div>
+          <div class="cyber-lab-desc">${escapeHtml(d.categoria || "")}</div>
+        </div>
+        <span class="badge ${iconeDificuldade(d.dificuldade)}">${DIFICULDADE_LABEL[d.dificuldade] || d.dificuldade}</span>
+        <span style="font-size:12px; color:var(--teal);">Abrir →</span>
+      </button>`;
+    })
+    .join("");
+  return `<div class="task-card"><div class="cyber-secao-header"><h3>Desafios / CTF</h3><span style="font-size:12px; color:var(--ink-soft);">${resolvidos}/${desafios.length}</span></div>
+    <p style="font-size:11px; color:var(--ink-soft); margin-bottom:10px;">Exercícios sobre dados fictícios. Ambientes próprios/educacionais.</p>
+    ${linhas}</div>`;
+}
+
 // Painel de lições de uma trilha (expandido abaixo da grade).
 function painelTrilhaHtml(track, lessons, progLicoes) {
   const itens = lessons
@@ -499,9 +662,13 @@ async function render() {
   html += trilhasGridHtml(tracks, lessons, progLicoes);
   html += `<div id="cyber-slot-painel"></div>`;
   html += labsHtml(labs, progLabs);
+  html += ctfHtml(conteudoCache.ctf || [], progresso.ctf || {});
 
   html += `</div><div class="cyber-col-lateral">`;
   html += socPainelHtml(soc || [], progSoc);
+  html += pontosFracosHtml(tracks, lessons, progLicoes);
+  html += ferramentasCardHtml();
+  html += tutorCyberHtml();
   html += desempenhoHtml(tracks, lessons, progLicoes);
   html += `</div></div>`;
 
@@ -511,6 +678,8 @@ async function render() {
   if (socAbertoId) abrirCenarioSoc(socAbertoId);
   else if (labAbertoId) abrirLabPainel(labAbertoId);
   else if (trilhaAbertaId) abrirPainelTrilha(trilhaAbertaId, { silencioso: true });
+  else if (painelFase3 === "tools") abrirFerramentas();
+  else if (painelFase3?.startsWith("ctf:")) abrirDesafioCtf(painelFase3.slice(4));
 }
 
 function abrirPainelTrilha(trackId, { silencioso = false } = {}) {
@@ -567,6 +736,15 @@ function ligarEventos() {
     const abrirSoc = e.target.closest("[data-cyber-abrir-soc]");
     const socOp = e.target.closest("#cyber-soc-opcoes .cyber-soc-op");
     const enviarSoc = e.target.closest("[data-cyber-soc-enviar]");
+    const abrirTools = e.target.closest("[data-cyber-abrir-tools]");
+    const abrirCtf = e.target.closest("[data-cyber-abrir-ctf]");
+    const enviarCtf = e.target.closest("[data-cyber-ctf-enviar]");
+    const perguntarTutor = e.target.closest("[data-cyber-tutor-perguntar]");
+
+    if (abrirTools) return void abrirFerramentas();
+    if (abrirCtf) return void abrirDesafioCtf(abrirCtf.dataset.cyberAbrirCtf);
+    if (enviarCtf) return void verificarCtf(enviarCtf.dataset.cyberCtfEnviar);
+    if (perguntarTutor) return void perguntarTutorCyberUI();
 
     if (abrirSoc) {
       abrirCenarioSoc(abrirSoc.dataset.cyberAbrirSoc);
@@ -646,6 +824,7 @@ function fecharPainel() {
   trilhaAbertaId = null;
   labAbertoId = null;
   socAbertoId = null;
+  painelFase3 = null;
   const slot = document.getElementById("cyber-slot-painel");
   if (slot) slot.innerHTML = "";
 }

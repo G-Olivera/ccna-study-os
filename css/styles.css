@@ -1479,3 +1479,50 @@ button:active { transform: scale(0.97); }
 .cyber-soc-feedback { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-sm); font-size: 13px; line-height: 1.55; border: 1px solid var(--border); }
 .cyber-soc-feedback.acerto { border-color: var(--sage); background: var(--sage-soft); }
 .cyber-soc-feedback.erro { border-color: var(--terracotta); background: var(--terracotta-soft); }
+
+/* Cybersecurity Fase 3 — pontos fracos, ferramentas, CTF, tutor */
+.cyber-fraco { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.cyber-fraco:last-child { border-bottom: 0; }
+.cyber-fraco-topo { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+
+.cyber-tutor-out {
+  margin-top: 10px; padding: 12px; background: var(--surface-quiet); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 13px; line-height: 1.55; white-space: pre-wrap; max-height: 320px; overflow-y: auto;
+}
+
+.cyber-tools-abas { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.cyber-tool-aba {
+  background: none; border: none; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--ink-soft);
+  border-bottom: 2px solid transparent; white-space: nowrap;
+}
+.cyber-tool-aba.selecionada { color: var(--teal); border-bottom-color: var(--teal); }
+.cyber-tool-label { display: block; font-size: 12px; font-weight: 600; margin: 10px 0 4px; }
+.cyber-tool-acoes { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.cyber-tool-input {
+  width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--ink); font-family: var(--font-body); font-size: 13px;
+}
+.cyber-tool-mono { font-family: var(--font-mono); font-size: 12px; word-break: break-all; }
+.cyber-tool-resultado { margin-top: 12px; }
+.cyber-tool-scroll { overflow-x: auto; }
+.cyber-tool-tabela { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cyber-tool-tabela td, .cyber-tool-tabela th { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.cyber-tool-tabela th { color: var(--ink-soft); font-weight: 600; }
+.cyber-tool-tabela td:first-child { color: var(--ink-soft); white-space: nowrap; }
+.cyber-tool-portas td:first-child { color: var(--ink); }
+
+.cyber-cvss-grupo { margin-bottom: 10px; }
+.cyber-cvss-ops { display: flex; gap: 6px; flex-wrap: wrap; }
+.cyber-cvss-op { padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--ink); font-size: 12px; }
+.cyber-cvss-op.selecionada { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); }
+.cyber-cvss-out { margin-top: 14px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-quiet); }
+.cyber-cvss-score { font-family: var(--font-display); font-size: 30px; font-weight: 700; color: var(--teal); }
+
+.cyber-ctf-linha { display: grid !important; grid-template-columns: minmax(0,1fr) auto auto; gap: 10px; align-items: center; padding: 12px 0 !important; }
+.cyber-ctf-enunciado {
+  white-space: pre-wrap; word-break: break-word; font-family: var(--font-mono); font-size: 12px; line-height: 1.6;
+  background: var(--ink); color: #cfe9e2; padding: 12px 14px; border-radius: 8px; margin: 12px 0; overflow-x: auto;
+}
+[data-theme="dark"] .cyber-ctf-enunciado { background: #0c1519; }
+.cyber-ctf-dica { font-size: 12px; margin: 8px 0; }
+.cyber-ctf-dica summary { cursor: pointer; color: var(--teal); }

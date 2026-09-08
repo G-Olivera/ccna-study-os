@@ -66,6 +66,21 @@ export async function explicarTrechoLivro(trecho) {
   return result.response.text();
 }
 
+/** Tutor com enquadramento de Cybersecurity defensiva. Explica conceitos, logs
+ * e alertas, gera cenários defensivos e explica respostas — sempre com foco em
+ * educação e defesa, nunca em automatizar ataque a sistemas de terceiros. */
+export async function perguntarTutorCyber(pergunta) {
+  const prompt =
+    "Você é um instrutor de Cybersecurity DEFENSIVA (SOC / Blue Team) para um " +
+    "estudante. Responda em português, direto, em passos curtos. Foque em " +
+    "entender, detectar e responder. Se a pergunta pedir para atacar, escanear " +
+    "ou invadir sistemas de terceiros, recuse e redirecione para a versão " +
+    "defensiva/educacional em ambiente autorizado.\n\nPergunta: " +
+    pergunta;
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+}
+
 /** Lista, em português, os termos técnicos / siglas / comandos que aparecem no
  * trecho da página — cada um com uma definição curta. Não traduz o trecho. */
 export async function glossarioDoTrecho(trecho) {

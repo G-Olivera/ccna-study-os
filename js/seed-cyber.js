@@ -425,10 +425,69 @@ const socScenarios = [
   },
 ];
 
+// ---------- DESAFIOS / CTF (Fase 3) ----------
+// Educacional, sobre dados fictícios. A verificação da resposta é no cliente
+// (respostas normalizadas em `respostas`) — como todo CTF client-side, quem abre
+// o devtools consegue "trapacear"; aqui o objetivo é treino, não competição.
+const ctfChallenges = [
+  {
+    id: "ctf-b64", ordem: 1, titulo: "Mensagem interceptada", categoria: "Codificação", dificuldade: "basico",
+    enunciado: "Um analista capturou este payload numa requisição. Decodifique e responda com o texto em claro:\n\nRXNjdWRvIGF6dWwsIGRlZmVzYSBlbSBwcm9mdW5kaWRhZGU=",
+    dica: "Só letras, números, + e / terminando com '=' costuma ser Base64.",
+    respostas: ["escudo azul, defesa em profundidade", "escudo azul defesa em profundidade"],
+    explicacao: "É Base64. Decodificado dá \"Escudo azul, defesa em profundidade\". Base64 não é criptografia — é só codificação; qualquer um decodifica.",
+  },
+  {
+    id: "ctf-hash", ordem: 2, titulo: "Que hash é esse?", categoria: "Criptografia", dificuldade: "basico",
+    enunciado: "Um relatório traz este valor como \"hash do arquivo\":\n\n5d41402abc4b2a76b9719d911017c592\n\nQual algoritmo produz um hash desse tamanho? (responda a sigla)",
+    dica: "Conte os caracteres hexadecimais. 32 = 128 bits.",
+    respostas: ["md5"],
+    explicacao: "32 caracteres hex = 128 bits = MD5 (SHA-1 tem 40, SHA-256 tem 64). MD5 é considerado quebrado para integridade contra adversário — colisões são práticas.",
+  },
+  {
+    id: "ctf-log", ordem: 3, titulo: "Usuário suspeito", categoria: "Análise de logs", dificuldade: "intermediario",
+    enunciado: "Trecho de log de autenticação (fictício). Qual usuário tem o comportamento mais suspeito? (responda só o nome de usuário)\n\n" +
+      "08:01 login ok    ana.paula   10.10.1.5\n" +
+      "08:03 login ok    r.moreira   10.10.1.9\n" +
+      "02:47 login FAIL  admin       203.0.113.44\n" +
+      "02:47 login FAIL  admin       203.0.113.44\n" +
+      "02:48 login FAIL  admin       203.0.113.44\n" +
+      "02:49 login ok    admin       203.0.113.44\n" +
+      "09:15 login ok    ana.paula   10.10.1.5",
+    dica: "Horário fora do expediente + falhas repetidas + IP externo + a conta mais valiosa.",
+    respostas: ["admin"],
+    explicacao: "A conta 'admin' teve 3 falhas às 02h47 de um IP externo (203.0.113.44, faixa de documentação) e logo em seguida um sucesso da mesma origem — padrão de força bruta bem-sucedida contra a conta mais privilegiada.",
+  },
+  {
+    id: "ctf-porta", ordem: 4, titulo: "Serviço exposto", categoria: "Redes", dificuldade: "basico",
+    enunciado: "Uma varredura mostra um host respondendo em TCP 3389 aberto para a internet. Que serviço é esse? (responda a sigla)",
+    dica: "É o protocolo de área de trabalho remota da Microsoft.",
+    respostas: ["rdp"],
+    explicacao: "TCP 3389 = RDP (Remote Desktop Protocol). Expor RDP direto na internet é um dos vetores de ransomware mais comuns — deve ficar atrás de VPN/bastion e com MFA.",
+  },
+];
+
+// ---------- PLAYGROUND SIEM — LOTE DE EVENTOS (Fase 3) ----------
+// Conjunto fixo de eventos fictícios para o usuário praticar filtros/consultas.
+const siemEvents = [
+  { ts: "2026-03-04T08:12:03Z", host: "WKS-1001", user: "ana.paula", src: "10.10.1.5", action: "logon", result: "success", detail: "tipo 2 (interativo)" },
+  { ts: "2026-03-04T08:40:10Z", host: "SRV-WEB01", user: "svc-web", src: "10.20.3.4", action: "process", result: "success", detail: "nginx reload" },
+  { ts: "2026-03-04T02:47:01Z", host: "SRV-AD01", user: "admin", src: "203.0.113.44", action: "logon", result: "failure", detail: "senha incorreta" },
+  { ts: "2026-03-04T02:47:05Z", host: "SRV-AD01", user: "admin", src: "203.0.113.44", action: "logon", result: "failure", detail: "senha incorreta" },
+  { ts: "2026-03-04T02:47:09Z", host: "SRV-AD01", user: "admin", src: "203.0.113.44", action: "logon", result: "failure", detail: "senha incorreta" },
+  { ts: "2026-03-04T02:49:22Z", host: "SRV-AD01", user: "admin", src: "203.0.113.44", action: "logon", result: "success", detail: "tipo 3 (rede)" },
+  { ts: "2026-03-04T02:51:00Z", host: "SRV-AD01", user: "admin", src: "203.0.113.44", action: "group_change", result: "success", detail: "b.reboucas -> Domain Admins" },
+  { ts: "2026-03-04T09:03:44Z", host: "WKS-3412", user: "m.silva", src: "10.30.5.12", action: "process", result: "success", detail: "powershell -EncodedCommand" },
+  { ts: "2026-03-04T09:03:45Z", host: "WKS-3412", user: "m.silva", src: "10.30.5.12", action: "network", result: "allowed", detail: "-> 203.0.113.77:80" },
+  { ts: "2026-03-04T09:30:12Z", host: "WKS-1001", user: "ana.paula", src: "10.10.1.5", action: "file", result: "success", detail: "abriu relatorio.xlsx" },
+  { ts: "2026-03-04T16:20:03Z", host: "SRV-APP07", user: "svc-app", src: "10.20.3.7", action: "network", result: "denied", detail: "-> 203.0.113.200:8443 (egress deny)" },
+  { ts: "2026-03-04T10:05:00Z", host: "WKS-2201", user: "p.costa", src: "10.30.4.7", action: "dns", result: "success", detail: "query TXT a8f3k2...9c.exfil-lab-example.test" },
+];
+
 export async function seedCyberIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
-  if (metaSnap.exists() && metaSnap.data().cyberSeededV2) {
+  if (metaSnap.exists() && metaSnap.data().cyberSeededV3) {
     console.log("[seed] Cybersecurity já populado, pulando.");
     return { seeded: false };
   }
@@ -438,17 +497,19 @@ export async function seedCyberIfNeeded() {
   lessons.forEach((l) => batch.set(doc(db, "content", "cyberLessons", "items", l.id), l));
   labs.forEach((lab) => batch.set(doc(db, "content", "cyberLabs", "items", lab.id), lab));
   socScenarios.forEach((s) => batch.set(doc(db, "content", "socScenarios", "items", s.id), s));
+  ctfChallenges.forEach((c) => batch.set(doc(db, "content", "cyberCtf", "items", c.id), c));
+  batch.set(doc(db, "content", "cyberSiem", "items", "lote-01"), { id: "lote-01", nome: "Lote 01 — dia 04/03", eventos: siemEvents });
   batch.set(
     metaRef,
     {
-      cyberSeededV2: true,
-      cyberCounts: { tracks: tracks.length, lessons: lessons.length, labs: labs.length, socScenarios: socScenarios.length },
-      cyberSeededV2At: serverTimestamp(),
+      cyberSeededV3: true,
+      cyberCounts: { tracks: tracks.length, lessons: lessons.length, labs: labs.length, socScenarios: socScenarios.length, ctf: ctfChallenges.length },
+      cyberSeededV3At: serverTimestamp(),
     },
     { merge: true }
   );
 
   await batch.commit();
-  console.log(`[seed] ✅ Cybersecurity: ${tracks.length} trilhas, ${lessons.length} lições, ${labs.length} labs, ${socScenarios.length} cenários SOC`);
+  console.log(`[seed] ✅ Cybersecurity: ${tracks.length} trilhas, ${lessons.length} lições, ${labs.length} labs, ${socScenarios.length} SOC, ${ctfChallenges.length} CTF`);
   return { seeded: true };
 }
