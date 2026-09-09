@@ -81,8 +81,3 @@ export function iniciarVerificacaoLembrete() {
     }
   }, 30000); // confere a cada 30s (margem de segurança pro minuto exato)
 }
-
-export function pararVerificacaoLembrete() {
-  if (intervaloVerificacao) clearInterval(intervaloVerificacao);
-  intervaloVerificacao = null;
-}

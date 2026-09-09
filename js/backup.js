@@ -35,6 +35,10 @@ const COLECOES = [
   "srsCards",
   "conquistas",
   "leituras",
+  "cyberProgress",
+  "cyberLabProgress",
+  "socAttempts",
+  "cyberCtfProgress",
 ];
 
 // Timestamp do Firestore -> string ISO (pra caber no JSON de forma legível).

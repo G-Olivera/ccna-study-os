@@ -29,12 +29,6 @@ export async function getAllTopics() {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function getTopicsByDomain(dominio) {
-  const q = query(collection(db, "content/topics/items"), where("dominio", "==", dominio));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-}
-
 // ---------- PROGRESSO DO USUÁRIO ----------
 
 function userSub(uid, sub) {
@@ -72,12 +66,6 @@ export async function saveSimulado(uid, simulado) {
     ...simulado,
     data: serverTimestamp(),
   });
-}
-
-export async function getSimulados(uid) {
-  const q = query(userSub(uid, "simulados"), orderBy("data", "desc"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
 /** Salva/atualiza o progresso de um laboratório prático. */

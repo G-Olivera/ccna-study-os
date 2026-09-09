@@ -16,3 +16,13 @@ export function escapeHtml(texto) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+/**
+ * Só deixa passar um #rgb / #rrggbb válido pra dentro de um atributo style="" —
+ * impede injeção de CSS via valor manipulado (ex.: "red;background:url(...)").
+ */
+export function corHexSegura(valor, fallback = "#3E6B6B") {
+  return typeof valor === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(valor.trim())
+    ? valor.trim()
+    : fallback;
+}

@@ -70,7 +70,7 @@ import { gerarSimulado, corrigirESalvarSimulado } from "./simulado.js";
 import { definirCronograma, calcularRitmo } from "./planner.js";
 import { abrirCLI } from "./cli-simulator.js";
 import { adicionarTarefa, getTarefasDeHoje, marcarConcluida, removerTarefa, editarTarefa, CATEGORIA_LABEL, SUGESTOES_BEMESTAR } from "./organizer.js";
-import { escapeHtml } from "./utils.js";
+import { escapeHtml, corHexSegura } from "./utils.js";
 import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, irParaPagina, getTextoPaginaAtual, listarProgressoLeituras, toggleFavorito, listarTodosLivros, adicionarLivroLocal, editarLivroLocal, removerLivroLocal, removerProgressoLeitura, gerarCapaAutomatica, getCapaEstaticaCache } from "./reader.js";
 import { capituloDaLicao, acharLivroDoVolume, TOTAL_CAPITULOS } from "./book-map.js";
 import { baixarPreferencias, aplicarPreferenciasNoLocalStorage, salvarPreferencias } from "./preferences.js";
@@ -3340,14 +3340,6 @@ let filtroCategoriaLivro = "";
 let filtroStatusLivro = "todos";
 let visualizacaoLivro = "grid";
 let menuLivroAberto = null;
-
-// Só deixa passar um #rgb / #rrggbb válido pra dentro de style="" — impede que um
-// valor manipulado no armazenamento local injete CSS (ex: "red;background:url(...)").
-function corHexSegura(valor, fallback = "#3E6B6B") {
-  return typeof valor === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(valor.trim())
-    ? valor.trim()
-    : fallback;
-}
 
 function corTextoContraste(hex) {
   const seguro = corHexSegura(hex);

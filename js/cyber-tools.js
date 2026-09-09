@@ -118,7 +118,8 @@ function cvssBase(sel) {
   const iscBase = 1 - (1 - c) * (1 - i) * (1 - a);
   let impact;
   if (sel.S === "U") impact = 6.42 * iscBase;
-  else impact = 7.52 * (iscBase - 0.029) - 3.25 * Math.pow(iscBase - 0.02, 15);
+  // CVSS v3.1: expoente 13 e fator 0.9731 no termo de escopo alterado (na v3.0 era ^15 sem o fator).
+  else impact = 7.52 * (iscBase - 0.029) - 3.25 * Math.pow(iscBase * 0.9731 - 0.02, 13);
   const exploit = 8.22 * av * ac * pr * ui;
 
   let score;

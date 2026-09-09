@@ -8,8 +8,6 @@ import { getAllUserTopicProgress } from "./data-schema.js";
 const TEMPO_POR_FLASHCARD_SEG = 25;
 const TEMPO_POR_QUESTAO_SEG = 75;
 
-export const DURACOES_DISPONIVEIS = [5, 10, 15, 30]; // minutos
-
 /**
  * Monta uma sessão de revisão rápida cabendo em `minutosDisponiveis`.
  * Prioriza: 1) cards SRS mais atrasados, 2) tópicos mais fracos.
@@ -46,12 +44,4 @@ export async function gerarRevisaoRapida(uid, minutosDisponiveis) {
     },
     tempoEstimadoSeg: tempoUsadoFlashcards + maxQuestoes * TEMPO_POR_QUESTAO_SEG,
   };
-}
-
-/** Atalho pra UI: botões prontos de 5/10/15/30 min. */
-export function opcoesDeDuracao() {
-  return DURACOES_DISPONIVEIS.map((min) => ({
-    minutos: min,
-    label: min < 60 ? `${min} min` : `${min / 60}h`,
-  }));
 }

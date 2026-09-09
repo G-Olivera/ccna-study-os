@@ -9,12 +9,6 @@ import {
   updateTransacao,
   getTransacoesByMonth,
   deleteTransacao,
-  createGastoFixo,
-  getGastosFixos,
-  deleteGastoFixo,
-  createCartao,
-  getCartoes,
-  deleteCartao,
   salvarMetaGasto,
   getMetaGasto,
 } from "./data-schema.js";
@@ -219,34 +213,9 @@ export async function getResumoDoMes(uid, anoMes = _anoMesDeHoje()) {
   };
 }
 
-// ---------- GASTOS FIXOS ----------
-
-export async function adicionarGastoFixo(uid, { descricao, diaVencimento, valorMedio }) {
-  return createGastoFixo(uid, { descricao, diaVencimento: Number(diaVencimento), valorMedio: Number(valorMedio) });
-}
-
-export async function listarGastosFixos(uid) {
-  const gastos = await getGastosFixos(uid);
-  return gastos.sort((a, b) => a.diaVencimento - b.diaVencimento);
-}
-
-export async function removerGastoFixo(uid, id) {
-  return deleteGastoFixo(uid, id);
-}
-
-// ---------- CARTÕES ----------
-
-export async function adicionarCartao(uid, { nome, vencimento, fechamento }) {
-  return createCartao(uid, { nome, vencimento: Number(vencimento), fechamento: Number(fechamento) });
-}
-
-export async function listarCartoes(uid) {
-  return getCartoes(uid);
-}
-
-export async function removerCartao(uid, id) {
-  return deleteCartao(uid, id);
-}
+// Gastos fixos e cartões: as versões em uso são adicionarGastoRecorrente /
+// adicionarCartaoCompleto etc. (reexportadas de ./finance/recurring.js e
+// ./finance/cards.js acima). Os wrappers antigos foram removidos.
 
 // ---------- META DE GASTO ----------
 

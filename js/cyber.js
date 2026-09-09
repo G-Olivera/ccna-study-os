@@ -12,17 +12,13 @@ import { db } from "./firebase-config.js";
 import { logActivity } from "./data-schema.js";
 import { explicarTopico } from "./ai-tutor.js";
 import { getDashboardData } from "./dashboard.js";
-import { escapeHtml } from "./utils.js";
+import { escapeHtml, corHexSegura } from "./utils.js";
 
 const DIFICULDADE_LABEL = { basico: "Básico", intermediario: "Intermediário", avancado: "Avançado" };
 const TIPO_LABEL = { teoria: "Teoria", lab: "Lab", quiz: "Quiz" };
 
 let conteudoCache = null; // { tracks, lessons, labs }
 let uidAtual = null;
-
-function corHexSegura(v, fallback = "#3E6B6B") {
-  return typeof v === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v.trim()) ? v.trim() : fallback;
-}
 
 // ---------- DADOS ----------
 
@@ -66,7 +62,7 @@ async function carregarProgresso(uid) {
 // Minutos de atividade Cybersecurity no mês corrente.
 async function minutosCyberDoMes(uid) {
   try {
-    const q = query(collection(db, "users", uid, "activityLog"), where("tipo", "in", ["cyber_licao", "cyber_lab"]));
+    const q = query(collection(db, "users", uid, "activityLog"), where("tipo", "in", ["cyber_licao", "cyber_lab", "cyber_soc", "cyber_ctf"]));
     const snap = await getDocs(q);
     const agora = new Date();
     let min = 0;
@@ -629,12 +625,12 @@ async function render() {
   const licoesFeitas = lessons.filter((l) => (progLicoes[l.id]?.masteryPercent ?? 0) >= LICAO_CONCLUIDA).length;
   const percentGeral = licoesTotais ? Math.round((licoesFeitas / licoesTotais) * 100) : 0;
   const labsFeitos = Object.values(progLabs).filter((p) => p.concluido).length;
-  const socResolvidos = (soc || []).filter((s) => progSoc[s.id]?.acertou).length;
+  const socFeitos = Object.values(progSoc).filter((p) => p?.acertou).length;
+  const ctfFeitos = Object.values(progresso.ctf || {}).filter((p) => p?.resolvido).length;
   const h = Math.floor(minutosMes / 60);
   const min = Math.round(minutosMes % 60);
   const horasMes = minutosMes === 0 ? "0h" : h > 0 ? `${h}h ${min}min` : `${min}min`;
-
-  const nenhumProgresso = Object.keys(progLicoes).length === 0 && labsFeitos === 0;
+  const nenhumProgresso = Object.keys(progLicoes).length === 0 && labsFeitos === 0 && socFeitos === 0 && ctfFeitos === 0;
 
   // Trilha "continuar": a de maior progresso ainda não concluída; senão Fundamentos.
   const comProgresso = tracks
