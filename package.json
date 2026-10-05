@@ -1,0 +1,17 @@
+{
+  "name": "ccna-study-os",
+  "private": true,
+  "description": "CCNA Study OS — app de estudos (vanilla JS/Firebase, sem build step). Este package.json existe só pra ferramentas de desenvolvimento (lint/format); nada aqui é carregado pelo app em produção.",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "eslint": "^9.15.0",
+    "globals": "^15.12.0",
+    "prettier": "^3.3.3"
+  }
+}
