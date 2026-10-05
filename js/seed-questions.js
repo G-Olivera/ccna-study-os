@@ -1331,13 +1331,304 @@ const questoesExemplo = [
     respostaCorreta: "B",
     justificativa: "O tráfego local (mesma sub-rede) não passa pelo gateway, então funciona. Já qualquer destino em outra rede é entregue ao gateway errado e não chega.",
   },
+
+  // ---------- LOTE V8 — reforço de proporção por domínio do blueprint ----------
+  // Network Access
+  {
+    id: "q-v8-001", dominio: "Network Access", topicId: "m06-03", dificuldade: "facil",
+    enunciado: "Qual comando, dentro da interface VLAN de gerenciamento de um switch, faz com que ele obtenha o endereço IP via DHCP?",
+    alternativas: { A: "ip address dhcp", B: "ip dhcp pool", C: "ip helper-address", D: "dhcp client enable" },
+    respostaCorreta: "A",
+    justificativa: "O comando `ip address dhcp` na interface de gerência faz o switch atuar como cliente DHCP e solicitar um endereço automaticamente.",
+  },
+  {
+    id: "q-v8-002", dominio: "Network Access", topicId: "m07-02", dificuldade: "facil",
+    enunciado: "Quais comandos, no modo de configuração de interface, definem manualmente a velocidade e o duplex de uma porta de switch?",
+    alternativas: { A: "interface speed / interface duplex", B: "speed <valor> / duplex <modo>", C: "set speed <valor> / set duplex <modo>", D: "port-speed <valor> / port-duplex <modo>" },
+    respostaCorreta: "B",
+    justificativa: "Dentro do modo de interface, os comandos `speed {10|100|1000|auto}` e `duplex {half|full|auto}` configuram manualmente esses parâmetros.",
+  },
+  {
+    id: "q-v8-003", dominio: "Network Access", topicId: "m07-03", dificuldade: "facil",
+    enunciado: "Qual comando reativa uma porta de switch que está administrativamente desligada?",
+    alternativas: { A: "enable", B: "no shutdown", C: "port-enable", D: "activate interface" },
+    respostaCorreta: "B",
+    justificativa: "`shutdown` desativa a interface administrativamente; `no shutdown` a reativa.",
+  },
+  {
+    id: "q-v8-004", dominio: "Network Access", topicId: "m08-01", dificuldade: "facil",
+    enunciado: "Qual comando atribui a porta de um switch à VLAN 20?",
+    alternativas: { A: "vlan 20", B: "switchport access vlan 20", C: "switchport trunk vlan 20", D: "interface vlan 20" },
+    respostaCorreta: "B",
+    justificativa: "`switchport access vlan 20`, dentro do modo de configuração da interface, atribui aquela porta de acesso à VLAN 20.",
+  },
+  {
+    id: "q-v8-005", dominio: "Network Access", topicId: "m09-01", dificuldade: "medio",
+    enunciado: "Por que o Spanning Tree Protocol é necessário em uma rede com switches redundantemente conectados?",
+    alternativas: { A: "Para aumentar a velocidade dos links", B: "Para evitar loops de camada 2 e tempestades de broadcast", C: "Para rotear pacotes IP entre VLANs", D: "Para criptografar o tráfego entre switches" },
+    respostaCorreta: "B",
+    justificativa: "Links redundantes entre switches sem STP criam loops de camada 2, causando tempestades de broadcast e cópias duplicadas de quadros. O STP bloqueia portas redundantes para evitar isso.",
+  },
+  {
+    id: "q-v8-006", dominio: "Network Access", topicId: "m09-02", dificuldade: "medio",
+    enunciado: "Em uma eleição de Spanning Tree, qual switch se torna a root bridge?",
+    alternativas: { A: "O que tem o maior endereço MAC", B: "O que tem o Bridge ID (prioridade + MAC) numericamente menor", C: "O primeiro que foi ligado", D: "O que tem mais portas ativas" },
+    respostaCorreta: "B",
+    justificativa: "A root bridge é o switch com o menor Bridge ID — prioridade mais baixa primeiro; em empate, o menor endereço MAC decide.",
+  },
+  {
+    id: "q-v8-007", dominio: "Network Access", topicId: "m10-01", dificuldade: "medio",
+    enunciado: "Qual é o valor padrão de prioridade de bridge usado pelo Spanning Tree em switches Cisco, antes de qualquer configuração manual?",
+    alternativas: { A: "0", B: "4096", C: "32768", D: "65535" },
+    respostaCorreta: "C",
+    justificativa: "O valor padrão de prioridade é 32768 (em incrementos de 4096). Quanto menor a prioridade, maior a chance de o switch virar a root bridge.",
+  },
+  {
+    id: "q-v8-008", dominio: "Network Access", topicId: "m31-01", dificuldade: "facil",
+    enunciado: "Qual a diferença fundamental entre um Access Point autônomo e um lightweight AP?",
+    alternativas: { A: "O autônomo não transmite Wi-Fi", B: "O autônomo tem toda a configuração local; o lightweight depende de um WLC para gerenciar e aplicar políticas", C: "O lightweight só funciona com cabo, sem rádio", D: "Não há diferença, são nomes para o mesmo equipamento" },
+    respostaCorreta: "B",
+    justificativa: "Um AP autônomo é configurado e gerenciado individualmente. Um lightweight AP usa CAPWAP para receber configuração e políticas centralizadas de um WLC.",
+  },
+  {
+    id: "q-v8-009", dominio: "Network Access", topicId: "m31-03", dificuldade: "medio",
+    enunciado: "No modo FlexConnect, qual é o principal comportamento de um AP em relação ao tráfego de dados quando a conexão com o WLC é perdida?",
+    alternativas: { A: "O AP para de funcionar completamente", B: "O AP pode continuar encaminhando tráfego localmente (switching local), mesmo sem o WLC", C: "O AP vira automaticamente um switch", D: "O AP reinicia e volta ao modo autônomo permanentemente" },
+    respostaCorreta: "B",
+    justificativa: "FlexConnect foi criado para sites remotos: permite que o AP continue comutando tráfego localmente mesmo com o link ao WLC fora do ar.",
+  },
+  {
+    id: "q-v8-010", dominio: "Network Access", topicId: "m32-01", dificuldade: "facil",
+    enunciado: "Quais são os três pilares de segurança que um esquema de autenticação wireless busca garantir?",
+    alternativas: { A: "Velocidade, alcance e custo", B: "Autenticação, confidencialidade (privacidade) e integridade", C: "Canal, banda e potência", D: "SSID, BSSID e ESSID" },
+    respostaCorreta: "B",
+    justificativa: "Segurança wireless busca garantir quem pode se conectar (autenticação), que os dados não sejam lidos por terceiros (confidencialidade) e que não sejam alterados em trânsito (integridade).",
+  },
+  {
+    id: "q-v8-011", dominio: "Network Access", topicId: "m33-01", dificuldade: "medio",
+    enunciado: "Qual protocolo um Access Point lightweight usa para formar um túnel de controle (e opcionalmente dados) com o WLC?",
+    alternativas: { A: "CAPWAP", B: "HSRP", C: "STP", D: "OSPF" },
+    respostaCorreta: "A",
+    justificativa: "O CAPWAP (Control And Provisioning of Wireless Access Points) é o protocolo-padrão usado para o túnel de gerenciamento entre AP lightweight e WLC.",
+  },
+  {
+    id: "q-v8-012", dominio: "Network Access", topicId: "m33-02", dificuldade: "medio",
+    enunciado: "No fluxo de configuração de uma WLAN em um WLC moderno (Cisco), o que uma 'policy tag' faz?",
+    alternativas: { A: "Define a senha da WLAN", B: "Associa um perfil de WLAN e um perfil de política a um grupo de APs", C: "Substitui a necessidade de VLAN", D: "Configura o canal de RF" },
+    respostaCorreta: "B",
+    justificativa: "A policy tag amarra o WLAN profile e o policy profile correspondentes aos APs que devem aplicá-los — parte do modelo de configuração baseado em tags do IOS-XE/9800.",
+  },
+
+  // IP Connectivity
+  {
+    id: "q-v8-013", dominio: "IP Connectivity", topicId: "m17-01", dificuldade: "facil",
+    enunciado: "Qual comando configura o endereço IP 192.168.1.1/24 em uma interface de roteador Cisco?",
+    alternativas: { A: "ip address 192.168.1.1 255.255.255.0", B: "ip 192.168.1.1/24", C: "address ip 192.168.1.1 24", D: "set ip 192.168.1.1 255.255.255.0" },
+    respostaCorreta: "A",
+    justificativa: "`ip address <endereço> <máscara>` é configurado dentro do modo de interface. O IOS clássico não aceita a notação CIDR direta nesse comando.",
+  },
+  {
+    id: "q-v8-014", dominio: "IP Connectivity", topicId: "m29-02", dificuldade: "medio",
+    enunciado: "Qual comando exibe a tabela de roteamento IPv6 de um roteador Cisco?",
+    alternativas: { A: "show ip route", B: "show ipv6 route", C: "show route ipv6", D: "show ipv6 neighbors" },
+    respostaCorreta: "B",
+    justificativa: "`show ipv6 route` lista as rotas IPv6 conhecidas, separado da tabela IPv4 (`show ip route`).",
+  },
+  {
+    id: "q-v8-015", dominio: "IP Connectivity", topicId: "m16-02", dificuldade: "facil",
+    enunciado: "Qual comando mostra rapidamente o status (up/down) e o endereço IP de todas as interfaces de um roteador?",
+    alternativas: { A: "show running-config", B: "show ip interface brief", C: "show interfaces status", D: "show version" },
+    respostaCorreta: "B",
+    justificativa: "`show ip interface brief` resume endereço IP, status da interface e status do protocolo de linha de cada interface.",
+  },
+  {
+    id: "q-v8-016", dominio: "IP Connectivity", topicId: "m20-01", dificuldade: "medio",
+    enunciado: "Um roteador não tem uma rota para a rede de destino de um pacote e não possui rota padrão. O que ele faz?",
+    alternativas: { A: "Envia o pacote por todas as interfaces (flooding)", B: "Descarta o pacote e pode enviar um ICMP Destination Unreachable", C: "Guarda o pacote em buffer até aparecer uma rota", D: "Encaminha pelo gateway de último recurso configurado na VLAN 1" },
+    respostaCorreta: "B",
+    justificativa: "Sem rota correspondente (nem rota padrão), o roteador descarta o pacote e tipicamente envia um ICMP Destination Unreachable de volta à origem.",
+  },
+  {
+    id: "q-v8-017", dominio: "IP Connectivity", topicId: "m21-01", dificuldade: "facil",
+    enunciado: "OSPF é classificado como qual tipo de protocolo de roteamento?",
+    alternativas: { A: "Vetor de distância", B: "Link-state", C: "Path-vector", D: "Estático" },
+    respostaCorreta: "B",
+    justificativa: "OSPF é link-state: cada roteador constrói um banco de dados topológico completo da área e calcula o melhor caminho com o algoritmo SPF (Dijkstra).",
+  },
+  {
+    id: "q-v8-018", dominio: "IP Connectivity", topicId: "m22-01", dificuldade: "medio",
+    enunciado: "No comando `network 10.0.0.0 0.0.0.255 area 0` dentro do OSPF, o que representa `0.0.0.255`?",
+    alternativas: { A: "A máscara de sub-rede normal", B: "Uma wildcard mask, que define quais interfaces participam do processo OSPF", C: "O ID da área", D: "O custo da métrica" },
+    respostaCorreta: "B",
+    justificativa: "O comando `network` do OSPF usa wildcard mask (inverso da máscara) para casar com o endereço das interfaces que devem participar daquela área.",
+  },
+  {
+    id: "q-v8-019", dominio: "IP Connectivity", topicId: "m22-02", dificuldade: "facil",
+    enunciado: "Qual comando verifica se dois roteadores formaram adjacência (vizinhança) OSPF?",
+    alternativas: { A: "show ip ospf interface", B: "show ip ospf neighbor", C: "show ip route ospf", D: "show ip protocols" },
+    respostaCorreta: "B",
+    justificativa: "`show ip ospf neighbor` lista os vizinhos OSPF descobertos e o estado atual da adjacência (ex.: FULL).",
+  },
+  {
+    id: "q-v8-020", dominio: "IP Connectivity", topicId: "m23-01", dificuldade: "medio",
+    enunciado: "Qual o efeito de configurar `passive-interface` em uma interface dentro do processo OSPF?",
+    alternativas: { A: "A interface para de rotear pacotes IP", B: "A interface deixa de enviar/receber pacotes Hello OSPF, mas sua rede ainda é anunciada", C: "A interface é removida completamente do OSPF, inclusive da tabela de roteamento", D: "A interface vira automaticamente a rota padrão" },
+    respostaCorreta: "B",
+    justificativa: "Uma interface passiva não forma vizinhança OSPF (não troca Hello), mas a sub-rede dela continua sendo anunciada, pois ainda está coberta pelo comando `network`.",
+  },
+  {
+    id: "q-v8-021", dominio: "IP Connectivity", topicId: "m23-02", dificuldade: "medio",
+    enunciado: "Qual comando faz o OSPF anunciar uma rota padrão (0.0.0.0/0) para os demais roteadores?",
+    alternativas: { A: "default-route ospf", B: "default-information originate", C: "network 0.0.0.0 0.0.0.0 area 0", D: "ip default-gateway" },
+    respostaCorreta: "B",
+    justificativa: "`default-information originate` (dentro do processo OSPF) faz o roteador anunciar uma rota padrão, geralmente usado no roteador de borda com saída para a internet.",
+  },
+  {
+    id: "q-v8-022", dominio: "IP Connectivity", topicId: "m24-01", dificuldade: "dificil",
+    enunciado: "Em qual estado de vizinhança OSPF os roteadores já trocaram completamente seus bancos de dados de link-state (LSDB) e estão totalmente sincronizados?",
+    alternativas: { A: "Init", B: "2-Way", C: "Exstart", D: "Full" },
+    respostaCorreta: "D",
+    justificativa: "O estado Full indica que os roteadores vizinhos têm LSDBs idênticos — a adjacência está completamente formada. Os demais (Down, Init, 2-Way, Exstart, Exchange, Loading) são etapas intermediárias.",
+  },
+  {
+    id: "q-v8-023", dominio: "IP Connectivity", topicId: "m24-03", dificuldade: "medio",
+    enunciado: "Qual é a fórmula padrão (Cisco) usada pelo OSPF para calcular o custo de uma interface?",
+    alternativas: { A: "Custo = largura de banda da interface em bps", B: "Custo = banda de referência (10^8) / largura de banda da interface em bps", C: "Custo = número de saltos até o destino", D: "Custo = atraso (delay) acumulado em microssegundos" },
+    respostaCorreta: "B",
+    justificativa: "Por padrão, o custo OSPF é banda de referência (100 Mbps = 10^8) dividida pela banda da interface em bps. Em links muito rápidos, vale ajustar com `auto-cost reference-bandwidth`.",
+  },
+  {
+    id: "q-v8-024", dominio: "IP Connectivity", topicId: "m27-01", dificuldade: "facil",
+    enunciado: "Qual comando configura o endereço IPv6 2001:db8::1/64 em uma interface de roteador?",
+    alternativas: { A: "ip address 2001:db8::1/64", B: "ipv6 address 2001:db8::1/64", C: "ipv6 2001:db8::1 /64", D: "address ipv6 2001:db8::1 64" },
+    respostaCorreta: "B",
+    justificativa: "O comando é `ipv6 address <endereço>/<prefixo>` dentro da interface — o prefixo vem com barra, diferente do IPv4 que usa máscara decimal.",
+  },
+
+  // IP Services
+  {
+    id: "q-v8-025", dominio: "IP Services", topicId: "m42-03", dificuldade: "facil",
+    enunciado: "Qual a principal diferença entre CDP e LLDP?",
+    alternativas: { A: "CDP é padrão aberto (IEEE) e LLDP é proprietário da Cisco", B: "CDP é proprietário da Cisco e LLDP é um padrão aberto (IEEE 802.1AB)", C: "Ambos são protocolos de roteamento", D: "LLDP só funciona em switches, nunca em roteadores" },
+    respostaCorreta: "B",
+    justificativa: "CDP (Cisco Discovery Protocol) é proprietário da Cisco; LLDP (Link Layer Discovery Protocol) é um padrão aberto do IEEE que cumpre função semelhante entre fabricantes diferentes.",
+  },
+  {
+    id: "q-v8-026", dominio: "IP Services", topicId: "m46-02", dificuldade: "facil",
+    enunciado: "Qual a diferença de transporte entre FTP e TFTP?",
+    alternativas: { A: "FTP usa TCP (confiável, com autenticação); TFTP usa UDP (simples, sem autenticação)", B: "FTP usa UDP; TFTP usa TCP", C: "Os dois usam ICMP", D: "Não há diferença de transporte entre eles" },
+    respostaCorreta: "A",
+    justificativa: "FTP roda sobre TCP (portas 20/21) com autenticação. TFTP roda sobre UDP (porta 69), é mais simples e sem autenticação — comum para transferir imagens de IOS em LAN confiável.",
+  },
+
+  // Security Fundamentals
+  {
+    id: "q-v8-027", dominio: "Security Fundamentals", topicId: "m37-01", dificuldade: "dificil",
+    enunciado: "Uma ACL padrão numerada (1-99) deve bloquear o tráfego da sub-rede 192.168.10.0/24 saindo em direção à internet, sem afetar outro tráfego dessa mesma sub-rede. Em qual lugar essa ACL deve ser aplicada, pela boa prática recomendada?",
+    alternativas: { A: "O mais próximo possível da origem do tráfego", B: "O mais próximo possível do destino do tráfego", C: "Em qualquer lugar, não importa", D: "Apenas na interface que já tem NAT configurado" },
+    respostaCorreta: "B",
+    justificativa: "Como a ACL padrão só enxerga o IP de origem (não o destino), aplicá-la perto da origem bloquearia o tráfego pra qualquer destino. A boa prática é aplicar ACLs padrão o mais perto possível do destino.",
+  },
+  {
+    id: "q-v8-028", dominio: "Security Fundamentals", topicId: "m35-03", dificuldade: "medio",
+    enunciado: "Em qual direção (in/out) faz mais sentido aplicar, na interface externa de um roteador de borda, uma ACL estendida que filtra tráfego vindo da internet para a rede interna?",
+    alternativas: { A: "in (entrando na interface externa)", B: "out (saindo pela interface externa)", C: "As duas direções simultaneamente, sempre", D: "Não importa, ACL não tem direção" },
+    respostaCorreta: "A",
+    justificativa: "Aplicar a ACL como 'in' na interface que recebe o tráfego da internet filtra os pacotes assim que chegam, antes de serem roteados para dentro da rede.",
+  },
+  {
+    id: "q-v8-029", dominio: "Security Fundamentals", topicId: "m36-02", dificuldade: "medio",
+    enunciado: "Qual comando de ACL estendida permite tráfego HTTP (porta 80) de qualquer origem para o host 10.0.0.10?",
+    alternativas: { A: "access-list 101 permit tcp any host 10.0.0.10 eq 80", B: "access-list 101 permit ip any host 10.0.0.10 eq www", C: "access-list 101 permit tcp host 10.0.0.10 any eq 80", D: "access-list 101 deny tcp any host 10.0.0.10 eq 80" },
+    respostaCorreta: "A",
+    justificativa: "`permit tcp any host 10.0.0.10 eq 80` permite tráfego TCP de qualquer origem com destino ao host 10.0.0.10 na porta 80. A opção B erra o protocolo — `ip` não aceita `eq`.",
+  },
+  {
+    id: "q-v8-030", dominio: "Security Fundamentals", topicId: "m38-01", dificuldade: "facil",
+    enunciado: "O que caracteriza um ataque de 'engenharia social'?",
+    alternativas: { A: "Exploração de uma falha de software", B: "Manipulação psicológica de uma pessoa para que ela revele informações ou execute ações indevidas", C: "Sobrecarga de um servidor com tráfego excessivo", D: "Interceptação de pacotes em trânsito na rede" },
+    respostaCorreta: "B",
+    justificativa: "Engenharia social explora a confiança/comportamento humano (phishing, pretexting, etc.), não uma falha técnica de sistema diretamente.",
+  },
+  {
+    id: "q-v8-031", dominio: "Security Fundamentals", topicId: "m39-01", dificuldade: "facil",
+    enunciado: "Qual comando define a senha do modo privilegiado (enable) de forma criptografada no IOS?",
+    alternativas: { A: "enable password cisco", B: "enable secret cisco", C: "service password-encryption", D: "username admin secret cisco" },
+    respostaCorreta: "B",
+    justificativa: "`enable secret` já armazena a senha com hash na configuração. `enable password` grava em texto claro, a menos que `service password-encryption` seja aplicado (e ainda assim é uma cifra fraca).",
+  },
+  {
+    id: "q-v8-032", dominio: "Security Fundamentals", topicId: "m40-01", dificuldade: "medio",
+    enunciado: "Qual comando habilita o Port Security em uma interface de switch, já configurada como modo access?",
+    alternativas: { A: "port-security enable", B: "switchport port-security", C: "ip port-security", D: "security port enable" },
+    respostaCorreta: "B",
+    justificativa: "`switchport port-security`, dentro do modo de interface já em modo access, ativa o recurso. Outros comandos relacionados definem o máximo de MACs, modo de violação, etc.",
+  },
+  {
+    id: "q-v8-033", dominio: "Security Fundamentals", topicId: "m41-02", dificuldade: "medio",
+    enunciado: "O que o Dynamic ARP Inspection (DAI) usa como referência para validar se uma mensagem ARP é legítima?",
+    alternativas: { A: "A tabela de roteamento", B: "A base de bindings construída pelo DHCP Snooping (IP, MAC, VLAN, porta)", C: "A lista de VLANs permitidas no trunk", D: "O arquivo de configuração salvo (startup-config)" },
+    respostaCorreta: "B",
+    justificativa: "DAI compara os pares IP-MAC anunciados em mensagens ARP com a tabela de bindings confiável construída pelo DHCP Snooping, descartando ARPs que não batem (indício de ARP spoofing).",
+  },
+  {
+    id: "q-v8-034", dominio: "Security Fundamentals", topicId: "m37-02", dificuldade: "medio",
+    enunciado: "Uma ACL nomeada está bloqueando tráfego que deveria passar. Qual comando ajuda a confirmar quantos pacotes bateram em cada linha da ACL?",
+    alternativas: { A: "show access-lists", B: "show running-config | include access-list", C: "debug ip packet", D: "show ip interface" },
+    respostaCorreta: "A",
+    justificativa: "`show access-lists` (ou `show ip access-lists`) mostra cada entrada da ACL com o contador de matches, essencial para saber qual linha está agindo ou bloqueando indevidamente.",
+  },
+
+  // Automation and Programmability
+  {
+    id: "q-v8-035", dominio: "Automation and Programmability", topicId: "m51-02", dificuldade: "dificil",
+    enunciado: "No modelo de fabric do Cisco SD-Access, qual é o papel do 'Fabric Border Node'?",
+    alternativas: { A: "Conecta clientes wireless diretamente", B: "Conecta a fabric a redes externas (fora da fabric), como a rede tradicional ou a internet", C: "Armazena a política de segmentação de grupos", D: "Substitui o WLC na rede" },
+    respostaCorreta: "B",
+    justificativa: "O Border Node é o ponto de saída/entrada da fabric SD-Access, traduzindo entre o encapsulamento interno e o tráfego de redes externas.",
+  },
+  {
+    id: "q-v8-036", dominio: "Automation and Programmability", topicId: "m50-01", dificuldade: "facil",
+    enunciado: "Em uma arquitetura SDN (Software-Defined Networking), o que caracteriza a separação entre plano de controle e plano de dados?",
+    alternativas: { A: "Cada dispositivo decide suas próprias rotas de forma totalmente independente", B: "Um controlador centralizado toma as decisões (plano de controle) e os dispositivos de rede só encaminham pacotes conforme instruído (plano de dados)", C: "O plano de dados roda só na nuvem", D: "Não existe mais plano de dados em redes SDN" },
+    respostaCorreta: "B",
+    justificativa: "SDN centraliza a lógica de decisão (controle) em um controller, enquanto switches/roteadores executam apenas o encaminhamento (dados) conforme as regras recebidas.",
+  },
+  {
+    id: "q-v8-037", dominio: "Automation and Programmability", topicId: "m50-02", dificuldade: "medio",
+    enunciado: "Qual é uma vantagem típica de uma rede 'controller-based' em relação a uma rede tradicional dispositivo-por-dispositivo?",
+    alternativas: { A: "Elimina totalmente a necessidade de endereçamento IP", B: "Permite provisionamento e políticas consistentes de forma centralizada, em vez de configurar cada equipamento manualmente", C: "Torna cada switch independente dos demais", D: "Impede automaticamente qualquer tipo de ataque de rede" },
+    respostaCorreta: "B",
+    justificativa: "O principal ganho de uma arquitetura controller-based é a gestão centralizada: políticas e configurações são definidas uma vez no controller e aplicadas de forma consistente em toda a infraestrutura.",
+  },
+  {
+    id: "q-v8-038", dominio: "Automation and Programmability", topicId: "m53-02", dificuldade: "medio",
+    enunciado: "Qual é o conceito central por trás de Infraestrutura como Código (IaC), como praticado com ferramentas como Terraform?",
+    alternativas: { A: "Escrever a configuração manualmente em cada dispositivo via CLI", B: "Descrever o estado desejado da infraestrutura em arquivos declarativos versionáveis, que a ferramenta aplica automaticamente", C: "Substituir toda a rede física por nuvem", D: "Usar apenas scripts de shell sem nenhuma ferramenta específica" },
+    respostaCorreta: "B",
+    justificativa: "IaC trata a infraestrutura como código: o estado desejado é declarado em arquivos versionados, e a ferramenta (Terraform, Ansible etc.) aplica as mudanças necessárias pra alcançar esse estado.",
+  },
+  {
+    id: "q-v8-039", dominio: "Automation and Programmability", topicId: "m52-01", dificuldade: "medio",
+    enunciado: "Em uma API REST, qual método HTTP é tipicamente usado para atualizar um recurso já existente?",
+    alternativas: { A: "GET", B: "POST", C: "PUT", D: "DELETE" },
+    respostaCorreta: "C",
+    justificativa: "PUT é usado para atualizar (substituir) um recurso existente. GET lê, POST geralmente cria um novo recurso, e DELETE remove.",
+  },
+  {
+    id: "q-v8-040", dominio: "Automation and Programmability", topicId: "m52-02", dificuldade: "facil",
+    enunciado: "No formato JSON, qual estrutura é usada para representar uma lista ordenada de valores?",
+    alternativas: { A: "Chaves { }", B: "Colchetes [ ]", C: "Parênteses ( )", D: "Aspas duplas \" \"" },
+    respostaCorreta: "B",
+    justificativa: "Em JSON, `{ }` delimita um objeto (pares chave-valor) e `[ ]` delimita um array (lista ordenada de valores).",
+  },
 ];
 
 export async function seedQuestionsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().questionsSeededV7) {
+  if (metaSnap.exists() && metaSnap.data().questionsSeededV8) {
     console.log("[seed] Banco de questões já populado, pulando.");
     return { seeded: false };
   }
@@ -1347,7 +1638,7 @@ export async function seedQuestionsIfNeeded() {
     const ref = doc(db, "content", "questions", "items", q.id);
     batch.set(ref, q);
   });
-  batch.set(metaRef, { questionsSeededV7: true, questionsCount: questoesExemplo.length, questionsSeededV7At: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { questionsSeededV8: true, questionsCount: questoesExemplo.length, questionsSeededV8At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${questoesExemplo.length} questões gravadas`);
