@@ -258,6 +258,92 @@ const labs = [
       "Habilitar Dynamic ARP Inspection apoiada no DHCP Snooping",
     ],
   },
+
+  // ---------- LOTE V5 — 1 laboratório pra cada trilha que ainda não tinha nenhum ----------
+  {
+    id: "cylab-defesa-camadas", trackId: "fundamentos", nome: "Mapeando defesa em profundidade",
+    descricao: "Pegue um cenário de rede simples e identifique um controle de segurança em cada camada, do perímetro aos dados.",
+    dificuldade: "basico", tempoMin: 25, ferramenta: "Exercício de mapeamento (texto)",
+    ambiente: "Exercício conceitual — não depende de nenhum equipamento real.",
+    checklist: [
+      "Listar um controle de segurança pro perímetro (ex.: firewall de borda)",
+      "Listar um controle pra camada de rede (ex.: segmentação/VLAN, ACL)",
+      "Listar um controle pro host (ex.: antivírus/EDR, hardening)",
+      "Listar um controle pra aplicação e outro pra dados (ex.: WAF; criptografia em repouso)",
+    ],
+  },
+  {
+    id: "cylab-owasp-headers", trackId: "web-security", nome: "Cabeçalhos de segurança HTTP",
+    descricao: "Analise a resposta HTTP de um site de exemplo e identifique quais cabeçalhos de segurança estão faltando.",
+    dificuldade: "intermediario", tempoMin: 30, ferramenta: "Resposta HTTP de exemplo (texto)",
+    ambiente: "Exemplo estático fornecido pelo lab — nenhuma requisição é feita a um site real.",
+    checklist: [
+      "Verificar se existe Content-Security-Policy e o que ela restringe",
+      "Verificar X-Frame-Options (ou a diretiva frame-ancestors da CSP), proteção contra clickjacking",
+      "Verificar Strict-Transport-Security (HSTS) e se o cookie de sessão tem o atributo Secure",
+      "Listar as 3 melhorias de cabeçalho mais importantes pra esse exemplo",
+    ],
+  },
+  {
+    id: "cylab-bucket-exposto", trackId: "cloud-security", nome: "Bucket de armazenamento mal configurado",
+    descricao: "Analise uma política de acesso de exemplo e decida se um bucket de nuvem está exposto indevidamente.",
+    dificuldade: "intermediario", tempoMin: 30, ferramenta: "Política de exemplo (JSON fictício)",
+    ambiente: "Exemplo estático — nenhum provedor de nuvem real é acessado.",
+    checklist: [
+      "Identificar quem a política permite acessar (ex.: '*' = qualquer pessoa na internet)",
+      "Verificar quais ações são permitidas (leitura, escrita, listagem)",
+      "Classificar o risco: dados públicos intencionais vs exposição acidental",
+      "Escrever a correção recomendada, aplicando o princípio do menor privilégio",
+    ],
+  },
+  {
+    id: "cylab-ciclo-ir", trackId: "resposta-incidentes", nome: "Aplicando o ciclo de resposta a incidentes (NIST)",
+    descricao: "Dado um incidente fictício já identificado, organize as ações nas fases corretas do ciclo de IR.",
+    dificuldade: "intermediario", tempoMin: 35, ferramenta: "Cenário de incidente (texto)",
+    ambiente: "Cenário 100% fictício e educacional.",
+    checklist: [
+      "Separar as ações de Contenção (isolar, impedir que piore) das de Erradicação (remover a causa)",
+      "Definir o que seria necessário pra Recuperação (restaurar o serviço com segurança)",
+      "Escrever ao menos uma lição aprendida (o que preveniria a recorrência)",
+      "Indicar quem precisaria ser comunicado (interno/externo) e por quê",
+    ],
+  },
+  {
+    id: "cylab-simetrica-assimetrica", trackId: "criptografia", nome: "Simétrica vs assimétrica na prática",
+    descricao: "Decida, para cada cenário dado, se a ferramenta certa é criptografia simétrica, assimétrica ou hashing.",
+    dificuldade: "basico", tempoMin: 25, ferramenta: "Ferramenta de Hash do CCNA Study OS (Cybersecurity → Ferramentas)",
+    ambiente: "Exercício conceitual, apoiado na ferramenta de hash já disponível no app.",
+    checklist: [
+      "Explicar por que o HTTPS usa assimétrica só pra negociar e simétrica pro resto do tráfego",
+      "Gerar o SHA-256 de um texto na ferramenta de Hash e explicar pra que serve (integridade, não sigilo)",
+      "Dar um exemplo de uso de chave assimétrica fora do TLS (ex.: assinatura digital)",
+      "Explicar por que hashing não é reversível e por que isso importa para senhas",
+    ],
+  },
+  {
+    id: "cylab-recon-passivo", trackId: "pentest-basico", nome: "Reconhecimento passivo (educacional)",
+    descricao: "Pratique reconhecimento 100% passivo sobre informações já fornecidas pelo lab — sem tocar em nenhum sistema real.",
+    dificuldade: "basico", tempoMin: 25, ferramenta: "Material de exemplo fornecido pelo lab",
+    ambiente: "⚠️ Material fictício fornecido pelo próprio lab. Em qualquer atividade real de reconhecimento: só em ambiente PRÓPRIO, autorizado por escrito e isolado. Nunca varrer, enumerar ou testar sistemas de terceiros sem autorização explícita — isso é crime.",
+    checklist: [
+      "Diferenciar reconhecimento passivo (não toca o alvo) de ativo (interage com o alvo)",
+      "A partir dos dados de exemplo, listar que informações um atacante aprenderia sem nunca se conectar ao alvo",
+      "Explicar por que reconhecimento passivo é a etapa recomendada antes de qualquer teste autorizado",
+      "Escrever, em texto, por que testar sistema de terceiros sem autorização é ilegal (não execute nada, só descreva)",
+    ],
+  },
+  {
+    id: "cylab-politica-seguranca", trackId: "governanca", nome: "Lendo uma política de segurança",
+    descricao: "Analise um trecho de política de segurança da informação fictícia e relacione-a a frameworks conhecidos.",
+    dificuldade: "basico", tempoMin: 20, ferramenta: "Trecho de política de exemplo (texto)",
+    ambiente: "Documento fictício de exemplo.",
+    checklist: [
+      "Identificar o objetivo da política (o que ela busca proteger)",
+      "Relacionar pelo menos um controle da política a um framework conhecido (ISO 27001, NIST CSF)",
+      "Identificar se há alguma exigência que remeta à LGPD (ex.: dados pessoais, retenção, resposta a incidente)",
+      "Escrever uma lacuna (gap) que a política parece não cobrir",
+    ],
+  },
 ];
 
 // ---------- SOC LAB — CENÁRIOS DE ALERTA (Fase 2) ----------
@@ -465,6 +551,36 @@ const ctfChallenges = [
     respostas: ["rdp"],
     explicacao: "TCP 3389 = RDP (Remote Desktop Protocol). Expor RDP direto na internet é um dos vetores de ransomware mais comuns — deve ficar atrás de VPN/bastion e com MFA.",
   },
+
+  // ---------- LOTE V2 — mais 4 desafios, cobrindo Web Security e mais um de Criptografia/Redes ----------
+  {
+    id: "ctf-header", ordem: 5, titulo: "Cabeçalho ausente", categoria: "Web Security", dificuldade: "intermediario",
+    enunciado: "Resposta HTTP de um site (trecho):\n\nHTTP/1.1 200 OK\nContent-Type: text/html\nSet-Cookie: session=abc123\n\nQual cabeçalho de segurança, com valor \"DENY\" ou \"SAMEORIGIN\", impediria essa página de ser carregada dentro de um <iframe> em outro domínio (mitigando clickjacking)? (responda o nome do cabeçalho)",
+    dica: "Começa com X- na forma clássica; a CSP moderna faz o mesmo com a diretiva frame-ancestors.",
+    respostas: ["x-frame-options", "x frame options", "xframeoptions"],
+    explicacao: "X-Frame-Options (ou a diretiva frame-ancestors da CSP) controla se a página pode ser embutida num iframe de outra origem. Sem ele, um atacante pode montar clickjacking: sobrepor elementos invisíveis pra enganar o clique do usuário.",
+  },
+  {
+    id: "ctf-rot13", ordem: 6, titulo: "Cifra de César", categoria: "Criptografia", dificuldade: "basico",
+    enunciado: "Esta mensagem foi cifrada com ROT13 (César com deslocamento 13). Decifre:\n\nqrsrfn rz pnznqnf",
+    dica: "ROT13 troca cada letra pela que está 13 posições à frente no alfabeto — e é sua própria inversa.",
+    respostas: ["defesa em camadas"],
+    explicacao: "ROT13 desloca cada letra 13 posições (sem distinguir maiúscula/minúscula, sem mexer em números/símbolos). Por ser simétrica (aplicar duas vezes volta ao original), é usada só pra ofuscar texto trivialmente — nunca como cifra de segurança de verdade.",
+  },
+  {
+    id: "ctf-synflood", ordem: 7, titulo: "Rajada de SYN", categoria: "Redes", dificuldade: "intermediario",
+    enunciado: "Um firewall registra, em 4 segundos, mais de 10 mil linhas como estas — todas da mesma origem, mesmo destino, mesma porta, sem nenhum ACK final do lado do cliente:\n\n14:02:01 TCP SYN 198.51.100.9:51000 -> 10.20.0.5:80\n14:02:01 TCP SYN 198.51.100.9:51001 -> 10.20.0.5:80\n14:02:02 TCP SYN 198.51.100.9:51002 -> 10.20.0.5:80\n\nQue tipo de ataque esse padrão descreve? (responda com duas palavras)",
+    dica: "Muitos SYN, handshake nunca completado, mesmo destino — o objetivo é esgotar algo no servidor.",
+    respostas: ["syn flood", "synflood"],
+    explicacao: "É um SYN flood: o atacante envia muitos SYN sem completar o handshake de 3 vias, esgotando a tabela de conexões half-open do servidor — um tipo de negação de serviço (DoS) na camada de transporte.",
+  },
+  {
+    id: "ctf-sqli", ordem: 8, titulo: "Campo de busca perigoso", categoria: "Web Security", dificuldade: "avancado",
+    enunciado: "Um formulário de busca envia o termo direto pra esta consulta no servidor:\n\nSELECT * FROM produtos WHERE nome = '<entrada_do_usuario>'\n\nSe alguém digitar  ' OR '1'='1  no campo, que categoria de vulnerabilidade está sendo explorada? (responda a sigla)",
+    dica: "A entrada do usuário é concatenada direto numa consulta de banco de dados, sem sanitização.",
+    respostas: ["sqli", "sql injection"],
+    explicacao: "SQL Injection (SQLi): a entrada não sanitizada altera a lógica da consulta — '1'='1' é sempre verdadeiro, então a condição WHERE passa a aceitar qualquer linha. A defesa correta é usar consultas parametrizadas (prepared statements), nunca concatenar entrada do usuário na query.",
+  },
 ];
 
 // ---------- PLAYGROUND SIEM — LOTE DE EVENTOS (Fase 3) ----------
@@ -498,7 +614,7 @@ const siemAchado = {
 export async function seedCyberIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
-  if (metaSnap.exists() && metaSnap.data().cyberSeededV4) {
+  if (metaSnap.exists() && metaSnap.data().cyberSeededV5) {
     console.log("[seed] Cybersecurity já populado, pulando.");
     return { seeded: false };
   }
@@ -513,9 +629,9 @@ export async function seedCyberIfNeeded() {
   batch.set(
     metaRef,
     {
-      cyberSeededV4: true,
+      cyberSeededV5: true,
       cyberCounts: { tracks: tracks.length, lessons: lessons.length, labs: labs.length, socScenarios: socScenarios.length, ctf: ctfChallenges.length },
-      cyberSeededV4At: serverTimestamp(),
+      cyberSeededV5At: serverTimestamp(),
     },
     { merge: true }
   );
