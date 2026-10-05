@@ -75,16 +75,7 @@ import { LIVROS_ESTATICOS, abrirLivro, proximaPagina, paginaAnterior, irParaPagi
 import { capituloDaLicao, acharLivroDoVolume, TOTAL_CAPITULOS } from "./book-map.js";
 import { baixarPreferencias, aplicarPreferenciasNoLocalStorage, salvarPreferencias } from "./preferences.js";
 import { exportarTudo, importarTudo, contarItens } from "./backup.js";
-import {
-  iniciarCronometro,
-  pausarCronometro,
-  reiniciarCronometro,
-  segundosAtuais,
-  estaRodando,
-  formatarTempo,
-  salvarProgressoCronometro,
-  buscarMinutosHoje,
-} from "./timer.js";
+import { inicializarCronometroUI } from "./timer-ui.js";
 
 // UID da conta que administra o conteúdo global (mesmo valor de firestore.rules).
 // Só essa conta popula content/** — os seeds ficam restritos a ela.
@@ -885,7 +876,7 @@ onAuthStateChanged(auth, async (user) => {
     await sincronizarPreferencias(user.uid);
 
     await carregarHoje();
-    await inicializarCronometroUI();
+    await inicializarCronometroUI(user.uid, () => planoHoje?.focusTopic?.id);
     iniciarVerificacaoLembrete();
     resetarTimerInatividade();
     carregarIndiceBusca().catch((e) => console.warn("[busca] Falha ao pré-carregar índice de busca:", e));
@@ -1202,69 +1193,6 @@ async function concluirSecao(secao, minutos) {
   await logActivity(currentUser.uid, secao, planoHoje.focusTopic.id, minutos);
   renderRotaHops();
   renderTaskCardAtual();
-}
-
-// ---------- CRONÔMETRO ----------
-
-let intervaloCronometro = null;
-let intervaloSalvarAuto = null;
-
-async function inicializarCronometroUI() {
-  const display = document.getElementById("cronometro-display");
-  const card = document.getElementById("cronometro-card");
-  const btnToggle = document.getElementById("btn-cronometro-toggle");
-  const btnReset = document.getElementById("btn-cronometro-reset");
-  const hojeTexto = document.getElementById("cronometro-hoje-texto");
-
-  async function atualizarTextoHoje() {
-    const minutosHoje = await buscarMinutosHoje(currentUser.uid);
-    const h = Math.floor(minutosHoje / 60);
-    const m = Math.round(minutosHoje % 60);
-    hojeTexto.textContent = h > 0 ? `Hoje: ${h}h ${m}min estudados` : `Hoje: ${m} min estudados`;
-  }
-
-  function tick() {
-    display.textContent = formatarTempo(segundosAtuais());
-  }
-
-  btnToggle.addEventListener("click", async () => {
-    if (estaRodando()) {
-      pausarCronometro();
-      card.classList.remove("rodando");
-      btnToggle.textContent = "Continuar";
-      clearInterval(intervaloCronometro);
-      clearInterval(intervaloSalvarAuto);
-      await salvarProgressoCronometro(currentUser.uid, planoHoje?.focusTopic?.id);
-      await atualizarTextoHoje();
-    } else {
-      iniciarCronometro();
-      card.classList.add("rodando");
-      btnToggle.textContent = "Pausar";
-      intervaloCronometro = setInterval(tick, 1000);
-      // salva automaticamente a cada 2 min, pra não perder tempo se a aba fechar
-      intervaloSalvarAuto = setInterval(async () => {
-        await salvarProgressoCronometro(currentUser.uid, planoHoje?.focusTopic?.id);
-        await atualizarTextoHoje();
-      }, 120000);
-    }
-  });
-
-  btnReset.addEventListener("click", async () => {
-    if (estaRodando()) {
-      pausarCronometro();
-      await salvarProgressoCronometro(currentUser.uid, planoHoje?.focusTopic?.id);
-      await atualizarTextoHoje();
-    }
-    reiniciarCronometro();
-    card.classList.remove("rodando");
-    btnToggle.textContent = "Iniciar";
-    clearInterval(intervaloCronometro);
-    clearInterval(intervaloSalvarAuto);
-    display.textContent = "00:00";
-  });
-
-  display.textContent = "00:00";
-  await atualizarTextoHoje();
 }
 
 // ---------- FLASHCARDS ----------
