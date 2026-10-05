@@ -484,10 +484,21 @@ const siemEvents = [
   { ts: "2026-03-04T10:05:00Z", host: "WKS-2201", user: "p.costa", src: "10.30.4.7", action: "dns", result: "success", detail: "query TXT a8f3k2...9c.exfil-lab-example.test" },
 ];
 
+// O que o Playground SIEM espera que o usuário identifique ao final da investigação.
+// Comparação é tolerante (maiúsculas/pontuação), ver conferirRespostaCtf em cyber-tools.js.
+const siemAchado = {
+  host: "SRV-AD01",
+  usuario: "admin",
+  resumo:
+    "Força bruta contra a conta admin em SRV-AD01 vinda de 203.0.113.44 (3 falhas em segundos), " +
+    "seguida de logon bem-sucedido e inclusão indevida de b.reboucas no grupo Domain Admins — " +
+    "escalonamento de privilégio logo após o acesso.",
+};
+
 export async function seedCyberIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
-  if (metaSnap.exists() && metaSnap.data().cyberSeededV3) {
+  if (metaSnap.exists() && metaSnap.data().cyberSeededV4) {
     console.log("[seed] Cybersecurity já populado, pulando.");
     return { seeded: false };
   }
@@ -498,13 +509,13 @@ export async function seedCyberIfNeeded() {
   labs.forEach((lab) => batch.set(doc(db, "content", "cyberLabs", "items", lab.id), lab));
   socScenarios.forEach((s) => batch.set(doc(db, "content", "socScenarios", "items", s.id), s));
   ctfChallenges.forEach((c) => batch.set(doc(db, "content", "cyberCtf", "items", c.id), c));
-  batch.set(doc(db, "content", "cyberSiem", "items", "lote-01"), { id: "lote-01", nome: "Lote 01 — dia 04/03", eventos: siemEvents });
+  batch.set(doc(db, "content", "cyberSiem", "items", "lote-01"), { id: "lote-01", nome: "Lote 01 — dia 04/03", eventos: siemEvents, achado: siemAchado });
   batch.set(
     metaRef,
     {
-      cyberSeededV3: true,
+      cyberSeededV4: true,
       cyberCounts: { tracks: tracks.length, lessons: lessons.length, labs: labs.length, socScenarios: socScenarios.length, ctf: ctfChallenges.length },
-      cyberSeededV3At: serverTimestamp(),
+      cyberSeededV4At: serverTimestamp(),
     },
     { merge: true }
   );

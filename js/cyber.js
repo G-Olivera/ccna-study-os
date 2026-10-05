@@ -7,7 +7,7 @@
 // Fases seguintes (SOC Lab, ferramentas, Tutor Cyber, CTF, pontos fracos) entram
 // depois, sem quebrar o que está aqui.
 
-import { collection, getDocs, doc, setDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+import { collection, getDocs, doc, getDoc, setDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { logActivity } from "./data-schema.js";
 import { explicarTopico } from "./ai-tutor.js";
@@ -24,12 +24,13 @@ let uidAtual = null;
 
 async function carregarConteudo() {
   if (conteudoCache) return conteudoCache;
-  const [tr, le, la, so, ct] = await Promise.all([
+  const [tr, le, la, so, ct, siemSnap] = await Promise.all([
     getDocs(collection(db, "content", "cyberTracks", "items")),
     getDocs(collection(db, "content", "cyberLessons", "items")),
     getDocs(collection(db, "content", "cyberLabs", "items")),
     getDocs(collection(db, "content", "socScenarios", "items")).catch(() => ({ docs: [] })),
     getDocs(collection(db, "content", "cyberCtf", "items")).catch(() => ({ docs: [] })),
+    getDoc(doc(db, "content", "cyberSiem", "items", "lote-01")).catch(() => null),
   ]);
   conteudoCache = {
     tracks: tr.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)),
@@ -37,6 +38,7 @@ async function carregarConteudo() {
     labs: la.docs.map((d) => ({ id: d.id, ...d.data() })),
     soc: so.docs.map((d) => ({ id: d.id, ...d.data() })),
     ctf: ct.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)),
+    siem: siemSnap?.exists?.() ? { id: siemSnap.id, ...siemSnap.data() } : null,
   };
   return conteudoCache;
 }
@@ -736,11 +738,20 @@ function ligarEventos() {
     const abrirCtf = e.target.closest("[data-cyber-abrir-ctf]");
     const enviarCtf = e.target.closest("[data-cyber-ctf-enviar]");
     const perguntarTutor = e.target.closest("[data-cyber-tutor-perguntar]");
+    const siemLimpar = e.target.closest("[data-cyber-siem-limpar]");
+    const siemVerificar = e.target.closest("[data-cyber-siem-verificar]");
 
     if (abrirTools) return void abrirFerramentas();
     if (abrirCtf) return void abrirDesafioCtf(abrirCtf.dataset.cyberAbrirCtf);
     if (enviarCtf) return void verificarCtf(enviarCtf.dataset.cyberCtfEnviar);
     if (perguntarTutor) return void perguntarTutorCyberUI();
+    if (siemLimpar) {
+      const labId = siemLimpar.dataset.cyberSiemLimpar;
+      document.querySelectorAll(`[data-cyber-lab-painel="${labId}"] .cyber-siem-filtro`).forEach((el) => (el.value = ""));
+      renderizarResultadosSiem(labId);
+      return;
+    }
+    if (siemVerificar) return void verificarAchadoSiem(siemVerificar.dataset.cyberSiemVerificar);
 
     if (abrirSoc) {
       abrirCenarioSoc(abrirSoc.dataset.cyberAbrirSoc);
@@ -798,6 +809,10 @@ function ligarEventos() {
     if (chk) {
       atualizarBotaoConcluirLab(chk.closest("[data-cyber-lab-painel]")?.dataset.cyberLabPainel);
       agendarSalvarLab(chk.closest("[data-cyber-lab-painel]")?.dataset.cyberLabPainel);
+      return;
+    }
+    if (e.target.closest(".cyber-siem-filtro")) {
+      renderizarResultadosSiem(e.target.closest("[data-cyber-lab-painel]")?.dataset.cyberLabPainel);
     }
   });
   raiz.addEventListener("input", (e) => {
@@ -807,8 +822,219 @@ function ligarEventos() {
       agendarSalvarLab(labId);
     } else if (e.target.id === "cyber-soc-conclusao") {
       atualizarBotaoSoc();
+    } else if (e.target.closest(".cyber-siem-filtro")) {
+      renderizarResultadosSiem(e.target.closest("[data-cyber-lab-painel]")?.dataset.cyberLabPainel);
     }
   });
+}
+
+// ---------- PLAYGROUND SIEM (lab "cylab-siem") ----------
+// Usa o mesmo mecanismo de progresso dos demais labs (checklist + conclusão
+// em cyberLabProgress) — só a investigação em si é interativa de verdade:
+// filtros reais sobre o lote de eventos semeado em content/cyberSiem.
+
+const SIEM_LAB_ID = "cylab-siem";
+const SIEM_ACTION_LABEL = { logon: "Logon", process: "Processo", network: "Rede", dns: "DNS", file: "Arquivo", group_change: "Alteração de grupo" };
+const SIEM_RESULT_LABEL = { success: "Sucesso", failure: "Falha", allowed: "Permitido", denied: "Negado" };
+
+function siemHora(tsIso) {
+  return (tsIso || "").split("T")[1]?.replace("Z", "") || "";
+}
+
+function valoresUnicosSiem(eventos, campo) {
+  return [...new Set(eventos.map((e) => e[campo]).filter(Boolean))].sort();
+}
+
+function optsDeLista(arr, placeholder) {
+  return `<option value="">${escapeHtml(placeholder)}</option>` + arr.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+}
+function optsDeMapa(mapa, placeholder) {
+  return `<option value="">${escapeHtml(placeholder)}</option>` + Object.entries(mapa).map(([v, label]) => `<option value="${v}">${escapeHtml(label)}</option>`).join("");
+}
+
+function filtrosSiemAtuais(labId) {
+  const raiz = document.querySelector(`[data-cyber-lab-painel="${labId}"]`);
+  if (!raiz) return null;
+  const val = (sel) => raiz.querySelector(sel)?.value || "";
+  return {
+    host: val("#cyber-siem-host"),
+    user: val("#cyber-siem-user"),
+    action: val("#cyber-siem-action"),
+    result: val("#cyber-siem-result"),
+    texto: val("#cyber-siem-texto").trim().toLowerCase(),
+    de: val("#cyber-siem-de"),
+    ate: val("#cyber-siem-ate"),
+    agrupar: val("#cyber-siem-agrupar"),
+  };
+}
+
+function filtrarEventosSiem(eventos, f) {
+  return eventos
+    .filter((e) => !f.host || e.host === f.host)
+    .filter((e) => !f.user || e.user === f.user)
+    .filter((e) => !f.action || e.action === f.action)
+    .filter((e) => !f.result || e.result === f.result)
+    .filter((e) => {
+      const hora = siemHora(e.ts).slice(0, 5);
+      if (f.de && hora < f.de) return false;
+      if (f.ate && hora > f.ate) return false;
+      return true;
+    })
+    .filter((e) => !f.texto || `${e.host} ${e.user} ${e.src} ${e.detail || ""}`.toLowerCase().includes(f.texto))
+    .sort((a, b) => (a.ts || "").localeCompare(b.ts || ""));
+}
+
+function siemTabelaHtml(eventos) {
+  if (!eventos.length) return `<p style="font-size:12px; color:var(--ink-soft); margin-top:10px;">Nenhum evento bate com esse filtro.</p>`;
+  const linhas = eventos
+    .map((e) => {
+      const ruim = e.result === "failure" || e.result === "denied";
+      return `<tr class="${ruim ? "cyber-siem-linha-ruim" : ""}">
+        <td class="cyber-tool-mono">${siemHora(e.ts)}</td>
+        <td>${escapeHtml(e.host)}</td>
+        <td>${escapeHtml(e.user)}</td>
+        <td class="cyber-tool-mono">${escapeHtml(e.src)}</td>
+        <td>${SIEM_ACTION_LABEL[e.action] || escapeHtml(e.action)}</td>
+        <td>${SIEM_RESULT_LABEL[e.result] || escapeHtml(e.result)}</td>
+        <td>${escapeHtml(e.detail || "")}</td>
+      </tr>`;
+    })
+    .join("");
+  return `<div class="cyber-tool-scroll"><table class="cyber-tool-tabela cyber-siem-tabela">
+    <tr><th>Hora</th><th>Host</th><th>Usuário</th><th>Origem</th><th>Ação</th><th>Resultado</th><th>Detalhe</th></tr>
+    ${linhas}
+  </table></div>`;
+}
+
+function siemGrupoHtml(eventos, campo) {
+  if (!campo) return "";
+  const contagem = new Map();
+  eventos.forEach((e) => {
+    const chave = e[campo] || "—";
+    const atual = contagem.get(chave) || { total: 0, falhas: 0 };
+    atual.total++;
+    if (e.result === "failure" || e.result === "denied") atual.falhas++;
+    contagem.set(chave, atual);
+  });
+  const linhas = [...contagem.entries()]
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([chave, c]) => `<tr><td>${escapeHtml(chave)}</td><td>${c.total}</td><td>${c.falhas || "—"}</td></tr>`)
+    .join("");
+  return `<p class="cyber-tool-label" style="margin-top:14px;">Agrupado por ${campo === "host" ? "host" : "usuário"}</p>
+    <div class="cyber-tool-scroll"><table class="cyber-tool-tabela">
+      <tr><th>${campo === "host" ? "Host" : "Usuário"}</th><th>Eventos</th><th>Falhas/negados</th></tr>
+      ${linhas}
+    </table></div>`;
+}
+
+function renderizarResultadosSiem(labId) {
+  if (!labId) return;
+  const raiz = document.querySelector(`[data-cyber-lab-painel="${labId}"]`);
+  const lote = conteudoCache?.siem;
+  if (!raiz || !lote) return;
+  const f = filtrosSiemAtuais(labId);
+  const filtrados = filtrarEventosSiem(lote.eventos || [], f);
+  const contagem = raiz.querySelector("#cyber-siem-contagem");
+  if (contagem) contagem.textContent = `${filtrados.length} de ${(lote.eventos || []).length} eventos`;
+  const tabela = raiz.querySelector("#cyber-siem-tabela-wrap");
+  if (tabela) tabela.innerHTML = siemTabelaHtml(filtrados);
+  const grupo = raiz.querySelector("#cyber-siem-grupo-wrap");
+  if (grupo) grupo.innerHTML = siemGrupoHtml(filtrados, f.agrupar);
+}
+
+async function verificarAchadoSiem(labId) {
+  const raiz = document.querySelector(`[data-cyber-lab-painel="${labId}"]`);
+  const lote = conteudoCache?.siem;
+  const fb = raiz?.querySelector("#cyber-siem-feedback");
+  if (!raiz || !lote?.achado || !fb) return;
+  const hostDigitado = raiz.querySelector("#cyber-siem-resp-host")?.value || "";
+  const userDigitado = raiz.querySelector("#cyber-siem-resp-user")?.value || "";
+  const { conferirRespostaCtf } = await import("./cyber-tools.js");
+  const hostOk = conferirRespostaCtf(hostDigitado, [lote.achado.host]);
+  const userOk = conferirRespostaCtf(userDigitado, [lote.achado.usuario]);
+  fb.classList.remove("hidden");
+  fb.classList.toggle("acerto", hostOk && userOk);
+  fb.classList.toggle("erro", !(hostOk && userOk));
+  fb.innerHTML =
+    hostOk && userOk
+      ? `<strong>✓ Investigação correta</strong><p style="margin-top:6px;">${escapeHtml(lote.achado.resumo)}</p>`
+      : `<strong>Ainda não bateu</strong><p style="margin-top:6px;">Host ${hostOk ? "✓" : "✗"} · Usuário ${userOk ? "✓" : "✗"}. Tente isolar a janela em que as falhas de logon acontecem e veja quem agiu logo depois.</p>`;
+}
+
+function siemPlaygroundHtml(lab, lote, prog) {
+  const marcados = new Set(prog.itensConcluidos || []);
+  const total = (lab.checklist || []).length;
+  const feitos = marcados.size;
+  const hosts = valoresUnicosSiem(lote.eventos || [], "host");
+  const users = valoresUnicosSiem(lote.eventos || [], "user");
+
+  const itensHtml = (lab.checklist || [])
+    .map(
+      (c, i) => `
+      <label class="cyber-lab-check">
+        <input type="checkbox" data-cyber-lab-item="${i}" ${marcados.has(i) ? "checked" : ""} />
+        <span>${escapeHtml(c)}</span>
+      </label>`
+    )
+    .join("");
+
+  return `
+    <div class="task-card cyber-painel-trilha" data-cyber-lab-painel="${lab.id}">
+      <div class="cyber-secao-header">
+        <h3>${escapeHtml(lab.nome)} ${prog.concluido ? '<span class="cyber-lab-ok">✓ concluído</span>' : ""}</h3>
+        <button class="btn-secondary" data-cyber-fechar-trilha style="width:auto; margin-top:0; padding:6px 12px; font-size:12px;">Fechar</button>
+      </div>
+      <p style="font-size:13px; color:var(--ink-soft);">${escapeHtml(lab.descricao || "")}</p>
+      <p class="cyber-lab-ambiente">🔒 Lote de logs 100% fictício (${escapeHtml(lote.nome || "")}) — não conecta a nenhum SIEM real.</p>
+
+      <p class="cyber-tool-label" style="margin-top:14px;">Filtros</p>
+      <div class="cyber-siem-filtros">
+        <select class="cyber-tool-input cyber-siem-filtro" id="cyber-siem-host">${optsDeLista(hosts, "Todos os hosts")}</select>
+        <select class="cyber-tool-input cyber-siem-filtro" id="cyber-siem-user">${optsDeLista(users, "Todos os usuários")}</select>
+        <select class="cyber-tool-input cyber-siem-filtro" id="cyber-siem-action">${optsDeMapa(SIEM_ACTION_LABEL, "Todas as ações")}</select>
+        <select class="cyber-tool-input cyber-siem-filtro" id="cyber-siem-result">${optsDeMapa(SIEM_RESULT_LABEL, "Todos os resultados")}</select>
+        <input class="cyber-tool-input cyber-siem-filtro" id="cyber-siem-texto" placeholder="Busca livre (host, usuário, origem, detalhe)" />
+        <input class="cyber-tool-input cyber-siem-filtro" id="cyber-siem-de" type="time" title="A partir de" />
+        <input class="cyber-tool-input cyber-siem-filtro" id="cyber-siem-ate" type="time" title="Até" />
+        <select class="cyber-tool-input cyber-siem-filtro" id="cyber-siem-agrupar">
+          <option value="">Não agrupar</option>
+          <option value="host">Agrupar por host</option>
+          <option value="user">Agrupar por usuário</option>
+        </select>
+      </div>
+      <div class="cyber-tool-acoes">
+        <button class="btn-secondary" data-cyber-siem-limpar="${lab.id}" style="margin-top:0;">Limpar filtros</button>
+        <span id="cyber-siem-contagem" style="font-size:11px; color:var(--ink-soft); align-self:center;"></span>
+      </div>
+      <div id="cyber-siem-tabela-wrap"></div>
+      <div id="cyber-siem-grupo-wrap"></div>
+
+      <p class="cyber-tool-label" style="margin-top:16px;">O que você encontrou?</p>
+      <div class="cyber-siem-resposta">
+        <input class="cyber-tool-input" id="cyber-siem-resp-host" placeholder="Host suspeito" />
+        <input class="cyber-tool-input" id="cyber-siem-resp-user" placeholder="Usuário/conta envolvida" />
+        <button class="btn-secondary" data-cyber-siem-verificar="${lab.id}" style="margin-top:0;">Verificar achado</button>
+      </div>
+      <div id="cyber-siem-feedback" class="cyber-soc-feedback hidden"></div>
+
+      <strong style="display:block; margin:16px 0 8px; font-size:13px;">Checklist do laboratório</strong>
+      <div class="cyber-lab-checklist">${itensHtml}</div>
+
+      <div class="cyber-lab-progresso">
+        <div class="track"><div class="fill" id="cyber-lab-fill" style="width:${total ? Math.round((feitos / total) * 100) : 0}%; background:var(--sage);"></div></div>
+        <span id="cyber-lab-progresso-texto">${feitos} de ${total} passos</span>
+      </div>
+
+      <label style="display:block; margin-top:16px; font-size:13px; font-weight:600;">Sua conclusão</label>
+      <p style="font-size:11px; color:var(--ink-soft); margin:2px 0 6px;">O que você encontrou, como classificou e o que faltaria confirmar (mín. 10 caracteres).</p>
+      <textarea id="cyber-lab-conclusao" class="cyber-lab-conclusao" rows="4" placeholder="Escreva sua conclusão do laboratório…">${escapeHtml(prog.conclusao || "")}</textarea>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+        <button class="btn-secondary" data-cyber-lab-salvar="${lab.id}" style="width:auto; margin-top:0;">Salvar progresso</button>
+        <button class="btn-primary" data-cyber-lab-concluir="${lab.id}" style="width:auto; margin-top:0;" disabled>Marcar lab como concluído</button>
+      </div>
+      <p id="cyber-lab-status" style="font-size:12px; color:var(--ink-soft); margin-top:8px;"></p>
+    </div>`;
 }
 
 // ---------- LABORATÓRIO INTERATIVO ----------
@@ -874,6 +1100,15 @@ async function abrirLabPainel(labId) {
   labAbertoId = labId;
 
   const prog = (await carregarProgresso(uidAtual)).labs[labId] || {};
+
+  if (labId === SIEM_LAB_ID && conteudoCache.siem) {
+    slot.innerHTML = siemPlaygroundHtml(lab, conteudoCache.siem, prog);
+    renderizarResultadosSiem(labId);
+    atualizarBotaoConcluirLab(labId);
+    slot.querySelector(".cyber-painel-trilha")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
   const marcados = new Set(prog.itensConcluidos || []);
   const total = (lab.checklist || []).length;
   const feitos = marcados.size;

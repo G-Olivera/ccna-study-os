@@ -1526,3 +1526,15 @@ button:active { transform: scale(0.97); }
 [data-theme="dark"] .cyber-ctf-enunciado { background: #0c1519; }
 .cyber-ctf-dica { font-size: 12px; margin: 8px 0; }
 .cyber-ctf-dica summary { cursor: pointer; color: var(--teal); }
+
+.cyber-siem-filtros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
+.cyber-siem-filtros .cyber-tool-input { margin: 0; }
+.cyber-siem-tabela th, .cyber-siem-tabela td { white-space: nowrap; }
+.cyber-siem-tabela td:last-child, .cyber-siem-tabela th:last-child { white-space: normal; }
+.cyber-siem-linha-ruim td { background: var(--terracotta-soft); }
+.cyber-siem-resposta { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; margin-top: 6px; }
+.cyber-siem-resposta .cyber-tool-input { margin: 0; }
+@media (max-width: 860px) {
+  .cyber-siem-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cyber-siem-resposta { grid-template-columns: 1fr; }
+}
