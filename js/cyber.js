@@ -88,7 +88,7 @@ export async function marcarLicaoCyber(uid, licaoId, mastery) {
     { masteryPercent: mastery, lastUpdated: serverTimestamp() },
     { merge: true }
   );
-  await logActivity(uid, "cyber_licao", licaoId, 5).catch(() => {});
+  await logActivity(uid, "cyber_licao", licaoId, 5).catch((e) => console.warn("[cyber] Falha ao registrar activityLog da lição:", e));
 }
 
 export async function salvarProgressoLab(uid, labId, dados) {
@@ -101,7 +101,7 @@ export async function salvarProgressoLab(uid, labId, dados) {
 
 export async function concluirLab(uid, labId, conclusao, tempoMin) {
   await salvarProgressoLab(uid, labId, { concluido: true, conclusao: conclusao || "", concluidoEm: new Date().toISOString() });
-  await logActivity(uid, "cyber_lab", labId, tempoMin || 20).catch(() => {});
+  await logActivity(uid, "cyber_lab", labId, tempoMin || 20).catch((e) => console.warn("[cyber] Falha ao registrar activityLog do lab:", e));
 }
 
 export async function registrarTentativaSoc(uid, cenarioId, classificacao, conclusao, acertou, tentativasAtuais = 0) {
@@ -117,7 +117,7 @@ export async function registrarTentativaSoc(uid, cenarioId, classificacao, concl
     },
     { merge: true }
   );
-  if (acertou) await logActivity(uid, "cyber_soc", cenarioId, 15).catch(() => {});
+  if (acertou) await logActivity(uid, "cyber_soc", cenarioId, 15).catch((e) => console.warn("[cyber] Falha ao registrar activityLog do SOC Lab:", e));
 }
 
 // ---------- CÁLCULO DE PROGRESSO ----------
@@ -471,7 +471,7 @@ async function verificarCtf(ctfId) {
       { resolvido: true, tentativas: (prog.tentativas || 0) + 1, resolvidoEm: new Date().toISOString(), lastUpdated: serverTimestamp() },
       { merge: true }
     );
-    await logActivity(uidAtual, "cyber_ctf", ctfId, 10).catch(() => {});
+    await logActivity(uidAtual, "cyber_ctf", ctfId, 10).catch((e) => console.warn("[cyber] Falha ao registrar activityLog do CTF:", e));
   }
   if (fb) {
     fb.classList.remove("hidden");
@@ -1141,10 +1141,15 @@ async function persistirEstadoLab(labId) {
 function agendarSalvarLab(labId) {
   if (!labId) return;
   clearTimeout(salvarLabTimer);
-  salvarLabTimer = setTimeout(() => {
-    persistirEstadoLab(labId).catch(() => {});
+  salvarLabTimer = setTimeout(async () => {
     const st = document.getElementById("cyber-lab-status");
-    if (st) st.textContent = "Progresso salvo automaticamente.";
+    try {
+      await persistirEstadoLab(labId);
+      if (st) st.textContent = "Progresso salvo automaticamente.";
+    } catch (e) {
+      console.warn("[cyber] Falha ao salvar progresso automaticamente:", e);
+      if (st) st.textContent = "Não consegui salvar agora — verifique sua conexão.";
+    }
   }, 1200);
 }
 

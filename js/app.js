@@ -576,7 +576,7 @@ document.getElementById("input-busca-global").addEventListener("input", (e) => {
     return;
   }
   timeoutBusca = setTimeout(async () => {
-    await carregarIndiceBusca().catch(() => {});
+    await carregarIndiceBusca().catch((e) => console.warn("[busca] Falha ao carregar índice de busca:", e));
     renderResultadosBusca(buscarConteudo(termo));
   }, 200);
 });
@@ -790,7 +790,7 @@ document.getElementById("btn-signup")?.addEventListener("click", async () => {
   }
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, senha);
-    await sendEmailVerification(cred.user).catch(() => {});
+    await sendEmailVerification(cred.user).catch((e) => console.warn("[auth] Falha ao enviar e-mail de verificação:", e));
   } catch (e) {
     erroEl.textContent = mensagemErroAuth(e.code);
   }
@@ -855,7 +855,10 @@ let syncPrefsTimer = null;
 function agendarSyncPrefs() {
   if (!currentUser) return;
   clearTimeout(syncPrefsTimer);
-  syncPrefsTimer = setTimeout(() => salvarPreferencias(currentUser.uid).catch(() => {}), 1500);
+  syncPrefsTimer = setTimeout(
+    () => salvarPreferencias(currentUser.uid).catch((e) => console.warn("[preferencias] Falha ao sincronizar:", e)),
+    1500
+  );
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -870,13 +873,13 @@ onAuthStateChanged(auth, async (user) => {
     // firestore.rules), então só ele carrega esses módulos. Para os demais usuários
     // o conteúdo já existe no Firestore — não faz sentido baixar ~130KB de seed.
     if (user.uid === ADMIN_UID) {
-      import("./seed-content.js").then((m) => m.seedContentIfNeeded()).catch(() => {});
-      import("./seed-questions.js").then((m) => m.seedQuestionsIfNeeded()).catch(() => {});
-      import("./seed-labs.js").then((m) => m.seedLabsIfNeeded()).catch(() => {});
-      import("./seed-flashcards.js").then((m) => m.seedFlashcardsIfNeeded()).catch(() => {});
-      import("./seed-cyber.js").then((m) => m.seedCyberIfNeeded()).catch(() => {});
+      import("./seed-content.js").then((m) => m.seedContentIfNeeded()).catch((e) => console.warn("[seed] conteúdo:", e));
+      import("./seed-questions.js").then((m) => m.seedQuestionsIfNeeded()).catch((e) => console.warn("[seed] questões:", e));
+      import("./seed-labs.js").then((m) => m.seedLabsIfNeeded()).catch((e) => console.warn("[seed] labs:", e));
+      import("./seed-flashcards.js").then((m) => m.seedFlashcardsIfNeeded()).catch((e) => console.warn("[seed] flashcards:", e));
+      import("./seed-cyber.js").then((m) => m.seedCyberIfNeeded()).catch((e) => console.warn("[seed] cybersecurity:", e));
     }
-    seedCategoriasIfNeeded(user.uid).catch(() => {});
+    seedCategoriasIfNeeded(user.uid).catch((e) => console.warn("[seed] categorias financeiras:", e));
 
     atualizarBannerEmail(user);
     await sincronizarPreferencias(user.uid);
@@ -885,7 +888,7 @@ onAuthStateChanged(auth, async (user) => {
     await inicializarCronometroUI();
     iniciarVerificacaoLembrete();
     resetarTimerInatividade();
-    carregarIndiceBusca().catch(() => {});
+    carregarIndiceBusca().catch((e) => console.warn("[busca] Falha ao pré-carregar índice de busca:", e));
   } else {
     document.getElementById("banner-email-nao-verificado")?.classList.add("hidden");
     currentUser = null;
@@ -3714,7 +3717,10 @@ document.addEventListener("click", async (e) => {
     fecharTodosMenusLivro();
     if (!confirm("Remover este livro da sua biblioteca? O arquivo salvo neste aparelho será apagado.")) return;
     await removerLivroLocal(btnRemover.dataset.removerLivroMenu);
-    await removerProgressoLeitura(currentUser.uid, btnRemover.dataset.removerLivroMenu).catch(() => {});
+    await removerProgressoLeitura(currentUser.uid, btnRemover.dataset.removerLivroMenu).catch((e) => {
+      console.warn("[leitura] Falha ao remover progresso salvo na nuvem:", e);
+      mostrarToast("O livro foi removido deste aparelho, mas o progresso na nuvem pode não ter sido limpo.", "info");
+    });
     await carregarLivro();
   }
 });
