@@ -1622,13 +1622,64 @@ const questoesExemplo = [
     respostaCorreta: "B",
     justificativa: "Em JSON, `{ }` delimita um objeto (pares chave-valor) e `[ ]` delimita um array (lista ordenada de valores).",
   },
+
+  // ---------- LOTE V9 — fecha a proporção de Network Fundamentals (17% → ~20%) ----------
+  {
+    id: "q-v9-001", dominio: "Network Fundamentals", topicId: "m01-02", dificuldade: "facil",
+    enunciado: "Em qual camada do modelo TCP/IP o protocolo HTTP opera?",
+    alternativas: { A: "Camada de rede", B: "Camada de transporte", C: "Camada de aplicação", D: "Camada de enlace" },
+    respostaCorreta: "C",
+    justificativa: "HTTP é um protocolo de camada de aplicação, responsável por formatar as requisições e respostas entre navegador e servidor web.",
+  },
+  {
+    id: "q-v9-002", dominio: "Network Fundamentals", topicId: "m02-01", dificuldade: "facil",
+    enunciado: "Qual padrão Ethernet define velocidades de até 1 Gbps sobre cabeamento de par trançado de cobre?",
+    alternativas: { A: "10GBASE-T", B: "1000BASE-T", C: "100BASE-FX", D: "1000BASE-SX" },
+    respostaCorreta: "B",
+    justificativa: "1000BASE-T (Gigabit Ethernet) roda sobre cabo de par trançado de cobre (categoria 5e ou superior), até 100 metros. 1000BASE-SX usa fibra óptica.",
+  },
+  {
+    id: "q-v9-003", dominio: "Network Fundamentals", topicId: "m03-01", dificuldade: "medio",
+    enunciado: "O que caracteriza uma 'linha dedicada' (leased line) como tecnologia WAN?",
+    alternativas: { A: "Um link físico ou lógico reservado exclusivamente para um cliente, sempre disponível ponto a ponto", B: "Uma conexão compartilhada com outros clientes via Wi-Fi público", C: "Um túnel criptografado sobre a internet pública", D: "Uma conexão que só funciona em horários específicos" },
+    respostaCorreta: "A",
+    justificativa: "Uma linha dedicada (leased line) fornece capacidade fixa e exclusiva entre dois pontos, contratada junto a uma operadora — diferente de links compartilhados ou best-effort.",
+  },
+  {
+    id: "q-v9-004", dominio: "Network Fundamentals", topicId: "m04-01", dificuldade: "facil",
+    enunciado: "Qual é a forma mais comum de acessar a CLI de um switch Cisco pela primeira vez, antes de qualquer IP de gerência configurado?",
+    alternativas: { A: "Telnet", B: "Porta console (cabo serial/rollover, ou USB em equipamentos mais novos)", C: "HTTP", D: "SNMP" },
+    respostaCorreta: "B",
+    justificativa: "No primeiro acesso, sem IP de gerência configurado, usa-se a porta console. Telnet e SSH exigem que um IP de gerência já esteja configurado e alcançável.",
+  },
+  {
+    id: "q-v9-005", dominio: "Network Fundamentals", topicId: "m13-02", dificuldade: "dificil",
+    enunciado: "Uma rede precisa de pelo menos 50 hosts utilizáveis por sub-rede. Qual é a menor máscara (em CIDR) que atende a esse requisito?",
+    alternativas: { A: "/25", B: "/26", C: "/27", D: "/24" },
+    respostaCorreta: "B",
+    justificativa: "/26 deixa 6 bits de host (2^6 - 2 = 62 hosts utilizáveis), suficiente para 50. /27 só tem 5 bits de host (30 utilizáveis), insuficiente.",
+  },
+  {
+    id: "q-v9-006", dominio: "Network Fundamentals", topicId: "m25-01", dificuldade: "facil",
+    enunciado: "Qual foi a principal motivação para a criação do IPv6?",
+    alternativas: { A: "Melhorar a velocidade de transmissão dos pacotes", B: "O esgotamento do espaço de endereços IPv4 (32 bits)", C: "Substituir o TCP por um protocolo mais rápido", D: "Eliminar a necessidade de endereços IP" },
+    respostaCorreta: "B",
+    justificativa: "O IPv4 tem só cerca de 4,3 bilhões de endereços (32 bits), insuficiente para a escala da internet moderna. O IPv6, com 128 bits, resolve esse esgotamento.",
+  },
+  {
+    id: "q-v9-007", dominio: "Network Fundamentals", topicId: "m34-03", dificuldade: "dificil",
+    enunciado: "O que é 'windowing' no controle de fluxo do TCP?",
+    alternativas: { A: "Um mecanismo que decide qual aplicação recebe o pacote", B: "A quantidade de dados que o emissor pode enviar antes de precisar de uma confirmação (ACK) do receptor", C: "O tamanho da janela do terminal usado para configurar o roteador", D: "Um recurso exclusivo do UDP" },
+    respostaCorreta: "B",
+    justificativa: "O windowing é o mecanismo de controle de fluxo do TCP: o receptor anuncia quanto buffer tem disponível (janela), e o emissor ajusta quanto enviar sem esperar confirmação a cada segmento.",
+  },
 ];
 
 export async function seedQuestionsIfNeeded() {
   const metaRef = doc(db, "content", "meta");
   const metaSnap = await getDoc(metaRef);
 
-  if (metaSnap.exists() && metaSnap.data().questionsSeededV8) {
+  if (metaSnap.exists() && metaSnap.data().questionsSeededV9) {
     console.log("[seed] Banco de questões já populado, pulando.");
     return { seeded: false };
   }
@@ -1638,7 +1689,7 @@ export async function seedQuestionsIfNeeded() {
     const ref = doc(db, "content", "questions", "items", q.id);
     batch.set(ref, q);
   });
-  batch.set(metaRef, { questionsSeededV8: true, questionsCount: questoesExemplo.length, questionsSeededV8At: serverTimestamp() }, { merge: true });
+  batch.set(metaRef, { questionsSeededV9: true, questionsCount: questoesExemplo.length, questionsSeededV9At: serverTimestamp() }, { merge: true });
 
   await batch.commit();
   console.log(`[seed] ✅ ${questoesExemplo.length} questões gravadas`);
