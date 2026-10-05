@@ -18,19 +18,32 @@ export const CONQUISTAS = [
   { id: "prontidao_90", nome: "Pronto pra Prova", desc: "Prontidão para o exame ≥ 90%.", condicao: (d) => d.prontidaoExame >= 90 },
 ];
 
+// Catálogo de conquistas do módulo Cybersecurity. Mesma mecânica e mesma
+// coleção (users/{uid}/conquistas) das conquistas gerais — só o catálogo e
+// a origem dos dados mudam, condicao(d) recebe um resumo do progresso Cyber
+// montado em cyber.js (ver render() lá).
+export const CONQUISTAS_CYBER = [
+  { id: "cyber_primeiro_lab", nome: "Primeiro Lab Cyber", desc: "Conclua seu primeiro laboratório de Cybersecurity.", condicao: (d) => d.labsFeitos >= 1 },
+  { id: "cyber_primeira_trilha", nome: "Primeira Trilha", desc: "Conclua 100% de uma trilha de Cybersecurity.", condicao: (d) => d.trilhasConcluidas >= 1 },
+  { id: "cyber_soc_analyst", nome: "SOC Analyst", desc: "Classifique corretamente 3 alertas no SOC Lab.", condicao: (d) => d.socFeitos >= 3 },
+  { id: "cyber_cacador_ctf", nome: "Caçador de Bandeiras", desc: "Resolva 3 desafios de CTF.", condicao: (d) => d.ctfFeitos >= 3 },
+  { id: "cyber_investigador_siem", nome: "Investigador SIEM", desc: "Conclua o laboratório Playground SIEM.", condicao: (d) => d.siemConcluido },
+  { id: "cyber_metade", nome: "Na Metade do Caminho", desc: "Alcance 50% de progresso geral em Cybersecurity.", condicao: (d) => d.percentGeral >= 50 },
+  { id: "cyber_blue_team", nome: "Blue Team Graduado", desc: "Conclua todas as trilhas já disponíveis de Cybersecurity.", condicao: (d) => d.trilhasComConteudo > 0 && d.trilhasConcluidas >= d.trilhasComConteudo },
+  { id: "cyber_mestre", nome: "Mestre Cyber", desc: "Alcance 100% de progresso geral em Cybersecurity.", condicao: (d) => d.percentGeral >= 100 },
+];
+
 /**
- * Compara os dados atuais do dashboard contra o catálogo de conquistas
- * e desbloqueia (salva) as que ainda não tinham sido registradas.
+ * Compara `dados` contra `catalogo` e desbloqueia (salva) as conquistas cuja
+ * condição já é satisfeita e ainda não tinham sido registradas.
  */
-export async function verificarConquistas(uid, dashboardData) {
-  const conquistasRef = collection(db, "users", uid, "conquistas");
-  const snap = await getDocs(conquistasRef);
+async function desbloquearNovas(uid, catalogo, dados) {
+  const snap = await getDocs(collection(db, "users", uid, "conquistas"));
   const jaDesbloqueadas = new Set(snap.docs.map((d) => d.id));
 
   const novasDesbloqueadas = [];
-
-  for (const conquista of CONQUISTAS) {
-    if (!jaDesbloqueadas.has(conquista.id) && conquista.condicao(dashboardData)) {
+  for (const conquista of catalogo) {
+    if (!jaDesbloqueadas.has(conquista.id) && conquista.condicao(dados)) {
       await setDoc(doc(db, "users", uid, "conquistas", conquista.id), {
         nome: conquista.nome,
         desc: conquista.desc,
@@ -39,11 +52,18 @@ export async function verificarConquistas(uid, dashboardData) {
       novasDesbloqueadas.push(conquista);
     }
   }
-
   return novasDesbloqueadas; // use isso pra mostrar um toast/celebração na UI
 }
 
-/** Retorna todas as conquistas já desbloqueadas pelo usuário. */
+export async function verificarConquistas(uid, dashboardData) {
+  return desbloquearNovas(uid, CONQUISTAS, dashboardData);
+}
+
+export async function verificarConquistasCyber(uid, dadosCyber) {
+  return desbloquearNovas(uid, CONQUISTAS_CYBER, dadosCyber);
+}
+
+/** Retorna todas as conquistas já desbloqueadas pelo usuário (gerais + Cyber). */
 export async function getConquistasDesbloqueadas(uid) {
   const snap = await getDocs(collection(db, "users", uid, "conquistas"));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));

@@ -12,6 +12,7 @@ import { db } from "./firebase-config.js";
 import { logActivity } from "./data-schema.js";
 import { explicarTopico } from "./ai-tutor.js";
 import { getDashboardData } from "./dashboard.js";
+import { verificarConquistasCyber, getConquistasDesbloqueadas, CONQUISTAS_CYBER } from "./gamification.js";
 import { escapeHtml, corHexSegura } from "./utils.js";
 
 const DIFICULDADE_LABEL = { basico: "Básico", intermediario: "Intermediário", avancado: "Avançado" };
@@ -531,6 +532,45 @@ function ferramentasCardHtml() {
     <button class="btn-secondary" data-cyber-abrir-tools style="width:auto; margin-top:0;">Abrir ferramentas</button></div>`;
 }
 
+function conquistasCyberHtml(desbloqueadas) {
+  const ids = new Set(desbloqueadas.map((c) => c.id));
+  const cards = CONQUISTAS_CYBER.map((c) => {
+    const ok = ids.has(c.id);
+    return `<div class="conquista-card ${ok ? "desbloqueada" : ""}" title="${escapeHtml(c.desc)}">
+      <div class="conquista-card-icone">${ok ? "🏆" : "🔒"}</div>
+      <div class="conquista-card-nome">${escapeHtml(c.nome)}</div>
+      <div class="conquista-card-status">${ok ? "Concluída" : "Bloqueada"}</div>
+    </div>`;
+  }).join("");
+  const total = CONQUISTAS_CYBER.length;
+  const feitas = CONQUISTAS_CYBER.filter((c) => ids.has(c.id)).length;
+  return `<div class="task-card"><div class="cyber-secao-header"><h3>Conquistas Cyber</h3><span style="font-size:12px; color:var(--ink-soft);">${feitas}/${total}</span></div>
+    <div class="conquistas-grid">${cards}</div></div>`;
+}
+
+// Confete + toast ao desbloquear conquista Cyber — mesma mecânica visual do
+// dashboard principal (app.js), duplicada aqui porque esse módulo é carregado
+// sob demanda e não importa app.js (evita dependência circular).
+function celebrarConquistaCyber(novas) {
+  const cores = ["#3E6B6B", "#C97B4A", "#5B8266", "#B3654A"];
+  for (let i = 0; i < 60; i++) {
+    const confete = document.createElement("div");
+    confete.className = "confete";
+    confete.style.left = `${Math.random() * 100}vw`;
+    confete.style.background = cores[Math.floor(Math.random() * cores.length)];
+    confete.style.animationDuration = `${1.6 + Math.random() * 1.2}s`;
+    confete.style.borderRadius = Math.random() > 0.5 ? "50%" : "2px";
+    document.body.appendChild(confete);
+    setTimeout(() => confete.remove(), 3200);
+  }
+  const nomes = novas.map((c) => c.nome).join(", ");
+  const toast = document.createElement("div");
+  toast.className = "toast-conquista";
+  toast.textContent = `🏆 Conquista desbloqueada: ${nomes}`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3700);
+}
+
 function tutorCyberHtml() {
   return `<div class="task-card"><div class="cyber-secao-header"><h3>Tutor Cyber</h3></div>
     <p style="font-size:11px; color:var(--ink-soft); margin-bottom:8px;">Explica logs, alertas e conceitos de defesa. Reaproveita o Tutor IA do app.</p>
@@ -634,6 +674,19 @@ async function render() {
   const horasMes = minutosMes === 0 ? "0h" : h > 0 ? `${h}h ${min}min` : `${min}min`;
   const nenhumProgresso = Object.keys(progLicoes).length === 0 && labsFeitos === 0 && socFeitos === 0 && ctfFeitos === 0;
 
+  const trilhasComProgresso = tracks.map((t) => progressoDaTrilha(t, lessons, progLicoes)).filter((p) => p.percent !== null);
+  const dadosCyber = {
+    labsFeitos,
+    socFeitos,
+    ctfFeitos,
+    percentGeral,
+    siemConcluido: !!progLabs[SIEM_LAB_ID]?.concluido,
+    trilhasConcluidas: trilhasComProgresso.filter((p) => p.percent === 100).length,
+    trilhasComConteudo: trilhasComProgresso.length,
+  };
+  const novasConquistasCyber = await verificarConquistasCyber(uidAtual, dadosCyber).catch(() => []);
+  const desbloqueadasCyber = await getConquistasDesbloqueadas(uidAtual).catch(() => []);
+
   // Trilha "continuar": a de maior progresso ainda não concluída; senão Fundamentos.
   const comProgresso = tracks
     .map((t) => ({ t, p: progressoDaTrilha(t, lessons, progLicoes) }))
@@ -664,6 +717,7 @@ async function render() {
 
   html += `</div><div class="cyber-col-lateral">`;
   html += socPainelHtml(soc || [], progSoc);
+  html += conquistasCyberHtml(desbloqueadasCyber);
   html += pontosFracosHtml(tracks, lessons, progLicoes);
   html += ferramentasCardHtml();
   html += tutorCyberHtml();
@@ -678,6 +732,8 @@ async function render() {
   else if (trilhaAbertaId) abrirPainelTrilha(trilhaAbertaId, { silencioso: true });
   else if (painelFase3 === "tools") abrirFerramentas();
   else if (painelFase3?.startsWith("ctf:")) abrirDesafioCtf(painelFase3.slice(4));
+
+  if (novasConquistasCyber.length > 0) celebrarConquistaCyber(novasConquistasCyber);
 }
 
 function abrirPainelTrilha(trackId, { silencioso = false } = {}) {
