@@ -1538,3 +1538,54 @@ button:active { transform: scale(0.97); }
   .cyber-siem-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cyber-siem-resposta { grid-template-columns: 1fr; }
 }
+
+/* ---------- LAB REAL (lab-real.js) ---------- */
+.topo-btn-lab-real { color: var(--sage); border-color: var(--sage); font-weight: 600; }
+
+.lab-real-conteudo { width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto; }
+.lab-real-cabecalho { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+.lab-real-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.lab-real-pill { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.lab-real-pill.green { color: var(--sage); }
+.lab-real-pill.amber { color: var(--amber); }
+.lab-real-pill.red { color: var(--terracotta); }
+.lab-real-mini { width: auto; margin-top: 0; padding: 6px 10px; font-size: 12px; }
+.lab-real-acoes { display: flex; gap: 8px; margin-top: 14px; }
+.lab-real-acoes button { margin-top: 0; }
+.lab-real-opcoes { margin-top: 12px; font-size: 13px; color: var(--ink-soft); }
+.lab-real-opcoes summary { cursor: pointer; font-weight: 600; color: var(--ink); padding: 4px 0; }
+.lab-real-opcoes label { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; line-height: 1.4; }
+.lab-real-aviso { font-size: 13px; color: var(--ink); background: color-mix(in srgb, var(--amber) 14%, transparent); border-radius: var(--radius-sm); padding: 8px 10px; margin: 10px 0 0; }
+.lab-real-erro { white-space: pre-wrap; font-size: 12px; color: var(--terracotta); background: color-mix(in srgb, var(--terracotta) 10%, transparent); border-radius: var(--radius-sm); padding: 8px 10px; margin: 10px 0 0; }
+.lab-real-h3 { font-size: 14px; margin: 18px 0 8px; }
+.lab-real-nos { display: grid; gap: 8px; }
+.lab-real-no { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; }
+.lab-real-no-cab { display: flex; align-items: center; gap: 8px; }
+.lab-real-papel { font-size: 12px; color: var(--ink-soft); }
+.lab-real-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.lab-real-dot.on { background: var(--sage); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sage) 25%, transparent); }
+.lab-real-dot.off { background: var(--terracotta); }
+.lab-real-ifs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.lab-real-if { font-size: 11px; font-family: ui-monospace, Menlo, Consolas, monospace; border-radius: 6px; padding: 2px 6px; border: 1px solid var(--border); }
+.lab-real-if.up { color: var(--sage); border-color: var(--sage); }
+.lab-real-if.down { color: var(--terracotta); border-color: var(--terracotta); }
+.lab-real-no-acoes { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.lab-real-ping { display: flex; gap: 6px; }
+.lab-real-ping select, .lab-real-ping input { flex: 1; min-width: 0; padding: 7px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; }
+.lab-real-ping-saida, .lab-real-cola { white-space: pre-wrap; font-size: 12px; font-family: ui-monospace, Menlo, Consolas, monospace; background: #1B2226; color: #E5E9EA; border-radius: var(--radius-sm); padding: 10px; margin-top: 8px; overflow-x: auto; }
+.lab-real-ping-saida:empty { display: none; }
+.lab-real-ping-saida.ok { border-left: 3px solid #7FAE8C; }
+.lab-real-ping-saida.falha { border-left: 3px solid #D4876C; }
+.lab-real-passos { padding-left: 18px; font-size: 14px; line-height: 1.6; }
+.lab-real-uid { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.lab-real-uid code { font-size: 12px; word-break: break-all; }
+
+.lab-console-conteudo { width: min(900px, calc(100vw - 16px)); height: min(620px, calc(100vh - 32px)); display: flex; flex-direction: column; padding: 14px; }
+.lab-console-terminal { flex: 1; min-height: 0; background: #1B2226; border-radius: var(--radius-sm); padding: 6px; overflow: hidden; }
+.lab-console-teclas { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+/* status real pintado no canvas da topologia */
+.topo-node.lab-on .topo-node-icone { box-shadow: 0 0 0 3px color-mix(in srgb, var(--sage) 45%, transparent); }
+.topo-node.lab-off .topo-node-icone { box-shadow: 0 0 0 3px color-mix(in srgb, var(--terracotta) 45%, transparent); }
+.topo-link.lab-link-up line { stroke: var(--sage); stroke-width: 3; }
+.topo-link.lab-link-down line { stroke: var(--terracotta); stroke-width: 3; stroke-dasharray: 6 4; }

@@ -930,6 +930,8 @@ function trocarTela(nome) {
     topologiaJaIniciada = true;
     import("./topology.js")
       .then((m) => m.initTopologia(currentUser.uid))
+      .then(() => import("./lab-real.js"))
+      .then((m) => m.initLabReal())
       .catch((e) => {
         topologiaJaIniciada = false;
         console.warn("[topologia] não foi possível carregar o editor:", e);

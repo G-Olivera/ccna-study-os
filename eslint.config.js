@@ -9,7 +9,7 @@ import globals from "globals";
 export default [
   js.configs.recommended,
   {
-    ignores: ["js/vendor/**", "node_modules/**"],
+    ignores: ["js/vendor/**", "node_modules/**", "lab-agent/node_modules/**"],
   },
   {
     files: ["**/*.js"],
@@ -27,6 +27,11 @@ export default [
       "no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "no-empty": ["warn", { allowEmptyCatch: true }],
     },
+  },
+  {
+    // Agente do Lab Real: roda em Node.js na VM, não no navegador.
+    files: ["lab-agent/**/*.js"],
+    languageOptions: { globals: { ...globals.node } },
   },
   {
     files: ["service-worker.js"],

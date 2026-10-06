@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3E6B6B">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasevertexai.googleapis.com https://www.googleapis.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasevertexai.googleapis.com https://www.googleapis.com https://*.sslip.io wss://*.sslip.io; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 </head>
 <body>
@@ -1188,6 +1188,7 @@
         </aside>
       </div>
 
+      <button class="btn-secondary topo-toolbar-btn topo-btn-lab-real" id="topo-btn-lab-real" title="Subir esta topologia com equipamentos reais">▶ Lab real</button>
       <button class="btn-secondary topo-toolbar-btn" id="topo-btn-conectar" title="Ativar modo de conexão: clique em 2 equipamentos">🔗 Conectar</button>
       <button class="btn-secondary topo-toolbar-btn ativo" id="topo-btn-toggle-interfaces" title="Mostrar/ocultar nomes das interfaces">Mostrar interfaces</button>
       <span class="topo-toolbar-divisor"></span>
@@ -1270,6 +1271,40 @@
       </div>
     </div>
   </section>
+
+  <!-- MODAL: Lab Real (controle do lab com equipamentos de verdade) -->
+  <div id="lab-real-modal" class="modal-overlay hidden">
+    <div class="modal-conteudo lab-real-conteudo" role="dialog" aria-modal="true" aria-labelledby="lab-real-titulo">
+      <div class="lab-real-cabecalho">
+        <h2 id="lab-real-titulo" style="font-size:16px;">Lab real</h2>
+        <button id="lab-real-fechar" class="btn-logout" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="lab-real-corpo"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: console real de um equipamento -->
+  <div id="lab-console-modal" class="modal-overlay hidden">
+    <div class="modal-conteudo lab-console-conteudo" role="dialog" aria-modal="true" aria-labelledby="lab-console-titulo">
+      <div class="lab-real-cabecalho">
+        <h2 id="lab-console-titulo" style="font-size:15px;">Console</h2>
+        <button id="lab-console-fechar" class="btn-logout" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="lab-console-terminal" class="lab-console-terminal"></div>
+      <div id="lab-console-teclas" class="lab-console-teclas">
+        <button class="btn-secondary lab-real-mini" data-tecla="\t">Tab</button>
+        <button class="btn-secondary lab-real-mini" data-tecla="?">?</button>
+        <button class="btn-secondary lab-real-mini" data-tecla="\u001b[A">↑</button>
+        <button class="btn-secondary lab-real-mini" data-tecla="\u001b[B">↓</button>
+        <button class="btn-secondary lab-real-mini" data-tecla="\u0003">Ctrl+C</button>
+        <button class="btn-secondary lab-real-mini" data-tecla="\u001a">Ctrl+Z</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: informações do laboratório -->
   <div id="topo-modal-info-lab" class="modal-overlay hidden">

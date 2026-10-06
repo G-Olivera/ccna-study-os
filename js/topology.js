@@ -158,6 +158,31 @@ let cliDeviceId = null;
 let cliSecaoAtual = "terminal";
 let temAlteracoesNaoSalvas = false;
 
+// ---------- INTEGRAÇÃO COM O LAB REAL (lab-real.js) ----------
+// O lab-real.js lê a topologia atual e "pinta" nós/links com o estado real
+// (no ar, link up/down) depois de cada render — sem acoplar os dois módulos.
+
+const ouvintesRender = new Set();
+
+export function aoRenderizarTopologia(fn) {
+  ouvintesRender.add(fn);
+  return () => ouvintesRender.delete(fn);
+}
+
+function avisarRender() {
+  ouvintesRender.forEach((fn) => {
+    try {
+      fn({ canvas: el.canvas, svg: el.svg, topologia, topologiaId });
+    } catch (e) {
+      console.error("[topologia] ouvinte de render falhou", e);
+    }
+  });
+}
+
+export function obterTopologiaAtual() {
+  return { topologia, topologiaId, temAlteracoesNaoSalvas };
+}
+
 function topologiaVazia(nome = "Sem título") {
   return {
     nome,
@@ -680,6 +705,7 @@ function renderDispositivos() {
       if (confirm("Excluir este equipamento e suas conexões?")) excluirDispositivo(e.target.closest(".topo-node").dataset.id);
     })
   );
+  avisarRender();
 }
 
 function renderConexoes() {
@@ -712,6 +738,7 @@ function renderConexoes() {
     .join("");
 
   el.svg.querySelectorAll(".topo-link").forEach((g) => g.addEventListener("click", () => excluirConexao(g.dataset.id)));
+  avisarRender();
 }
 
 // ---------- PROPRIEDADES (abas: Geral / Interfaces / Configuração / Anotações) ----------
