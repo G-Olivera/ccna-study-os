@@ -295,6 +295,33 @@ button { font-family: var(--font-body); cursor: pointer; }
   --space-5: 18px; --space-6: 24px; --space-7: 36px; --space-8: 48px;
 }
 
+/* Leitura: fonte, espaçamento e movimento — reaproveita o visual de .densidade-opcao. */
+.leitura-opcoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.leitura-opcao { padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 12px; }
+.leitura-opcao.selecionada { border-color: var(--teal); color: var(--teal); }
+
+[data-leitura-fonte="atkinson"] { --font-body: "Atkinson Hyperlegible", sans-serif; }
+[data-leitura-fonte="lexend"] { --font-body: "Lexend", sans-serif; }
+
+/* Espaçamento ampliado: linha mais alta e letras mais espaçadas no corpo do texto
+   e nos blocos de texto corrido (não em código/mono nem em UI curta). */
+[data-leitura-espacamento="ampliado"] body { line-height: 1.8; letter-spacing: 0.02em; }
+[data-leitura-espacamento="ampliado"] .tutor-msg-texto,
+[data-leitura-espacamento="ampliado"] .flashcard-pergunta,
+[data-leitura-espacamento="ampliado"] .flashcard-resposta,
+[data-leitura-espacamento="ampliado"] .licao-texto,
+[data-leitura-espacamento="ampliado"] .livro-explicacao,
+[data-leitura-espacamento="ampliado"] p,
+[data-leitura-espacamento="ampliado"] .config-info small {
+  max-width: 68ch;
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+}
+
+/* Reduzir movimento: desliga toda animação/transição do app, independente do
+   prefers-reduced-motion do sistema (controle manual dentro do próprio app). */
+[data-reduzir-movimento="1"] * { animation: none !important; transition: none !important; }
+
 @media (max-width: 600px) {
   .modal-config-conteudo { padding: 20px; }
 }

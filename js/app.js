@@ -232,6 +232,52 @@ document.querySelectorAll(".densidade-opcao").forEach((btn) => {
 });
 aplicarDensidade(localStorage.getItem(DENSIDADE_KEY) || "confortavel");
 
+// ===== LEITURA: fonte, espaçamento e reduzir movimento (acessibilidade) =====
+const LEITURA_FONTE_KEY = "ccna-study-os-leitura-fonte";
+const LEITURA_ESPACAMENTO_KEY = "ccna-study-os-leitura-espacamento";
+const REDUZIR_MOVIMENTO_KEY = "ccna-study-os-reduzir-movimento";
+
+function aplicarLeituraFonte(fonte) {
+  if (fonte) document.documentElement.setAttribute("data-leitura-fonte", fonte);
+  else document.documentElement.removeAttribute("data-leitura-fonte");
+  document.querySelectorAll(".leitura-opcao[data-leitura-fonte]").forEach((b) => b.classList.toggle("selecionada", b.dataset.leituraFonte === fonte));
+}
+document.querySelectorAll(".leitura-opcao[data-leitura-fonte]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    localStorage.setItem(LEITURA_FONTE_KEY, btn.dataset.leituraFonte);
+    aplicarLeituraFonte(btn.dataset.leituraFonte);
+    agendarSyncPrefs();
+  });
+});
+aplicarLeituraFonte(localStorage.getItem(LEITURA_FONTE_KEY) || "");
+
+function aplicarLeituraEspacamento(espacamento) {
+  if (espacamento) document.documentElement.setAttribute("data-leitura-espacamento", espacamento);
+  else document.documentElement.removeAttribute("data-leitura-espacamento");
+  document.querySelectorAll(".leitura-opcao[data-leitura-espacamento]").forEach((b) => b.classList.toggle("selecionada", b.dataset.leituraEspacamento === espacamento));
+}
+document.querySelectorAll(".leitura-opcao[data-leitura-espacamento]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    localStorage.setItem(LEITURA_ESPACAMENTO_KEY, btn.dataset.leituraEspacamento);
+    aplicarLeituraEspacamento(btn.dataset.leituraEspacamento);
+    agendarSyncPrefs();
+  });
+});
+aplicarLeituraEspacamento(localStorage.getItem(LEITURA_ESPACAMENTO_KEY) || "");
+
+function aplicarReduzirMovimento(ativo) {
+  if (ativo) document.documentElement.setAttribute("data-reduzir-movimento", "1");
+  else document.documentElement.removeAttribute("data-reduzir-movimento");
+  const chk = document.getElementById("checkbox-reduzir-movimento");
+  if (chk) chk.checked = !!ativo;
+}
+document.getElementById("checkbox-reduzir-movimento")?.addEventListener("change", (e) => {
+  localStorage.setItem(REDUZIR_MOVIMENTO_KEY, e.target.checked ? "1" : "0");
+  aplicarReduzirMovimento(e.target.checked);
+  agendarSyncPrefs();
+});
+aplicarReduzirMovimento(localStorage.getItem(REDUZIR_MOVIMENTO_KEY) === "1");
+
 // ===== SEGURANÇA: redefinir senha (ação real via Firebase Auth, não fake) =====
 document.getElementById("btn-gerenciar-seguranca").addEventListener("click", async () => {
   const btn = document.getElementById("btn-gerenciar-seguranca");
@@ -831,6 +877,9 @@ async function sincronizarPreferencias(uid) {
         aplicarPreferenciaTema();
         aplicarAccent(localStorage.getItem(ACCENT_KEY) || "");
         aplicarDensidade(localStorage.getItem(DENSIDADE_KEY) || "confortavel");
+        aplicarLeituraFonte(localStorage.getItem(LEITURA_FONTE_KEY) || "");
+        aplicarLeituraEspacamento(localStorage.getItem(LEITURA_ESPACAMENTO_KEY) || "");
+        aplicarReduzirMovimento(localStorage.getItem(REDUZIR_MOVIMENTO_KEY) === "1");
         valoresOcultos = localStorage.getItem("ccna-study-os-ocultar-valores") === "1";
         inicializarLembreteUI();
       }

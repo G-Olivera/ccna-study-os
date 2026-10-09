@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CCNA Study OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css" />
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -298,6 +298,29 @@
                 <button class="densidade-opcao" data-densidade="confortavel">Confortável</button>
                 <button class="densidade-opcao" data-densidade="compacta">Compacta</button>
               </div>
+            </div>
+
+            <div class="config-secao">
+              <strong>Leitura</strong>
+              <small>Fonte, espaçamento e movimento na tela — pensados pra dislexia e fadiga de leitura. As fontes abaixo são gratuitas e desenhadas pra legibilidade; nenhuma fonte é "certificada contra dislexia" — isso não existe.</small>
+
+              <small style="display:block; font-weight:600; color:var(--ink); margin-bottom:6px;">Fonte do texto</small>
+              <div class="leitura-opcoes">
+                <button class="leitura-opcao" data-leitura-fonte="" style="font-family:'Inter', sans-serif;">Padrão</button>
+                <button class="leitura-opcao" data-leitura-fonte="atkinson" style="font-family:'Atkinson Hyperlegible', sans-serif;">Atkinson Hyperlegible</button>
+                <button class="leitura-opcao" data-leitura-fonte="lexend" style="font-family:'Lexend', sans-serif;">Lexend</button>
+              </div>
+
+              <small style="display:block; font-weight:600; color:var(--ink); margin:14px 0 6px;">Espaçamento do texto</small>
+              <div class="leitura-opcoes">
+                <button class="leitura-opcao" data-leitura-espacamento="">Padrão</button>
+                <button class="leitura-opcao" data-leitura-espacamento="ampliado">Ampliado</button>
+              </div>
+
+              <label style="display:flex; align-items:center; gap:8px; margin-top:14px; font-size:13px;">
+                <input type="checkbox" id="checkbox-reduzir-movimento" />
+                Reduzir movimento (desliga animações e transições)
+              </label>
             </div>
           </div>
 
